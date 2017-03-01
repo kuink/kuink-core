@@ -1,0 +1,18 @@
+{
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://packages.zendframework.com/"
+        }],
+    "require": {
+	 "zendframework/zend-loader": "2.0.*",
+	 "zendframework/zend-mail": "2.0.*",
+	 "zendframework/zend-memory": "2.0.*",
+	 "zendframework/zend-mime": "2.0.*",
+	 "zendframework/zendpdf": "2.0.*",
+	 "zendframework/zend-servicemanager": "2.0.*",
+	 "zendframework/zend-stdlib": "2.0.*",
+	 "zendframework/zend-text": "2.0.*"
+	
+	}
+}
