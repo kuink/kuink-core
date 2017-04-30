@@ -9,83 +9,72 @@
 //
 // Kuink Application Framework is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Kuink Application Framework.  If not, see <http://www.gnu.org/licenses/>.
-
-class AsciiLib
-{
+// along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
+class AsciiLib {
 	var $nodeconfiguration;
 	var $msg_manager;
-    function  AsciiLib($nodeconfiguration, $msg_manager) {
-    	$this->nodeconfiguration = $nodeconfiguration;
-    	$this->msg_manager = $msg_manager;
-        return;
-    }
-
-    
-    function createTable( $params ){
-        $tableData = $params[0];
-        $tableHeaders = (isset($params[1])) ? $params[1]:null;
-        
-        
-        // Either simple
-        $arrayKeys = array();
-        if (!isset($params[1])){
-            foreach(array_pop($tableData) as $key => $columnData){
-                $arrayKeys[] = $key;
-            }
-        }else{
-            foreach($params[1] as $key){
-                $arrayKeys[] = $key;
-            }
-        }
-        
-        
-        //default width
-        foreach ($arrayKeys as $key){
-            $columnWidths[] = strlen($key);
-        }
-        
-        //optimize width
-        foreach ($tableData as $row){
-            $i=0;
-            foreach ($row as $column){
-                if (strlen($column)>$columnWidths[$i])
-                   $columnWidths[$i] = strlen($column);
-                $i++;
-            }
-        }
-        
-//        echo "<pre>";
-//        var_dump($tableData);
-//        echo "</pre>";
-        
-        
-        $table = new Zend\Text\Table\Table(array('columnWidths' => $columnWidths));
-        
-        
-        $table->appendRow($arrayKeys);
-        $decorator = new Zend\Text\Table\Decorator\Ascii();
-        $table->setDecorator($decorator);
-        // Or verbose
-        foreach($tableData as $rowData){
-            $row = new Zend\Text\Table\Row();
-            foreach ($rowData as $columnData) {
-                $row->appendColumn(new Zend\Text\Table\Column($columnData));
-            }
-            $table->appendRow($row);
-        }
-        
-       
-        
-        
-        return (string)$table;
-    }
-    
-    
+	function AsciiLib($nodeconfiguration, $msg_manager) {
+		$this->nodeconfiguration = $nodeconfiguration;
+		$this->msg_manager = $msg_manager;
+		return;
+	}
+	function createTable($params) {
+		$tableData = $params [0];
+		$tableHeaders = (isset ( $params [1] )) ? $params [1] : null;
+		
+		// Either simple
+		$arrayKeys = array ();
+		if (! isset ( $params [1] )) {
+			foreach ( array_pop ( $tableData ) as $key => $columnData ) {
+				$arrayKeys [] = $key;
+			}
+		} else {
+			foreach ( $params [1] as $key ) {
+				$arrayKeys [] = $key;
+			}
+		}
+		
+		// default width
+		foreach ( $arrayKeys as $key ) {
+			$columnWidths [] = strlen ( $key );
+		}
+		
+		// optimize width
+		foreach ( $tableData as $row ) {
+			$i = 0;
+			foreach ( $row as $column ) {
+				if (strlen ( $column ) > $columnWidths [$i])
+					$columnWidths [$i] = strlen ( $column );
+				$i ++;
+			}
+		}
+		
+		// echo "<pre>";
+		// var_dump($tableData);
+		// echo "</pre>";
+		
+		$table = new Zend\Text\Table\Table ( array (
+				'columnWidths' => $columnWidths 
+		) );
+		
+		$table->appendRow ( $arrayKeys );
+		$decorator = new Zend\Text\Table\Decorator\Ascii ();
+		$table->setDecorator ( $decorator );
+		// Or verbose
+		foreach ( $tableData as $rowData ) {
+			$row = new Zend\Text\Table\Row ();
+			foreach ( $rowData as $columnData ) {
+				$row->appendColumn ( new Zend\Text\Table\Column ( $columnData ) );
+			}
+			$table->appendRow ( $row );
+		}
+		
+		return ( string ) $table;
+	}
 }
 
 ?>

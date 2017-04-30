@@ -9,22 +9,19 @@
 //
 // Kuink Application Framework is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Kuink Application Framework.  If not, see <http://www.gnu.org/licenses/>.
-
+// along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Formatter;
 
-class Percentage extends Formatter
-{
-    function format( $value, $params=null )
-    {
-    	$perc = ((float)$value)*100;
-    	$return = (string)number_format ( $perc , 2, ',' , '.' );
-        return '('.$perc.'%)';
-    }
+class Percentage extends Formatter {
+	function format($value, $params = null) {
+		$perc = (( float ) $value) * 100;
+		$return = ( string ) number_format ( $perc, 2, ',', '.' );
+		return '(' . $perc . '%)';
+	}
 }
 
 ?>

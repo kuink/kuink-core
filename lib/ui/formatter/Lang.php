@@ -9,26 +9,21 @@
 //
 // Kuink Application Framework is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Kuink Application Framework.  If not, see <http://www.gnu.org/licenses/>.
-
+// along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Formatter;
 
-class Lang extends Formatter
-{
-	function format( $value, $params=null ) {
-		return $this->lang($value, $params);
+class Lang extends Formatter {
+	function format($value, $params = null) {
+		return $this->lang ( $value, $params );
 	}
-	
-	
-    function lang( $value, $params=null )
-    {
-    	$langKey = (string) $this->getParam($params, $value, false, $value);
-    	return kuink_get_string($langKey, $this->nodeconfiguration['customappname']);
-    }
+	function lang($value, $params = null) {
+		$langKey = ( string ) $this->getParam ( $params, $value, false, $value );
+		return kuink_get_string ( $langKey, $this->nodeconfiguration ['customappname'] );
+	}
 }
 
 ?>

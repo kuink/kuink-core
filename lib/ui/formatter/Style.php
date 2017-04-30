@@ -9,30 +9,40 @@
 //
 // Kuink Application Framework is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Kuink Application Framework.  If not, see <http://www.gnu.org/licenses/>.
-
+// along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Formatter;
 
-class Style extends Formatter
-{
-
-    function format( $value, $params )
-    {
-        return $this->bold($value, $params);
-    }
-    
-    function bold(  $value, $params ) {
-    	return '<strong>'.$value.'</strong>';
-    }
-
-    function italic(  $value, $params ) {
-    	return '<i>'.$value.'</i>';
-    }    
-    
+class Style extends Formatter {
+	function format($value, $params) {
+		return $this->bold ( $value, $params );
+	}
+	function bold($value, $params) {
+		return '<strong>' . $value . '</strong>';
+	}
+	function italic($value, $params) {
+		return '<i>' . $value . '</i>';
+	}
+	function nl2br($value, $params) {
+		return nl2br ( $value );
+	}
+	function nl2list($value, $params) {
+		if (trim ( $value ) == '')
+			return $value;
+		
+		$tag = isset ( $params [0] ) ? ( string ) $params [0] : 'ul';
+		$bits = explode ( "\n", $value );
+		
+		$newstring = '<' . $tag . '>';
+		
+		foreach ( $bits as $bit ) {
+			$newstring .= "<li>" . $bit . "</li>";
+		}
+		
+		return $newstring . '</' . $tag . '>';
+	}
 }
-
 ?>

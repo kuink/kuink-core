@@ -9,36 +9,32 @@
 //
 // Kuink Application Framework is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Kuink Application Framework.  If not, see <http://www.gnu.org/licenses/>.
-
+// along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Formatter;
 
-class ArrayKey extends Formatter
-{
-	function format( $value, $params=null ) {
-		
-		$key = $this->getParam($params, 'key', true);
+class ArrayKey extends Formatter {
+	function format($value, $params = null) {
+		$key = $this->getParam ( $params, 'key', true );
 		
 		$formatedString = '';
-		//print_object(count($value));
-		//print_object(count($value, COUNT_RECURSIVE));
+		// print_object(count($value));
+		// print_object(count($value, COUNT_RECURSIVE));
 		
-		if (count($value) != count($value, COUNT_RECURSIVE)) {
-			foreach ($value as $item) {
-				$formatedString .= $item[$key].'</br>';
-				//print_object($formatedString);
+		if (count ( $value ) != count ( $value, COUNT_RECURSIVE )) {
+			foreach ( $value as $item ) {
+				$formatedString .= $item [$key] . '</br>';
+				// print_object($formatedString);
 			}
 		} else {
-			$formatedString = $value[$key];
+			$formatedString = $value [$key];
 		}
-
-		return (string)$formatedString;
+		
+		return ( string ) $formatedString;
 	}
-
 }
 
 ?>

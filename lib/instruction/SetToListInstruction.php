@@ -7,17 +7,17 @@ namespace Kuink\Core\Instruction;
  *
  * @author paulo.tavares
  */
-class SetToListInstruction extends \Kuink\Core\Instruction{
+class SetToListInstruction extends \Kuink\Core\Instruction {
 	
 	/**
 	 * Converts a list to a set
-	 * 
+	 *
 	 * @see \Kuink\Core\DataSourceConnector::connect()
 	 */
-	static public function execute( $instManager, $instructionXmlNode ) {
-		$content = $instManager->executeInnerInstruction( $instructionXmlNode );
-		$list = implode(',', $content);
-
+	static public function execute($instManager, $instructionXmlNode) {
+		$content = $instManager->executeInnerInstruction ( $instructionXmlNode );
+		$list = implode ( ',', $content );
+		
 		return $list;
 	}
 }

@@ -12,86 +12,133 @@ namespace Kuink\Core\DataSourceConnector;
  */
 class LdapConnector extends \Kuink\Core\DataSourceConnector {
 	var $client; // The ldap client
-	function connect() {
+	function connect($noBind = false) {
 		global $KUINK_CFG;
 		
 		if (! $this->client) {
 			$server = $this->dataSource->getParam ( 'server', true );
-			
 			$this->client = ldap_connect ( $server );
 			ldap_set_option ( $this->client, LDAP_OPT_PROTOCOL_VERSION, 3 );
 			ldap_set_option ( $this->client, LDAP_OPT_REFERRALS, 0 );
 			
+			$anonymousBind = $this->dataSource->getParam ( 'anonymousBind', true );
+			if ($anonymousBind != 'true' && ! $noBind)
+				$bind = ldap_bind ( $this->client, $this->dataSource->getParam ( 'user', true ), $this->dataSource->getParam ( 'passwd', true ) );
 			$errno = ldap_errno ( $this->client );
-			// var_dump($errno);
+			// print_object($errno);
 			if ($errno) {
 				throw new \Exception ( ldap_error ( $this->client ) );
 			}
 		}
 		return true;
 	}
+	function disconnect() {
+		ldap_close ( $this->client );
+		$this->client = null;
+	}
+	public function getDataSourceParam($params) {
+		$name = (isset ( $params ['name'] )) ? ( string ) $params ['name'] : '';
+		
+		return $this->dataSource->getParam ( $name, false, '' );
+	}
 	public function getDn($entity, $uid) {
 		// get dn
 		$server = $this->dataSource->getParam ( 'server', true );
-		$filter = '(uid=' . $uid . ')';
+		$loginField = $this->dataSource->getParam ( 'loginField', true );
+		$filter = '(' . $loginField . '=' . $uid . ')';
 		$sr = ldap_search ( $this->client, $entity, $filter );
-		// var_dump($sr);
+		$errno = ldap_errno ( $this->client );
 		$entries = ldap_get_entries ( $this->client, $sr );
-		// var_dump($entries);
+		// print_object($entries);
+		// print_object($entries);
+		// die();
+		
 		if ($entries ['count'] == 0)
 			return false;
 		
 		return $entries [0] ['dn'];
 	}
-	
 	function bind($params) {
-		$this->connect ();
-		$user = (! isset ( $params ['_user'] )) ? $this->dataSource->getParam('user', true ) : ( string ) $params ['_user'];
-		$passwd = (! isset ( $params ['_passwd'] )) ? $this->dataSource->getParam('passwd', true ) : ( string ) $params ['_passwd'];
-		$entity = (! isset ( $params ['_entity'] )) ? $this->dataSource->getParam('entity', true ) : ( string ) $params ['_entity'];
+		$this->connect ( false );
+		$user = (! isset ( $params ['_user'] )) ? $this->dataSource->getParam ( 'user', true ) : ( string ) $params ['_user'];
+		$passwd = (! isset ( $params ['_passwd'] )) ? $this->dataSource->getParam ( 'passwd', true ) : ( string ) $params ['_passwd'];
+		$entity = (! isset ( $params ['_entity'] )) ? $this->dataSource->getParam ( 'entity', true ) : ( string ) $params ['_entity'];
 		
-		if (isset($params ['_user']))
+		if (isset ( $params ['_user'] ))
 			$dn = $this->getDn ( $entity, $user );
 		else
 			$dn = $user;
-		//var_dump($dn);
+			// var_dump($dn);
 		$bind = ldap_bind ( $this->client, $dn, $passwd );
 		if ($bind)
 			return 1;
 		else
 			return 0;
 	}
-	
-	private function getUserInfoFromParams($user) {
-		$info['cn'] = (string)$this->getParam($user, 'name', true);
-		$info['gidNumber'] = 513;
-		$info['givenName']= (string)$this->getParam($user, 'name', true);
-		$info['homeDirectory']='/home/'.$this->getParam($user, 'uid', true);
-		$info['objectclass'][0] = 'top';
-		$info['objectclass'][1] = 'person';
-		$info['objectclass'][2] = 'organizationalPerson';
-		$info['objectclass'][3] = 'inetOrgPerson';
-		$info['objectclass'][4] = 'sambaSamAccount';
+	private function getUserInfoFromParams($user, $forUpdate = false) {
+		$info = array ();
 		
-		//Samba Stuff
-		$info['sambaAcctFlags'] = '[U]';
-		$info['sambaSID'] = '<SambaSID>';
-		$info['sambaDomainName'] = '<Domain>';
-		$info['sambaHomeDrive'] = '<Drive>';
-		$info['sambaHomePath'] = "\\\\<Server>\\".$info['uid'];
+		if (! $forUpdate)
+			$info ['cn'] = ( string ) $this->getParam ( $user, 'uid', true );
 		
-		$userPassword = $this->getUserPassword($this->getParam($user, 'password', true));
-		foreach($userPassword as $key=>$value)
-			$info[$key] = $value;
+		$info ['gidNumber'] = ( int ) $this->dataSource->getParam ( 'gidNumber', true );
+		$info ['givenName'] = ( string ) $this->getParam ( $user, 'name', true );
 		
-		$info['sn'] = (string)$this->getParam($user, 'surname', true);
-		$info['uidNumber'] = 1002;
-		$info['uid'] = (string)$this->getParam($user, 'uid', true);
-
-		$info['mail']= (string)$this->getParam($user, 'email', true);
-		$info['displayName']= (string)$this->getParam($user, 'display_name', true);
-		$info['gecos'] = (string)$this->getParam($user, 'gecos', true);
-				
+		// $homeDirectoryBase = (string)$this->dataSource->getParam('homeDirectoryBase', true );
+		$info ['unixHomeDirectory'] = ( string ) $this->dataSource->getParam ( 'unixHomeDirectory', true );
+		$info ['unixHomeDirectory'] .= ( string ) $this->getParam ( $user, 'uid', true );
+		
+		$homeDirectoryKey = 'homeDirectory.' . $this->getParam ( $user, 'personTypeCode', true );
+		;
+		$homeDirectory = ( string ) $this->dataSource->getParam ( $homeDirectoryKey, false );
+		
+		// If not found then get the default
+		if ($homeDirectory == '')
+			$homeDirectory = ( string ) $this->dataSource->getParam ( 'homeDirectory.default', true );
+		$homeDirectory .= ( string ) $this->getParam ( $user, 'uid', true );
+		
+		$info ['homeDirectory'] = $homeDirectory;
+		$info ['objectclass'] = array ();
+		$info ['objectclass'] [0] = 'top';
+		$info ['objectclass'] [1] = 'person';
+		$info ['objectclass'] [2] = 'organizationalPerson';
+		$info ['objectclass'] [3] = 'user';
+		$info ['objectclass'] [4] = 'posixAccount';
+		// $info['objectclass'][4] = 'sambaSamAccount';
+		$info ['uid'] = ( string ) $this->getParam ( $user, 'uid', true );
+		
+		$id = ( int ) $this->getParam ( $user, 'id', true );
+		$uidNumberBase = ( int ) $this->dataSource->getParam ( 'uidNumberBase', true );
+		$uidNumber = $id + $uidNumberBase;
+		$info ['uidNumber'] = $uidNumber;
+		
+		// $info['homeDirectory'] = '\\\\saturno.cscm-lx.pt\\'.$info['uid'];
+		$info ['homeDrive'] = ( string ) $this->dataSource->getParam ( 'homeDrive', true );
+		$info ['loginShell'] = ( string ) $this->dataSource->getParam ( 'loginShell', true );
+		$info ['msSFU30NisDomain'] = ( string ) $this->dataSource->getParam ( 'nisDomain', true );
+		
+		$domain = ( string ) $this->dataSource->getParam ( 'domain', true );
+		// $info['pager'] = ''; //get id_card from person
+		$info ['userPrincipalName'] = $this->getParam ( $user, 'uid', true ) . '@' . $domain;
+		$info ['userAccountControl'] = ( int ) $this->dataSource->getParam ( 'userAccountControl', true );
+		
+		$setPassword = $this->getParam ( $user, 'password', false );
+		$userPassword = $this->getUserPassword ( $setPassword );
+		// print_object($user['password']);
+		if ($setPassword != '')
+			foreach ( $userPassword as $key => $value )
+				$info [$key] = $value;
+		
+		$info ['sn'] = ( string ) $this->getParam ( $user, 'surname', true );
+		// $info['uidNumber'] = 1002;
+		
+		$info ['mail'] = ( string ) $this->getParam ( $user, 'email', true );
+		$info ['displayName'] = ( string ) $this->getParam ( $user, 'display_name', true );
+		$info ['gecos'] = ( string ) $this->getParam ( $user, 'gecos', true );
+		
+		$info ['sAMAccountName'] = ( string ) $this->getParam ( $user, 'uid', true );
+		// print_object($user);
+		// print_object($info);
 		return $info;
 	}
 	
@@ -101,58 +148,68 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 	 */
 	function insert($params) {
 		global $KUINK_TRACE;
+		$this->connect ();
 		
-		$this->connect();
-		$bind = $this->bind($params); //bind as admin by default
-		if (!$bind)
+		$bind = $this->bind ( $params ); // bind as admin by default
+		
+		if (! $bind)
 			return 0;
-
-		$entity = (string)$this->getParam($params, '_entity', true);
-		$id =  (string)$this->getParam($params, 'uid', true);
-		$type =  (string)$this->getParam($params, 'type', true);
-		$name = (string)$this->getParam($params, 'name', true);
+			
+			// $entity = (string)$this->getParam($params, '_entity', true);
+		$id = ( string ) $this->getParam ( $params, 'uid', true );
+		$type = ( string ) $this->getParam ( $params, 'type', true );
+		$name = ( string ) $this->getParam ( $params, 'name', true );
+		// print_object($params);
+		// get the OU
+		$ou = $this->dataSource->getParam ( 'config.ouByType.' . $type, false );
+		if (trim ( $ou ) == '')
+			$ou = $this->dataSource->getParam ( 'config.ouByType._default', false );
+			// var_dump($ou);
+		if (trim ( $ou ) == '')
+			throw new \Exception ( 'LDAP: OU not found for type ' . $type );
+			
+			// build the dn
+		$dn = 'cn=' . $id . ',' . $ou; // 'cn='.$name.','.$ou;
+		                         // var_dump('AA');
+		$info = $this->getUserInfoFromParams ( $params );
+		$KUINK_TRACE [] = $info;
+		foreach ( $info as $infoKey => $infoValue )
+			$KUINK_TRACE [] = $infoKey . ' : ' . $infoValue;
+			// print_object($info);
 		
-		//get the OU
-		$ou = $this->dataSource->getParam('config.ouByType.'.$type, false );
-		if (trim($ou) == '')
-			$ou = $this->dataSource->getParam('config.ouByType._default', false );
-		
-		if (trim($ou) == '') 
-			throw new \Exception('LDAP: OU not found for type '.$type);
-
-		//build the dn
-		$dn = $ou; //'cn='.$name.','.$ou;
-		$info = $this->getUserInfoFromParams($params);
-		
-		//var_dump($dn);
-		//var_dump($info);
-
 		$ldapAddError = ( string ) ldap_error ( $this->client );
+		// print_object($ldapAddError);
 		$KUINK_TRACE [] = $ldapAddError;
-		//var_dump($ldapAddError);
-		
-		$add = ldap_add($this->client, $dn, $info);
-		
+		$KUINK_TRACE [] = ( string ) ldap_errno ( $this->client );
+		// print_object($dn);
+		$add = ldap_add ( $this->client, $dn, $info );
+		// var_dump($add);
 		$ldapAddError = ( string ) ldap_error ( $this->client );
-		$KUINK_TRACE [] = $ldapAddError; 
-		//var_dump($ldapAddError);
+		// print_object($ldapAddError);
+		$KUINK_TRACE [] = $ldapAddError;
 		
-		ldap_close($this->client);
+		$this->disconnect ();
 		return $add;
 	}
-	
 	function update($params) {
 		global $KUINK_TRACE;
 		
 		$this->connect ();
 		// Get the dn, can only update given the dn
-		$dn = '';
-		if (isset ( $params ['dn'] ))
-			$dn = ( string ) $params ['dn'];
-		else
-			throw new \Exception ( 'To update please set the dn' );
-			
-			// Try to bind with the user
+		
+		// CN=5,CN=Users,DC=ds,DC=cscm-lx,DC=pt
+		
+		$entity = isset ( $params ['_entity'] ) ? ( string ) $params ['_entity'] : $this->dataSource->getParam ( 'entity', true );
+		
+		$dn = $this->getDn ( $entity, $params ['uid'] );
+		// print_object($dn);
+		/*
+		 * if (isset ( $params ['dn'] ))
+		 * $dn = ( string ) $params ['dn'];
+		 * else
+		 * throw new \Exception ( 'To update please set the dn' );
+		 */
+		// Try to bind with the user
 		if (isset ( $params ['_passwd'] )) {
 			$passwd = $params ['_passwd'];
 			$bind = ldap_bind ( $this->client, $dn, $passwd );
@@ -166,9 +223,10 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 			if (! $bind)
 				throw new \Exception ( 'Cannot login with user: ' . $user );
 		}
-		$passwd = (! isset ( $params ['_passwd'] )) ? $this->dataSource->getParam ( 'passwd', true ) : ( string ) $params ['_passwd'];
+		// print_object('passed');
+		// $passwd = (! isset ( $params ['_passwd'] )) ? $this->dataSource->getParam ( 'passwd', true ) : ( string ) $params ['_passwd'];
 		
-		//$bind = ldap_bind ( $this->client, $dn, $passwd );
+		// $bind = ldap_bind ( $this->client, $dn, $passwd );
 		
 		unset ( $params ['_entity'] );
 		unset ( $params ['_attributes'] );
@@ -179,26 +237,32 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		unset ( $params ['_pk'] );
 		unset ( $params ['dn'] );
 		// $resultData=$this->execute($params);
-		// var_dump($params);
+		// print_object($params);
+		// print_object($params);
+		$info = $this->getUserInfoFromParams ( $params, true ); // true for update purpose
+		                                                     // print_object($info);
 		
-		$replace = ldap_mod_replace ( $this->client, $dn, $params );
-		$KUINK_TRACE [] = ( string ) ldap_error ( $this->client );
-		//print_object ( ldap_error ( $this->client ) );
+		$replace = ldap_mod_replace ( $this->client, $dn, $info );
+		$KUINK_TRACE [] = 'ldapUpdate: ' . $replace;
+		$ldapMessage = ( string ) ldap_error ( $this->client );
+		$KUINK_TRACE [] = 'ldapMessage: ' . $ldapMessage;
+		$KUINK_TRACE [] = 
+		// print_object ( ldap_error ( $this->client ) );
+		$this->disconnect ();
 		if ($replace)
 			return 1;
 		else
 			return 0;
 	}
-
 	private function getUserPassword($password) {
-		//Get this from configs
+		// Get this from configs
 		$sambaMode = $this->dataSource->getParam ( 'sambaMode', false, 'false' );
 		$adMode = ($this->dataSource->getParam ( 'adMode', false, 'false' ));
 		
 		$samba_mode = ($sambaMode == 'true');
 		$ad_mode = ($adMode == 'true');
 		
-		$hash =  $this->dataSource->getParam ( 'hash', false, 'MD5' );
+		$hash = $this->dataSource->getParam ( 'hash', false, 'MD5' );
 		
 		// change the password
 		// Set Samba password value
@@ -253,28 +317,29 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 	/*
 	 * Assumes that a connect and bind was allready made
 	 * Errors: 0 - No errors 1 - wrong old password 2 - password validation failed
-	*/
-	private function ldapChangePassword($dn, $password) {	
-		//Get this from configs
-		$sambaMode = $this->dataSource->getParam ( 'sambaMode', false, 'false' );
-		$adMode = ($this->dataSource->getParam ( 'adMode', false, 'false' ));
-	
-		$samba_mode = ($sambaMode == 'true');
-		$ad_mode = ($adMode == 'true');
-	
-		$hash =  $this->dataSource->getParam ( 'hash', false, 'MD5' );
-	
+	 */
+	private function ldapChangePassword($dn, $password) {
+		// Get this from configs
+		$adVersion = ($this->dataSource->getParam ( 'adVersion', true ));
+		$ldapMode = ($this->dataSource->getParam ( 'ldapMode', true ));
+		
+		if ($adVersion != 'Samba.3' && $adVersion != 'Samba.4' && $adVersion != 'AD')
+			throw new \Exception ( 'Invalid authentication service: ' . $adVersion );
+		if ($ldapMode != 'true' && $ldapMode != 'false')
+			throw new \Exception ( 'Invalid authentication ldapMode: ' . $ldapMode );
+		
+		$hash = $this->dataSource->getParam ( 'hash', false, 'MD5' );
+		
 		// change the password
 		// Set Samba password value
-		if ($samba_mode) {
+		if ($adVersion == 'Samba.3') {
 			$userdata ["sambaNTPassword"] = $this->make_md4_password ( $password );
 			$userdata ["sambaPwdLastSet"] = time ();
-		}
-	
-		// Transform password value
-		if ($ad_mode) {
+		} else if ($adVersion == 'AD' || $adVersion == 'Samba.4') {
 			$password = $this->make_ad_password ( $password );
-		} else {
+		}
+		
+		if ($ldapMode == 'true') {
 			// Hash password if needed
 			if ($hash == "SSHA") {
 				$password = $this->make_ssha_password ( $password );
@@ -292,9 +357,9 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 				$password = $this->make_crypt_password ( $password );
 			}
 		}
-	
+		
 		// Set password value
-		if ($ad_mode) {
+		if ($adVersion == 'AD' || $adVersion == 'Samba.4') {
 			$userdata ["unicodePwd"] = $password;
 			if ($ad_options ['force_unlock']) {
 				$userdata ["lockoutTime"] = 0;
@@ -302,34 +367,24 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 			if ($ad_options ['force_pwd_change']) {
 				$userdata ["pwdLastSet"] = 0;
 			}
-		} else {
+		} else if ($ldapMode == 'true') {
 			$userdata ["userPassword"] = $password;
 		}
-	
+		
 		// Shadow options
 		if ($shadow_options ['update_shadowLastChange']) {
 			$userdata ["shadowLastChange"] = floor ( time () / 86400 );
 		}
-	
+		
 		// Commit modification on directory
-	
-		// Special case: AD mode with password changed as user
-		// Not possible with PHP, because requires add/delete modification
-		// in a single operation
-		if ($ad_mode and $who_change_password === "user") {
-			$result = "passworderror";
-			error_log ( "Cannot modify AD password as user" );
-			return $result;
-		}
-		// Else just replace with new password
+		// Just replace with new password
 		$replace = ldap_mod_replace ( $this->client, $dn, $userdata );
 		$errno = ldap_errno ( $ldap );
 		if ($errno)
 			return 2;
-	
-		// return $result;
+		
 		return 0;
-	}	
+	}
 	
 	/*
 	 * Errors: 0 - No errors 1 - wrong old password 2 - password validation failed
@@ -340,30 +395,32 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		$oldPasswd = $this->getParam ( $params, 'oldPassword', true );
 		$password = $this->getParam ( $params, 'newPassword', true );
 		$bind = ldap_bind ( $this->client, $dn, $oldPasswd );
-		if (!$bind)
+		if (! $bind)
 			return 1;
-		$result = $this->ldapChangePassword($dn, $password);
+		$result = $this->ldapChangePassword ( $dn, $password );
 		
 		return $result;
 	}
-
+	
 	/*
 	 * Errors: 0 - No errors 1 - wrong old password 2 - password validation failed
-	*/
+	 */
 	function setPassword($params) {
-		$this->connect();
-		$bind = $this->bind($params); //bind as admin by default 
-		//var_dump($params);
-		//var_dump($bind);
-		if (!$bind)
+		// print_object($params);
+		$this->connect ();
+		$bind = $this->bind ( $params ); // bind as admin by default
+		                              
+		// print_object($bind);
+		if (! $bind)
 			return 1;
-
-		$dn = $this->getParam ( $params, 'dn', true );
-		$password = $this->getParam ( $params, 'newPassword', true );		
 		
-		return $this->ldapChangePassword($dn, $password);
-	}	
-	
+		$dn = $this->getParam ( $params, 'dn', true );
+		$password = $this->getParam ( $params, 'newPassword', true );
+		
+		$result = $this->ldapChangePassword ( $dn, $password );
+		$this->disconnect ();
+		return $result;
+	}
 	function save($params) {
 		global $KUINK_TRACE;
 		
@@ -371,7 +428,6 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		
 		return;
 	}
-	
 	function delete($params) {
 		global $KUINK_TRACE;
 		
@@ -388,22 +444,18 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		
 		$entity = (! isset ( $params ['_entity'] )) ? $this->dataSource->getParam ( 'entity', true ) : ( string ) $params ['_entity'];
 		$attrs = isset ( $params ['_attributes'] ) ? ( string ) $params ['_attributes'] : '';
-		$query = isset ( $params ['_query'] ) ? ( string ) $params ['_query'] : '';//(cn=*)';
+		$query = isset ( $params ['_query'] ) ? ( string ) $params ['_query'] : ''; // (cn=*)';
 		$sort = isset ( $params ['_sort'] ) ? ( string ) $params ['_sort'] : '';
 		$user = isset ( $params ['_user'] ) ? ( string ) $params ['_user'] : '';
 		$passwd = isset ( $params ['_passwd'] ) ? ( string ) $params ['_passwd'] : '';
 		// $pageSize = isset($params['_pageSize']) ? (string) $params['_pageSize'] : '';
 		// $pageNum = isset($params['_pageNum']) ? (string) $params['_pageNum'] : '';
-		
-		$KUINK_TRACE[] = 'ldap query: '.$query;
-		
-		$this->connect ( $entity, $user, $passwd );
+		$KUINK_TRACE [] = 'entity: ' . $entity;
+		$KUINK_TRACE [] = 'ldap query: ' . $query;
+		// $this->connect ( $entity, $this->dataSource->getParam('user', true ), $this->dataSource->getParam('passwd', true ) );
+		$this->connect ();
 		
 		$attributes = ($attrs != '') ? explode ( ',', $attrs ) : null;
-		
-		// $cookie = '';
-		// ldap_control_paged_result($this->client, $pageSize, true, $pageNum);
-		
 		if ($attributes)
 			$search = ldap_search ( $this->client, $entity, $query, $attributes );
 		else
@@ -411,6 +463,8 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		
 		if ($sort != '')
 			ldap_sort ( $this->client, $search, $sort );
+			
+			// print_object($query);
 		
 		$result = ldap_get_entries ( $this->client, $search );
 		
@@ -425,11 +479,10 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 			if (! empty ( $returnRow ))
 				$return [] = $returnRow;
 		}
-		// var_dump($return);
+		// print_object($return);
 		
 		return $return;
 	}
-	
 	function getEntities($params) {
 		global $KUINK_TRACE;
 		
@@ -437,7 +490,6 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		
 		return null;
 	}
-	
 	function getAttributes($params) {
 		global $KUINK_TRACE;
 		
@@ -446,34 +498,38 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		
 		return null;
 	}
-	
 	function load($params) {
 		global $KUINK_TRACE;
-
-		//Build or complete the query
-		$queryParams = array();
-		foreach($params as $key=>$value) {
-			if ($key[0]!='_') {
-				$queryParams[$key]=$value;
+		
+		$this->connect ();
+		// Build or complete the query
+		$queryParams = array ();
+		foreach ( $params as $key => $value ) {
+			if ($key [0] != '_') {
+				if ($key == 'id')
+					$key = ( string ) $this->dataSource->getParam ( 'loginField', true );
+				$queryParams [$key] = $value;
 			}
 		}
-		if (count($queryParams) > 0) {
+		if (count ( $queryParams ) > 0) {
 			$query .= '(&';
-			foreach($queryParams as $key=>$value)
-				$query .= '('.$key.'='.$value.')';
+			foreach ( $queryParams as $key => $value )
+				$query .= '(' . $key . '=' . $value . ')';
 			
 			$query .= ')';
 			
-			$params['_query'].=$query;
+			$params ['_query'] .= $query;
 		}
+		// print_object($params);
+		// die();
 		
 		$resultData = $this->execute ( $params );
 		
-		//var_dump($resultData);
+		// print_object($resultData);
+		$this->disconnect ();
 		
 		return isset ( $resultData [0] ) ? $resultData [0] : null;
 	}
-	
 	function getAll($params) {
 		$resultData = $this->execute ( $params );
 		
