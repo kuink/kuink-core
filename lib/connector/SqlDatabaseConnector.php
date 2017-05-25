@@ -535,10 +535,13 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		if (count ( $params ) == 0 && ! $allowEmptyParams) {
 			return null;
 		}
-		
 		// Here we have some parameters
 		$query = $this->db->prepare ( $sql );
+		//print($sql.'<br/>');
+		
 		$query->execute ( $params );
+		
+		
 		
 		// Handle the errors
 		$errorInfo = $query->errorInfo ();

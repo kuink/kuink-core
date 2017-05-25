@@ -310,9 +310,7 @@ class Grid extends Control {
 			// print_object($this->hidden);
 		}
 		
-		// \Neon\Core\ProcessOrchestrator::setProcessVariable('__grid_'.$this->name, 'page', $this->page);
 		// Getting the pagesize to display
-		// $currentStoredPageSize = \Neon\Core\ProcessOrchestrator::getProcessVariable('__grid_'.$this->name, 'pagesize');
 		$currentStoredPageSize = $this->getContextVariable ( GridContextVariables::PAGE_SIZE );
 		$defaultPageSize = $this->getProperty ( $this->name, GridProperty::PAGE_SIZE, false, GridDefaults::PAGE_SIZE );
 		
@@ -1068,7 +1066,7 @@ class Grid extends Control {
 					
 					$conditionTrue = 0;
 					if ($actionCondition != '') {
-						$eval = new \Neon\Core\EvalExpr ();
+						$eval = new \Kuink\Core\EvalExpr ();
 						$conditionTrue = $eval->e ( $actionCondition, $record, TRUE ); // Eval and return a value without ''
 					} else {
 						$conditionTrue = TRUE;

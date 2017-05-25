@@ -138,6 +138,7 @@ class Application {
 			
 			// Set the company id
 		ProcessOrchestrator::setCompany ();
+		//print('----->'.ProcessOrchestrator::getCompany ().'<------');
 		
 		if ($KUINK_CFG->useNewDataAccessInfrastructure)
 			// Setup Company dataSources
@@ -145,11 +146,11 @@ class Application {
 			
 			// Load application.xml now that we have the app base in apps dir
 		$this->loadApplicationDefinition ();
+
 		
 		if ($KUINK_CFG->useNewDataAccessInfrastructure)
 			// Setup framework dataSources
 			\Kuink\Core\DataSourceManager::setupApplicationDS ( $this );
-			
 			// Loading language files
 		Language::loadLanguageFiles ( $this->appManager, $this->name, $this->lang );
 		

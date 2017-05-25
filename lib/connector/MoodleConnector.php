@@ -96,7 +96,7 @@ class MoodleConnector extends \Kuink\Core\DataSourceConnector {
 		
 		$serverUrl = $server . '?wstoken=' . $token . '&wsfunction=' . $entity;
 		
-		$curl = new \Neon\Core\DataSourceConnector\Curl ();
+		$curl = new \Kuink\Core\DataSourceConnector\Curl ();
 		
 		$restFormatUrl = ($restFormat == 'json') ? '&moodlewsrestformat=' . $restFormat : '';
 		

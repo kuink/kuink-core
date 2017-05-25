@@ -316,8 +316,8 @@ abstract class Control {
 				$parts = explode ( ',', $library );
 				if (count ( $parts ) != 4)
 					throw new \Exception ( 'Invalid lirary,function name: ' . $datasourcename . count ( $parts ) );
-				$node = new \Neon\Core\Node ( $parts [0], $parts [1], $parts [2] );
-				$runtime = new \Neon\Core\Runtime ( $node, 'lib', null );
+				$node = new \Kuink\Core\Node ( $parts [0], $parts [1], $parts [2] );
+				$runtime = new \Kuink\Core\Runtime ( $node, 'lib', null );
 				
 				$result = $runtime->execute ( $parts [3], $callParams );
 				// print_object($result);

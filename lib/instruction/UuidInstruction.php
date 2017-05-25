@@ -12,7 +12,7 @@ class UuidInstruction extends \Kuink\Core\Instruction {
 	/**
 	 * Handles String Types
 	 *
-	 * @see \Neon\Core\DataSourceConnector::connect()
+	 * @see \Kuink\Core\DataSourceConnector::connect()
 	 */
 	static public function execute($instManager, $instructionXmlNode) {
 		$utils = new \UtilsLib ( $instManager->nodeConfiguration, null );

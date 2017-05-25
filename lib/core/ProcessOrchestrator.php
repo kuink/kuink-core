@@ -742,7 +742,6 @@ class ProcessOrchestrator {
 		// unset( $_SESSION['KUINK_CONTEXT']['idCompany'] );
 		
 		$context = self::getContext ();
-		
 		// check if there's a company set
 		if (isset ( $_GET ['idCompany'] )) {
 			// check if the user belongs to this new company

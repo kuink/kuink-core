@@ -138,10 +138,10 @@ class Runtime {
 		// $event_params = ProcessOrchestrator::getEventParams();
 		$currentNode = ProcessOrchestrator::getCurrentNode ();
 		// die();
-		
+		//print_r($currentNode->params);
 		$this->params = $currentNode->params;
-		foreach ( $params as $key => $value )
-			$this->params [$key] = $value;
+		//foreach ( $params as $key => $value )
+		//	$this->params [$key] = $value;
 			
 			// $this->params = empty( $params ) ? $currentNode->params : $params ;
 		$this->variables [] = null;
@@ -553,6 +553,8 @@ class Runtime {
 			$this->nodeconfiguration [NodeConfKey::NODE_ROLES] = $node_roles;
 			$this->nodeconfiguration [NodeConfKey::ROLES] = $new_roles;
 			$this->buildAllCapabilities ();
+			$this->variables['ROLES'] = $this->nodeconfiguration[NodeConfKey::ROLES];
+			$this->variables['CAPABILITIES'] = $this->nodeconfiguration[NodeConfKey::CAPABILITIES];			
 			$action_permissions = $this->getActionPermissions ( $nodexml );
 			$this->nodeconfiguration [NodeConfKey::ACTION_PERMISSIONS] = $action_permissions;
 			$actionname = $this->nodeconfiguration [NodeConfKey::ACTION];
@@ -1557,6 +1559,7 @@ class Runtime {
 			case 'String.stripslashes' :
 			case 'String.firstWord' :
 			case 'String.lastWord' :
+			case 'Math.round' :
 			// $result = $this->inst_string( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname, $variables, $exit );
 			// break;
 			case 'ListToSet' :
@@ -1761,9 +1764,12 @@ class Runtime {
 	function inst_call($nodeconfiguration, $nodexml, $instruction_xmlnode, $instructionname, &$variables, &$exit) {
 		// Getting Function name and parameters
 		// var_dump( $instruction_xmlnode );
+		global $KUINK_TRACE;
 		$library = $this->get_inst_attr ( $instruction_xmlnode, 'library', $variables, false );
 		$function_name = $this->get_inst_attr ( $instruction_xmlnode, 'function', $variables, false );
 		$function_params = $this->get_inst_attr ( $instruction_xmlnode, 'params', $variables, false );
+		
+		$KUINK_TRACE[] = 'Call: '.$library.','.$function_name;
 		
 		// Check if library as 4 elements, the last one is the function name
 		$libSplit = explode ( ',', $library );
@@ -3396,6 +3402,8 @@ class Runtime {
 		// var_dump($roles);
 		// var_dump($nodeconfiguration);
 		$this->buildAllCapabilities ();
+		$variables['ROLES'] = $this->nodeconfiguration[NodeConfKey::ROLES];
+		$variables['CAPABILITIES'] = $this->nodeconfiguration[NodeConfKey::CAPABILITIES];		
 		return $value;
 	}
 	function inst_capability(&$nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {

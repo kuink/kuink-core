@@ -77,7 +77,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		$paramsDef [] = $this->addParam ( $paramsDef, 'application', 'text', true );
 		$params = $this->ckeckParams ( $paramsDef, $params );
 		
-		$isApp = \Neon\Core\Reflection::isPhysicalApplication ( $params ['base'], $params ['application'] );
+		$isApp = \Kuink\Core\Reflection::isPhysicalApplication ( $params ['base'], $params ['application'] );
 		
 		return $isApp;
 	}

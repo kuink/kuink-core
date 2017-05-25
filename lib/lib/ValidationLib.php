@@ -224,7 +224,7 @@ class ValidationLib {
 			// }
 		}
 		if (! $is_valid) {
-			$this->msg_manager->add ( \Neon\Core\MessageType::ERROR, neon_get_string ( "invalid_pt_civil_card_number" ) );
+			$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, neon_get_string ( "invalid_pt_civil_card_number" ) );
 		}
 		return ( int ) $is_valid;
 	}

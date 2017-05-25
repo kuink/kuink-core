@@ -18,7 +18,7 @@ namespace Kuink\UI\Control;
 
 class Menu extends Control {
 	function display() {
-		$actionPermissions = $this->nodeconfiguration [\Neon\Core\NodeConfKey::ACTION_PERMISSIONS];
+		$actionPermissions = $this->nodeconfiguration [\Kuink\Core\NodeConfKey::ACTION_PERMISSIONS];
 		$actionarray = array ();
 		$utils = new \UtilsLib ( $this->nodeconfiguration, null );
 		$root = ($this->xml_definition->xpath ( './Action' ));
@@ -26,7 +26,7 @@ class Menu extends Control {
 		$actionName = ( string ) $parent [0] ['action'];
 		$visible = isset ( $parent [0] ['visible'] ) ? ( string ) $parent [0] ['visible'] : 'true';
 		
-		$menu ['label'] = \Neon\Core\Language::getString ( ( string ) $parent [0] ['label'], $this->nodeconfiguration [\Neon\Core\NodeConfKey::APPLICATION] );
+		$menu ['label'] = \Kuink\Core\Language::getString ( ( string ) $parent [0] ['label'], $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] );
 		$menu ['href'] = ($actionName != '') ? $utils->ActionUrl ( array (
 				0 => $actionName 
 		) ) : '#';
@@ -48,7 +48,7 @@ class Menu extends Control {
 				if ($actionPermissions [$name] && $visible == 'true') {
 					// The user has permissions to execute this action
 					// Add this action to the array
-					$label = \Neon\Core\Language::getString ( $label, $this->nodeconfiguration [\Neon\Core\NodeConfKey::APPLICATION] );
+					$label = \Kuink\Core\Language::getString ( $label, $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] );
 					
 					$url = $utils->ActionUrl ( array (
 							0 => $name 
@@ -82,7 +82,7 @@ class Menu extends Control {
 				if ($actionPermissions [$name] && $visible == 'true') {
 					// The user has permissions to execute this action
 					// Add this action to the array
-					$label = \Neon\Core\Language::getString ( $label, $this->nodeconfiguration [\Neon\Core\NodeConfKey::APPLICATION] );
+					$label = \Kuink\Core\Language::getString ( $label, $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] );
 					
 					$url = $utils->ActionUrl ( array (
 							0 => $name 
@@ -103,7 +103,7 @@ class Menu extends Control {
 		
 		// return $actionarray;
 		// $this->render( array("title"=>$title, "actions"=>$actionarray) );
-		$layout = \Neon\UI\Layout\Layout::getInstance ();
+		$layout = \Kuink\UI\Layout\Layout::getInstance ();
 		
 		// print_object(count($menu['child']));
 		if ($actionPermissions [$actionName] || ($actionName == '' && count ( $menu ['child'] ) > 0)) {

@@ -47,7 +47,7 @@ class FileLib {
 		$path = $CFG->dataroot . '/' . $upload_dir . 'tmp/';
 		$compressedFilePath = $path . $compressedFileName . '.' . $compressedFileExtension;
 		
-		$file = fopen ( $compressedFilePath, 'wb' ) or $this->msg_manager->add ( \Neon\Core\MessageType::ERROR, 'Couldn\'t open file' );
+		$file = fopen ( $compressedFilePath, 'wb' ) or $this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Couldn\'t open file' );
 		fwrite ( $file, $download );
 		
 		if ($file) {

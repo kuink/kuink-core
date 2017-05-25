@@ -59,6 +59,7 @@ class ColorBar extends Formatter {
 		$max = ( int ) $this->getParam ( $params, 'max', true, 100 );
 		$decimals = ( int ) $this->getParam ( $params, 'decimals', false, 0 );
 		$perc = ($value != 0) ? ( float ) (( int ) $value / ($max - $min)) * 100.0 : 0;
+		$perc = ($perc > 100.0) ? 100.0 : $perc;
 		$showValue = ( string ) $this->getParam ( $params, 'showvalue', false, 'true' );
 		$pallete_name = ( string ) $this->getParam ( $params, 'pallete', false, 'blue' );
 		
