@@ -9,32 +9,28 @@
 //
 // Kuink Application Framework is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Kuink Application Framework.  If not, see <http://www.gnu.org/licenses/>.
-
-
-
+// along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Control;
 
 class DocViewer extends Control {
 	function display() {
-		$titleRaw =  (string)$this->getProperty('', 'title', false, '', $this->xml_definition);
-		$title = \Kuink\Core\Language::getString($titleRaw, $this->nodeconfiguration[\Kuink\Core\NodeConfKey::APPLICATION]);
+		$titleRaw = ( string ) $this->getProperty ( '', 'title', false, '', $this->xml_definition );
+		$title = \Kuink\Core\Language::getString ( $titleRaw, $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] );
 		
-		$data = (string)$this->bind_data[0];
-		$this->render( array('fileGuid'=>$data, 'title'=>$title) );
+		$data = ( string ) $this->bind_data [0];
+		$this->render ( array (
+				'fileGuid' => $data,
+				'title' => $title 
+		) );
 	}
-
 	function getHtml() {
 		$html = $this->name;
 		return $html;
 	}
-
-
 }
-
 
 ?>

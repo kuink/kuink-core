@@ -7,16 +7,15 @@ namespace Kuink\Core\Instruction;
  *
  * @author paulo.tavares
  */
-class MicroTimeInstruction extends \Kuink\Core\Instruction{
+class MicroTimeInstruction extends \Kuink\Core\Instruction {
 	
 	/**
 	 * Converts a list to a set
-	 * 
+	 *
 	 * @see \Kuink\Core\DataSourceConnector::connect()
 	 */
-	static public function execute( $instManager, $instructionXmlNode ) {
-
-		return microtime(true);
+	static public function execute($instManager, $instructionXmlNode) {
+		return microtime ( true );
 	}
 }
 

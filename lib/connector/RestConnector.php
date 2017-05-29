@@ -12,23 +12,21 @@ namespace Kuink\Core\DataSourceConnector;
  * @author paulo.tavares
  */
 class RestConnector extends \Kuink\Core\DataSourceConnector {
-	
 	private $response = null;
-	private $responseType = "json"; 
+	private $responseType = "json";
 	private $server = null;
 	private $port = null;
 	
-	
 	/**
 	 * Connect using any strategy
-	 * 
+	 *
 	 * @see \Kuink\Core\DataSourceConnector::connect()
 	 */
 	function connect() {
 		$this->server = $this->dataSource->getParam ( 'server', true );
-		$this->port = $this->dataSource->getParam ( 'port', true);
+		$this->port = $this->dataSource->getParam ( 'port', true );
 		$server = $this->dataSource->getParam ( 'server', true );
-		var_dump($server);
+		var_dump ( $server );
 		$responseType = $this->dataSource->getParam ( 'responseType', true );
 		if ($responseType != '')
 			$this->responseType = $responseType;
@@ -36,7 +34,7 @@ class RestConnector extends \Kuink\Core\DataSourceConnector {
 	
 	/**
 	 * Wrapper to put
-	 * 
+	 *
 	 * @see \Kuink\Core\DataSourceConnector::insert()
 	 */
 	function insert($params) {
@@ -46,7 +44,7 @@ class RestConnector extends \Kuink\Core\DataSourceConnector {
 	
 	/**
 	 * Wrapper to post
-	 * 
+	 *
 	 * @param unknown $params        	
 	 */
 	function update($params) {
@@ -56,7 +54,7 @@ class RestConnector extends \Kuink\Core\DataSourceConnector {
 	
 	/**
 	 * Wrapper to post
-	 * 
+	 *
 	 * @param unknown $params        	
 	 */
 	function save($params) {
@@ -66,7 +64,7 @@ class RestConnector extends \Kuink\Core\DataSourceConnector {
 	
 	/**
 	 * Wrapper to delete
-	 * 
+	 *
 	 * @param unknown $params        	
 	 */
 	function delete($params) {
@@ -84,51 +82,52 @@ class RestConnector extends \Kuink\Core\DataSourceConnector {
 	
 	/**
 	 * Wrapper to get
-	 * 
+	 *
 	 * @param unknown $params        	
 	 * @return Ambigous <NULL, unknown>
 	 */
 	function load($params) {
 		// kuink_mydebug(__CLASS__, __METHOD__);
 		global $KUINK_TRACE;
-		$this->connect();
+		$this->connect ();
 		
-		$entity = (string)$this->getParam($params, '_entity');
+		$entity = ( string ) $this->getParam ( $params, '_entity' );
 		
-		//entity is mandatory
-		if (!$entity)
+		// entity is mandatory
+		if (! $entity)
 			return null;
-		$url = $this->server.':'.$this->port.$entity.'?status=pending';
-		var_dump($url);
-		$this->response = $this->httpGet($url, null);
-	
-		return $this->decodeResponse();
+		$url = $this->server . ':' . $this->port . $entity . '?status=pending';
+		var_dump ( $url );
+		$this->response = $this->httpGet ( $url, null );
+		
+		return $this->decodeResponse ();
 	}
 	
-	/** ########## Aux Functions ################## **/
-	private function decodeResponse(){
-		switch ($this->responseType){
-			case 'json':
-				return json_decode($this->response, true);
+	/**
+	 * ########## Aux Functions ################## *
+	 */
+	private function decodeResponse() {
+		switch ($this->responseType) {
+			case 'json' :
+				return json_decode ( $this->response, true );
 		}
-		
-		
 	}
 	
-	/** ########## CURL OPERATIONS ############## **/
-	
-	private function  httpGet($url, $params){
-		//next example will recieve all messages for specific conversation
+	/**
+	 * ########## CURL OPERATIONS ############## *
+	 */
+	private function httpGet($url, $params) {
+		// next example will recieve all messages for specific conversation
 		$service_url = $url;
-		$curl = curl_init($service_url);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-		$curl_response = curl_exec($curl);
+		$curl = curl_init ( $service_url );
+		curl_setopt ( $curl, CURLOPT_RETURNTRANSFER, true );
+		$curl_response = curl_exec ( $curl );
 		if ($curl_response === false) {
-			$info = curl_getinfo($curl);
-			curl_close($curl);
-			throw new \Kuink\Core\Exception\HttpRequestFailed('Error during HTTP request execution');			
+			$info = curl_getinfo ( $curl );
+			curl_close ( $curl );
+			throw new \Kuink\Core\Exception\HttpRequestFailed ( 'Error during HTTP request execution' );
 		}
-		curl_close($curl);
+		curl_close ( $curl );
 		return $curl_response;
 	}
 }

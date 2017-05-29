@@ -7,18 +7,18 @@ namespace Kuink\Core\Instruction;
  *
  * @author paulo.tavares
  */
-class JsonToSetInstruction extends \Kuink\Core\Instruction{
+class JsonToSetInstruction extends \Kuink\Core\Instruction {
 	
 	/**
 	 * Converts a list to a set
-	 * 
+	 *
 	 * @see \Kuink\Core\DataSourceConnector::connect()
 	 */
-	static public function execute( $instManager, $instructionXmlNode ) {
-		$content = (string)$instManager->executeInnerInstruction( $instructionXmlNode );
-
-		$list = json_decode($content, true);
-
+	static public function execute($instManager, $instructionXmlNode) {
+		$content = ( string ) $instManager->executeInnerInstruction ( $instructionXmlNode );
+		
+		$list = json_decode ( $content, true );
+		
 		return $list;
 	}
 }

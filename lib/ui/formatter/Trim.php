@@ -9,25 +9,36 @@
 //
 // Kuink Application Framework is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Kuink Application Framework.  If not, see <http://www.gnu.org/licenses/>.
-
+// along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Formatter;
 
-class Trim extends Formatter
-{
-
-    function format( $value, $params )
-    {
-    	if ($value == '')
-    		return '';
-       	return substr($value, 0, (int)$params['length']).' (...)';
-        
-    }
-    
+class Trim extends Formatter {
+	function format($value, $params) {
+		if ($value == '')
+			return '';
+		$length = ( int ) $this->getParam ( $params, 'length', true, 30 );
+		$completeWord = ( string ) $this->getParam ( $params, 'completeWord', false, 'true' );
+		
+		$formattedValue = substr ( $value, 0, $length );
+		
+		if ($completeWord == 'true') {
+			if ($value [$length] != ' ') {
+				$i = $length;
+				$len = strlen ( $value );
+				while ( ($i < $len) && ($value [$i] != ' ') ) {
+					$i ++;
+				}
+				// print_object($formattedValue.'::'.substr($value, $length, $i-$length).'('.$length.','.$i.')'.$len);
+				$formattedValue .= substr ( $value, $length, $i - $length );
+			}
+		}
+		
+		return $formattedValue . ' (...)';
+	}
 }
 
 ?>

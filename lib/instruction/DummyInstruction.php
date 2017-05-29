@@ -7,15 +7,15 @@ namespace Kuink\Core\Instruction;
  *
  * @author paulo.tavares
  */
-class DummyInstruction extends \Kuink\Core\Instruction{
+class DummyInstruction extends \Kuink\Core\Instruction {
 	
 	/**
 	 * Converts a list to a set
-	 * 
+	 *
 	 * @see \Kuink\Core\DataSourceConnector::connect()
 	 */
-	static public function execute( $instManager, $instructionXmlNode ) {
-		$instManager->variables['test'] = 'MODIFIED';
+	static public function execute($instManager, $instructionXmlNode) {
+		$instManager->variables ['test'] = 'MODIFIED';
 		$instManager->exit = true;
 		$instManager->break = true;
 		return '';
