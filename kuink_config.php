@@ -44,7 +44,7 @@ $KUINK_CFG->streamUrl = 'stream.php';
 $KUINK_CFG->apiCompleteUrl = $wwwroot . '/mod/kuink/' . $KUINK_CFG->apiUrl . '&neonfunction=';
 $KUINK_CFG->guestUrl = $wwwroot . '/mod/kuink/auth_guest.php';
 $KUINK_CFG->dataRoot = $KUINK_BRIDGE_CFG->dataroot;
-$KUINK_CFG->appRoot = $KUINK_CFG->dataRoot . '/neon/';
+$KUINK_CFG->appRoot = $KUINK_CFG->dataRoot . '/kuink/';
 $KUINK_CFG->layoutCache = false;
 $KUINK_CFG->externalServiceRoot = $KUINK_CFG->appRoot . 'apps/_externalServices/';
 
@@ -60,15 +60,15 @@ $KUINK_CFG->environment = str_replace ( array (
 switch ($KUINK_CFG->environment) {
 	case 'dev' :
 		$KUINK_CFG->theme = $KUINK_BRIDGE_CFG->theme;
-		$KUINK_CFG->theme = 'adminLTE2'; // "default" or "adminLTE" for experimental theme
-		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';
+		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
+		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';		
 		break;
 	case 'test' :
-		$KUINK_CFG->theme = 'adminLTE2'; // "default" or "adminLTE" for experimental theme
+		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';
 		break;
 	case 'prod' :
-		$KUINK_CFG->theme = 'adminLTE2'; // "default" or "adminLTE" for experimental theme
+		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';
 		break;
 	default :
@@ -92,9 +92,11 @@ $appsVersionFile = $KUINK_CFG->appRoot . 'apps/version.txt';
 $appsVersion = (file_exists ( $appsVersionFile )) ? file_get_contents ( $appsVersionFile ) : '';
 $KUINK_CFG->appsVersion = $appsVersion;
 
+$KUINK_CFG->defaultDataSourceName = 'fw';
+
 // Experimental features
 $KUINK_CFG->postRedirectGet = false;
 $KUINK_CFG->useNewDataAccessInfrastructure = true;
-$KUINK_CFG->defaultDataSourceName = 'neon';
+
 
 ?>

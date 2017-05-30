@@ -79,7 +79,7 @@ switch ($type) {
 		break;
 	
 	case "tmp" :
-		$pathName = $KUINK_CFG->dataRoot . '/neon/files/tmp/' . $guid;
+		$pathName = $KUINK_CFG->dataRoot . '/kuink/files/tmp/' . $guid;
 		
 		if (file_exists ( $pathName ) and ! is_dir ( $pathName )) {
 			ob_clean ();
