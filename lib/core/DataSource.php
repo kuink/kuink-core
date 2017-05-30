@@ -120,9 +120,9 @@ class DataSource {
 		$type = '';
 		// Getting database object
 		if ($database_name == '') {
-			$this->curr_db_prefix = $KUINK_DATABASES ['neon']->prefix;
-			$type = $KUINK_DATABASES ['neon']->type;
-			$database = $KUINK_DATABASES ['neon']->db;
+			$this->curr_db_prefix = $KUINK_DATABASES [$KUINK_CFG->defaultDataSourceName]->prefix;
+			$type = $KUINK_DATABASES [$KUINK_CFG->defaultDataSourceName]->type;
+			$database = $KUINK_DATABASES [$KUINK_CFG->defaultDataSourceName]->db;
 		} else {
 			// Check if there is allready a connection active to this database
 			if (isset ( $KUINK_DATABASES [$database_name] )) {
