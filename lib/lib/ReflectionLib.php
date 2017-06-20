@@ -362,7 +362,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		$override = isset ( $params ['override'] ) ? ( string ) $params ['override'] : 'false';
 		
 		$nodeName = $node . '.xml';
-		$filePath = $KUINK_CFG->appRoot . "apps/$appName/$application/process/$process/dataaccess";
+		$filePath = $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/dataaccess";
 		$fileName = $filePath . '/' . $nodeName;
 		// var_dump($xmlDefinition);
 		if (file_exists ( $fileName ) && $override == 'true')

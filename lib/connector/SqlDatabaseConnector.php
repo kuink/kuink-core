@@ -322,8 +322,10 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		// get the total number of records
 		$total = $this->executeSql ( $countSql, $params ); // $DB->count_records_sql($count_sql);
 		$totalRecords = 0;
-		foreach ( $total [0] as $total )
-			$totalRecords = ( int ) $total;
+		foreach($total as $totalItem) {
+			$totalRecords = (int)$totalItem['_total'];
+		}
+		
 		
 		$KUINK_TRACE [] = "TOTAL RECORDS: " . $totalRecords;
 		
@@ -747,68 +749,78 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		// global $CFG;
 		// global $KUINK_TRACE;
 		// global $DB;
-		$hasGroupBy = false;
-		// Check if this has a xsql query
-		$xsql = $instruction->xpath ( './XSql' );
-		$is_xsql = (! empty ( $xsql ));
+  	$hasGroupBy = false;
+  	//Check if this has a xsql query
+  	$xsql = $instruction->xpath('./XSql');
+  	$is_xsql = (! empty($xsql));
+
+  	$sql = '';
+  	if (! $is_xsql)
+  	{
+  		$sql = (string)$instruction[0][0];
+  	}
+  	else
+  	{
+  		//Parse XSQL
+  		$sql = '';
+
+  		$xinstructions = $xsql[0]->children();
+  		//print_object($xinstructions);
+  		foreach ($xinstructions as $xinst)
+  		{
+  			$xinst_name = $xinst->getname();
+  			//print($xinst_name.'<br/>');
+  			//print_object($params);
+
+  			switch( $xinst_name )
+  			{
+  				case 'XSelect':
+  					$selectFields = trim($this->xparse($xinst, '', 'SELECT *', 'XField', $params));
+  					//If this is a select *, then we must remove the * because select field, * generates an sql error
+  					$selectFields = ($selectFields == '*') ? ' ' : ', '.$selectFields;
+  					$sql .= ($count) ? 'SELECT COUNT(*) AS _total '.$selectFields.' ' : $this->xparse($xinst, 'SELECT', 'SELECT *', 'XField', $params);
+  					break;
+  				case 'XFrom':
+  					$sql .= $this->xparse($xinst, 'FROM', 'FROM','XTable', $params);
+  					break;
+  				case 'XWhere':
+  					$sql .= $this->xparse($xinst, 'WHERE','WHERE 1=1', 'XCondition', $params);
+  					break;
+  				case 'XGroupBy':
+  					$hasGroupBy = true;
+  					$sql .= $this->xparse($xinst, 'GROUP BY','', 'XCondition', $params);
+  					break;
+  				case 'XHaving':
+  					$sql .= $this->xparse($xinst, 'HAVING', 'HAVING 1=1', 'XCondition', $params);
+  					break;
+  				case 'XOrderBy':
+  					$sql .= ($count) ? '' : $this->xparse($xinst, 'ORDER BY', '', 'XOrder', $params);
+  					break;
+  				default:
+  					throw new \Exception('Invalid xsql instruction: '.$xinst_name);
+  					break;
+  			}
+
+  		}
+  	}
+  	//Expand parameters and table prefix
+  	foreach ($params as $key => $value) {
+  		//$param_value = mysql_escape_string($value);
+  		$param_value = $value;
+  		$sql = str_replace('{param->'.$key.'}', $param_value , $sql);
+  	}
+  	$sql = str_replace('{table_prefix}', "{$this->curr_db_prefix}" , $sql);
+
+  	if ($hasGroupBy && $count)
+  		$sql = 'SELECT COUNT(*) as _total FROM ('.$sql.') __total';
+
+  	//print_object( $sql );
+
+  	//if ($this->db->inTransaction())
+  	//$sql .= ' FOR UPDATE';
+
+  	return $sql;
 		
-		$sql = '';
-		if (! $is_xsql) {
-			$sql = ( string ) $instruction [0] [0];
-		} else {
-			// Parse XSQL
-			$sql = '';
-			
-			$xinstructions = $xsql [0]->children ();
-			// print_object($xinstructions);
-			foreach ( $xinstructions as $xinst ) {
-				$xinst_name = $xinst->getname ();
-				// print($xinst_name.'<br/>');
-				// print_object($params);
-				
-				switch ($xinst_name) {
-					case 'XSelect' :
-						$sql .= $this->xparse ( $xinst, 'SELECT', 'SELECT *', 'XField', $params ); // ($count) ? 'SELECT COUNT(*) ' : $this->xparse($xinst, 'SELECT', 'SELECT *', 'XField', $params);
-						break;
-					case 'XFrom' :
-						$sql .= $this->xparse ( $xinst, 'FROM', 'FROM', 'XTable', $params );
-						break;
-					case 'XWhere' :
-						$sql .= $this->xparse ( $xinst, 'WHERE', 'WHERE 1=1', 'XCondition', $params );
-						break;
-					case 'XGroupBy' :
-						$hasGroupBy = true;
-						$sql .= $this->xparse ( $xinst, 'GROUP BY', '', 'XCondition', $params );
-						break;
-					case 'XHaving' :
-						$sql .= $this->xparse ( $xinst, 'HAVING', 'HAVING 1=1', 'XCondition', $params );
-						break;
-					case 'XOrderBy' :
-						$sql .= ($count) ? '' : $this->xparse ( $xinst, 'ORDER BY', '', 'XOrder', $params );
-						break;
-					default :
-						throw new \Exception ( 'Invalid xsql instruction: ' . $xinst_name );
-						break;
-				}
-			}
-		}
-		// Expand parameters and table prefix
-		foreach ( $params as $key => $value ) {
-			// $param_value = mysql_escape_string($value);
-			$param_value = $value;
-			$sql = str_replace ( '{param->' . $key . '}', $param_value, $sql );
-		}
-		$sql = str_replace ( '{table_prefix}', "{$this->curr_db_prefix}", $sql );
-		
-		if ($hasGroupBy && $count)
-			$sql = 'SELECT COUNT(*) as total FROM (' . $sql . ') _total';
-			
-			// print_object( $sql );
-			
-		// if ($this->db->inTransaction())
-			// $sql .= ' FOR UPDATE';
-		
-		return $sql;
 	}
 	
 	// xchild [XField, XCondition,...]
@@ -913,13 +925,21 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		
 		return $entityChanges;
 	}
-	private function domainToArray($domain, $nodeManager) {
-		$domArray = Array ();
-		foreach ( $domain->attributes () as $key => $value ) {
-			$domArray [$key] = ( string ) $value;
-		}
-		return $domArray;
+  
+  	private function domainToArray($domain, $nodeManager) {
+	  	$domArray = Array();
+	  	
+	  	if ($domain === null)
+			return null;  	
+	  	
+		$domAttrs = $domain->attributes();
+	  	
+	  	foreach($domAttrs as $key=>$value)
+	  		$domArray[$key] = (string)$value;
+	  	
+	  	return $domArray;
 	}
+  
 	private function entityToArray($entity, $nodeManager) {
 		// print_object($entity);
 		$parent = current ( $entity->xpath ( 'parent::*' ) );
