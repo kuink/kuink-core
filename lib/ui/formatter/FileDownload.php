@@ -46,7 +46,7 @@ class FileDownload extends Formatter {
 			);
 			$datasource = new \Kuink\Core\DataSource ( null, 'framework,generic,load', 'framework', 'generic' );
 			$record = $datasource->execute ( $conditions );
-			// var_dump($record);
+			//var_dump($record);
 			if (! isset ( $record ['id'] ))
 				return '-';
 				
@@ -66,7 +66,7 @@ class FileDownload extends Formatter {
 			$icon = 'kuink-core/pix/icon_themes/standard/' . $ext . '.png';
 		else
 			$icon = 'kuink-core/pix/icon_themes/standard/default.png';
-		
+			
 		$contextId = \Kuink\Core\ProcessOrchestrator::getContextId ();
 		// $img_html = '<a href="file.php?path='.$this->path.'&guid='.$guid.'"><img align="left" src="'.$icon.'" height="48" alt="'.$ext.'"/></a>';
 		// $info_html = '<a href="file.php?path='.$this->path.'&guid='.$guid.'">'.$original_name.'</a>';
@@ -84,6 +84,7 @@ class FileDownload extends Formatter {
 		
 		return $return_html;
 	}
+	
 	private function FormatBytes($size) {
 		$type = ($size > 1024 * 1024) ? 'MB' : 'KB';
 		switch ($type) {

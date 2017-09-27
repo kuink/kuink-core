@@ -43,7 +43,7 @@ $KUINK_DATASOURCES = array (); // Will replace $KUINK_DATABASES
 $KUINK_TRANSLATION = null; // Holds pointers to xml language files
 $KUINK_APPLICATION = null; // The Application object to run
 
-global $KUINK_CFG, $USER;
+global $KUINK_CFG;
 
 // Handling External Roles
 $roles = array ();
@@ -58,13 +58,19 @@ $application = $KUINK_BRIDGE_CFG->application;
 $configuration = $KUINK_BRIDGE_CFG->configuration;
 $lang = $KUINK_BRIDGE_CFG->auth->user->lang;
 
+//Setting the modal default to widgetContainer to display widgets correctly
+$modal = (string)$_GET['modal'];
+//if ($modal == '') 
+//	$_GET['modal'] = 'widgetContainer';
+
+
 if (isset ( $_GET ['idWidget'] )) {
 	$KUINK_APPLICATION = new Kuink\Core\Application ( $application, $lang, $configuration );
 	
 	$idWidget = ( string ) $_GET ['idWidget'];
 	$node = new \Kuink\Core\Node ( 'framework', 'widget', 'api' );
 	
-	$wsParams ['guid'] = $idWidget;
+	$wsParams ['uuid'] = $idWidget;
 	
 	$wsResult = $KUINK_APPLICATION->run ( $node, 'getByGuid', $wsParams );
 	$widgetData = $wsResult ['RETURN'];

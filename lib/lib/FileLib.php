@@ -80,8 +80,8 @@ class FileLib {
 	// Param: MaxUploadSize - Maximum upload size of the file
 	// Param: ValidExtensions - comma separated list of valid extensions
 	function upload($params) {
-		global $CFG;
 		// global $msg_manager;
+		global $KUINK_BRIDGE_CFG;
 		global $trace;
 		// global $_Files;
 		
@@ -103,28 +103,9 @@ class FileLib {
 		// print('UPLOAD FOLDER:'.$upload_folder );
 		$config = $this->nodeconfiguration ['config'];
 		
-		$base_upload = $config ['neonUploadFolderBase'];
+		$base_upload = $config['neonUploadFolderBase'];
 		$upload_dir = $base_upload . $upload_folder;
 		// kuink_mydebug('uploaddir', $upload_dir);
-		
-		// Cleaning spaces from filename
-		foreach ( $_FILES as $field => $data ) {
-			// $filename = clean_filename($data['name']);
-			$filename = sha1_file ( $data ['name'] );
-			$filename = str_replace ( ' ', '_', $filename );
-			$_FILES [$field] ['name'] = $filename;
-			
-			$filename = sha1_file ( $data ['tmp_name'] );
-			$filename = str_replace ( ' ', '_', $filename );
-			$_FILES [$field] ['tmp_name'] = $filename;
-		}
-		// upload dos ficheiros que esta no $_FILES
-		// $upload_manager = new \upload_manager();
-		// $upload_manager->preprocess_files();
-		// $upload_manager->process_file_uploads($upload_dir);
-		foreach ( $_FILES as $tipo => $file ) {
-			var_dump ( $file ['name'] . ' » ' . $file ['tmp_name'] );
-		}
 		
 		// normalizar os ficheiros
 		foreach ( $_FILES as $tipo => $file ) {
@@ -134,14 +115,17 @@ class FileLib {
 			$error = false;
 			// kuink_mydebug('filename', $filename);
 			
-			if ($file ['error'] != 0)
+			if ($file ['error'] != 0) {
 				$trace [] = 'FileLib::Upload ERROR - ' . $file ['error'];
+				$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Erro no upload do ficheiro.' );
+			}
 			
 			if ($file ['error'] == 4) {
 				if ($mandatory == 'true')
 					$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'O ficheiro é obrigatório.' );
 				return null;
 			}
+			//var_dump($filename);
 			//
 			if ($filename != '') {
 				// Extract file extension
@@ -149,7 +133,7 @@ class FileLib {
 				$file_ext = strtolower ( $file_ext [count ( $file_ext ) - 1] );
 				
 				// nome normalizado para guardar na base de dados {tipo}_{num_aluno}_{increment}.{ext}
-				$full_path_original = $CFG->dataroot . '/' . $upload_dir . '/' . $filename;
+				$full_path_original = $KUINK_BRIDGE_CFG->dataroot . '/' . $upload_dir . '/' . $filename;
 				
 				$i = 0; // incremento. O primeiro ficheiro é 0
 				      
@@ -157,15 +141,8 @@ class FileLib {
 				$db_filename = $param_filename . '.' . $file_ext;
 				
 				// caminho completo do ficheiro com o nome normalizado
-				$full_path_normalizado = $CFG->dataroot . "/" . $upload_dir . "/" . $db_filename;
+				$full_path_normalizado = $KUINK_BRIDGE_CFG->dataroot . "/" . $upload_dir . "/" . $db_filename;
 				
-				// print('<br>DE:'.$full_path_original);
-				// print('<br>PARA:'.$full_path_normalizado);
-				
-				// VERIFICAR ERROS
-				//
-				// Verificar extensões
-				// TODO: STI remover as mensagens hardcoded
 				if (! in_array ( $file_ext, $valid_extensions_arr ) && ($valid_extensions != '')) {
 					unlink ( $full_path_original );
 					$error = true;
@@ -188,13 +165,26 @@ class FileLib {
 					continue;
 				}
 				
+				//var_dump($db_filename);
+
+				
 				if (! $error) {
+					//kuink_mydebug('dest filename', $KUINK_BRIDGE_CFG->dataroot . '/' . $upload_dir);
+
+					//create the directory if not exists
+					if (!file_exists($KUINK_BRIDGE_CFG->dataroot . '/' . $upload_dir))
+						mkdir($KUINK_BRIDGE_CFG->dataroot . '/' . $upload_dir, 0777, true);
+					
+					//move the file
+					move_uploaded_file($file['tmp_name'], $full_path_normalizado);
+					
 					// Altera o nome para o nome normalizado GUID
 					$full_path_original = str_replace ( " ", "\ ", $full_path_original );
-					// kuink_mydebug('$full_path_original',$full_path_original);
+						
+					//kuink_mydebug('$full_path_original',$full_path_original);
 					rename ( $full_path_original, $full_path_normalizado );
-					// move_uploaded_file($file['tmp_name'], $full_path_normalizado);
 					
+					//var_dump($full_path_normalizado);
 					// Grava o ficheiro na base de dados na tabela ficheiro
 					
 					$original_name = ($original_name == '') ? $filename : $original_name;

@@ -41,7 +41,7 @@ $KUINK_CFG->kuinkRoot = $KUINK_BRIDGE_CFG->kuinkroot; // 'mod/kuink/';
 $KUINK_CFG->themeRoot = 'kuink-core/';
 $KUINK_CFG->apiUrl = 'api.php?idcontext=' . $contextId;
 $KUINK_CFG->streamUrl = 'stream.php';
-$KUINK_CFG->apiCompleteUrl = $wwwroot . '/mod/kuink/' . $KUINK_CFG->apiUrl . '&neonfunction=';
+$KUINK_CFG->apiCompleteUrl = $wwwroot . '/' . $KUINK_CFG->apiUrl . '&neonfunction=';
 $KUINK_CFG->guestUrl = $wwwroot . '/mod/kuink/auth_guest.php';
 $KUINK_CFG->dataRoot = $KUINK_BRIDGE_CFG->dataroot;
 $KUINK_CFG->appRoot = $KUINK_CFG->dataRoot . '/kuink/';

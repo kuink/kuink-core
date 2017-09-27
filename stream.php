@@ -53,25 +53,25 @@ switch ($type) {
 			$dataAccess = new \Kuink\Core\DataAccess ( 'load', 'framework', 'config' );
 			$params ['_entity'] = 'fw_file';
 			$params ['guid'] = $guid;
-			$file_record = $dataAccess->execute ( $params );
+			$fileRecord = $dataAccess->execute ( $params );
 			
-			$file = ( string ) $file_record ['name'];
-			$path = ( string ) $file_record ['path'];
+			$file = (string) $fileRecord['name'];
+			$path = (string) $fileRecord['path'];
+			
+			$pathName = $KUINK_CFG->dataRoot.$path .'/'. $file;		
 		} else {
 			// Without guid
 			header ( 'HTTP/1.0 404 not found' );
 			print_error ( 'Not Allowed', 'error' );
 		}
 		
-		$pathName = $KUINK_CFG->dataRoot . '/' . $path . '/' . $file;
-		
 		if (file_exists ( $pathName ) and ! is_dir ( $pathName )) {
 			ob_clean ();
-			header ( 'Content-Type: ' . $file_record ['mimetype'] );
-			header ( 'Content-Length: ' . filesize ( $pathName . $file ) );
-			
+			header ( 'Content-Type: ' . $fileRecord ['mimetype'] );
+			header ( 'Content-Length: ' . filesize ( $pathName ) );
+			header('Content-Disposition: attachment; filename="'.$guid.'.'.$fileRecord['ext'].'"');
+
 			readfile ( $pathName );
-			// send_file($pathName, $file, 0);
 		} else {
 			header ( 'HTTP/1.0 404 not found' );
 			print_error ( 'filenotfound', 'error' );
