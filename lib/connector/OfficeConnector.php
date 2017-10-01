@@ -23,7 +23,7 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 		
 		if (! $this->conn) {
 			$this->conn = new \clsTinyButStrong (); // new instance of TBS
-			$this->conn->Plugin ( TBS_INSTALL, OPENTBS_PLUGIN ); // load the OpenTBS plugin
+			$this->conn->Plugin(TBS_INSTALL, OPENTBS_PLUGIN); // load the OpenTBS plugin
 			
 			$this->fileName = ( string ) $this->dataSource->getParam ( 'filename', false, '' );
 			$this->idFile = ( string ) $this->dataSource->getParam ( 'idFile', false, '' );
@@ -89,6 +89,18 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 			$this->conn->PlugIn ( OPENTBS_ADD_CREDIT, $propValue, $propName );
 		return '';
 	}
+	
+	function setText($params) {
+		$this->connect ();
+		
+		$block = array();
+		foreach ( $params as $propName => $propValue )
+			$block[$propName]= $propValue;
+		$data = array();
+		$data[] = $block;
+		$this->conn->MergeBlock('document', $data);
+		return '';
+	}	
 	
 	/**
 	 * Save the file with changed data

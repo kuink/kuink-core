@@ -46,7 +46,7 @@ class FileDownload extends Formatter {
 			);
 			$datasource = new \Kuink\Core\DataSource ( null, 'framework,generic,load', 'framework', 'generic' );
 			$record = $datasource->execute ( $conditions );
-			//var_dump($record);
+			// var_dump($record);
 			if (! isset ( $record ['id'] ))
 				return '-';
 				
@@ -66,7 +66,7 @@ class FileDownload extends Formatter {
 			$icon = 'kuink-core/pix/icon_themes/standard/' . $ext . '.png';
 		else
 			$icon = 'kuink-core/pix/icon_themes/standard/default.png';
-			
+		
 		$contextId = \Kuink\Core\ProcessOrchestrator::getContextId ();
 		// $img_html = '<a href="file.php?path='.$this->path.'&guid='.$guid.'"><img align="left" src="'.$icon.'" height="48" alt="'.$ext.'"/></a>';
 		// $info_html = '<a href="file.php?path='.$this->path.'&guid='.$guid.'">'.$original_name.'</a>';
@@ -84,7 +84,52 @@ class FileDownload extends Formatter {
 		
 		return $return_html;
 	}
-	
+	function url($value, $params = null) {
+		global $KUINK_CFG;
+		// Ler os metadados da base de dados
+		// global $DB;
+		
+		// var_dump($params);
+		// kuink_mydebug('Value', $value);
+		if (empty ( $value ))
+			return '-';
+			
+			// Try to get elements from $params this way no need to query database
+		$ext = ( string ) $params ['fileExt'];
+		$filename = ( string ) $params ['fileName'];
+		$guid = ( string ) $params ['fileGuid'];
+		$filesize = ( string ) $params ['fileSize'];
+		$original_name = ( string ) $params ['fileOriginalName'];
+		$unlinked = ( string ) $params ['unlinked'];
+		
+		if ($ext == '' || $filename == '' || $guid == '' || $filesize == '' || $original_name == '') {
+			// Get the file data from database
+			// kuink_mydebug('Value', $value);
+			$conditions = array (
+					'table' => 'fw_file',
+					'id' => $value 
+			);
+			$datasource = new \Kuink\Core\DataSource ( null, 'framework,generic,load', 'framework', 'generic' );
+			$record = $datasource->execute ( $conditions );
+			// var_dump($record);
+			if (! isset ( $record ['id'] ))
+				return '-';
+				
+				// $record = $DB->get_record('file', $conditions);
+				// var_dump($record);
+			
+			$ext = ( string ) $record ['ext'];
+			$filename = ( string ) $record ['name'];
+			$guid = ( string ) $record ['guid'];
+			$filesize = $record ['size'];
+			$original_name = $record ['original_name'];
+			$unlinked = $record ['unlinked'];
+		}
+		
+		$url = $KUINK_CFG->streamFileUrl . $guid;
+		
+		return $url;
+	}
 	private function FormatBytes($size) {
 		$type = ($size > 1024 * 1024) ? 'MB' : 'KB';
 		switch ($type) {

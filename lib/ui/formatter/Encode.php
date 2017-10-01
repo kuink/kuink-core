@@ -16,25 +16,29 @@
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Formatter;
 
-class ArrayKey extends Formatter {
-	function format($value, $params = null) {
-		
-		$key = $this->getParam ( $params, 'key', true );
-		$formatedString = '';
-		// print_object(count($value));
-		// print_object(count($value, COUNT_RECURSIVE));
-		
-		if (count ( $value ) != count ( $value, COUNT_RECURSIVE )) {
-			foreach ( $value as $item ) {
-				$formatedString .= $item [$key] . '</br>';
-				// print_object($formatedString);
-			}
-		} else {
-			$formatedString = $value [$key];
-		}
 
-		return ( string ) $formatedString;
+class Encode extends Formatter {
+	
+	function format($value, $params = null) {
+		$formatter = $this->base64($value, $params);
+		return $formatter;
 	}
+	
+	/**
+	 * Formats the value directly from the conditions
+	 *
+	 * @param type $value        	
+	 * @param type $params        	
+	 * @return string
+	 */
+	function base64($value, $params = null) {
+		return base64_encode($value);
+	}
+	
+	function pre($value, $params = null) {
+		return '<pre>'.$value.'</pre>';
+	}
+	
 }
 
 ?>

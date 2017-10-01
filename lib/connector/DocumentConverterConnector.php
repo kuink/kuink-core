@@ -20,12 +20,33 @@ class DocumentConverterConnector extends \Kuink\Core\DataSourceConnector {
 
 	function execute($params) {
 		global $KUINK_TRACE;
+		global $KUINK_CFG;
+		global $KUINK_BRIDGE_CFG;
 		$this->connect();
 		
-		$format = $this->getParam($params, 'format');
-		$source = $this->getParam($params, 'source');
-		$target = $this->getParam($params, 'target');
+		$idFile = (int)$this->getParam($params, 'id');
+		$path = (string)$this->getParam($params, 'path', false, '');
+		$newName = $this->getParam($params, 'newName', false, '');
+	
+		$format = (string)$this->getParam($params, 'format');
 		
+		$datasource = new \Kuink\Core\DataSource ( null, 'framework,generic,load', 'framework', 'generic' );
+		$file = $datasource->execute ( array (
+				'table' => 'fw_file',
+				'id' => $idFile
+		) );
+		
+		// full origin path
+		$source = $KUINK_CFG->dataRoot . '/' . $file['path'] . '/' . $file['name'];
+		$source = str_replace ( '//', '/', $source );
+		
+		// full destination path
+		$newName = ($newName == '') ? str_replace($file['ext'], $format, $file['name']) : $newName.'.'.$format;
+		
+		$path = ($path == '') ? $file['path'] : $path;
+		$target = $KUINK_CFG->dataRoot . '/' . $path . '/' . $newName;
+		$target = str_replace ( '//', '/', $target );
+				
 		//Expand the params into the command
 		$command = $this->dataSource->getParam('command', true);
 		$command = sprintf($command, $format, $source, $target);
@@ -34,7 +55,20 @@ class DocumentConverterConnector extends \Kuink\Core\DataSourceConnector {
 		$result = shell_exec($command);
 		$KUINK_TRACE[]=$result;
 		
-		return $result;
+		if (! file_exists($target)) {
+			throw new \Exception('Cannot convert file to '.$format.'. Check if the convertion service "unoconv -l" is up and running');
+		} else {
+			//Registering the new file
+			$fileSize = filesize($target);
+			$fileExt = $format;
+			$fileMime = 'application/'.$format;
+			
+			$fileLib = new \FileLib ( $this->nodeconfiguration, \Kuink\Core\MessageManager::getInstance () );
+			
+			$newFile = $fileLib->register( $newName, $path, $newName, $fileSize, $fileExt, $fileMime, $KUINK_BRIDGE_CFG->auth->user->id, '' );
+		}
+		
+		return $newFile;
 	}
 	
 	

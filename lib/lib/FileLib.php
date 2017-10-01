@@ -14,7 +14,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
-global $CFG;
 // include_once($CFG->dirroot.'/lib/uploadlib.php');
 include_once (__DIR__ . '/UtilsLib.php');
 class FileLib {
@@ -31,7 +30,7 @@ class FileLib {
 	// Param: fileContents - the actual file binary
 	// Param: unzip - true (1) if to retrieve the file uncompressed, false (0) if compressed
 	function uploadFromCompressedDownload($params) {
-		global $CFG;
+		global $KUINK_BRIDGE_CFG;
 		
 		$compressedFileName = $params ['compressedFileName'];
 		$compressedFileExtension = $params ['compressedFileExtension'];
@@ -44,7 +43,7 @@ class FileLib {
 		$config = $this->nodeconfiguration ['config'];
 		$base_upload = $config ['neonUploadFolderBase'];
 		$upload_dir = $base_upload . $upload_folder;
-		$path = $CFG->dataroot . '/' . $upload_dir . 'tmp/';
+		$path = $KUINK_BRIDGE_CFG->dataroot . '/' . $upload_dir . 'tmp/';
 		$compressedFilePath = $path . $compressedFileName . '.' . $compressedFileExtension;
 		
 		$file = fopen ( $compressedFilePath, 'wb' ) or $this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Couldn\'t open file' );
@@ -239,7 +238,7 @@ class FileLib {
 	 * @throws Exception
 	 */
 	function unlink($params) {
-		global $CFG;
+		global $KUINK_BRIDGE_CFG;
 		if (! isset ( $params [0] ))
 			throw new Exception ( 'unlink needs the id of the file.' );
 		$id = ( string ) $params [0];
@@ -250,7 +249,7 @@ class FileLib {
 		) );
 		// var_dump($file);
 		// print($CFG->dataroot.'/'.$file->path.'/'.$file->name);
-		$filename = $CFG->dataroot . '/' . $file ['path'] . '/' . $file ['name'];
+		$filename = $KUINK_BRIDGE_CFG->dataroot . '/' . $file ['path'] . '/' . $file ['name'];
 		// kuink_mydebug('file',$filename);
 		unlink ( $filename );
 		
@@ -273,6 +272,7 @@ class FileLib {
 		// var_dump($file);
 		return;
 	}
+		
 	function download($params) {
 		global $KUINK_CFG;
 		// disable moodle specific debug messages and any errors in output
@@ -339,17 +339,17 @@ class FileLib {
 		) );
 		
 		// full origin path
-		$originalFile = $CFG->dataroot . '/' . $file ['path'] . '/' . $file ['name'];
+		$originalFile = $KUINK_BRIDGE_CFG->dataroot . '/' . $file ['path'] . '/' . $file ['name'];
 		$originalFile = str_replace ( '//', '/', $originalFile );
 		
 		// full destination path
 		$newName = (! $newName) ? $file ['name'] : $newName . '.' . $file ['ext'];
 		$destinationPath = $baseUploadDir . '/' . $copyTo;
 		$destinationPath = str_replace ( '//', '/', $destinationPath );
-		$destinationFile = $CFG->dataroot . '/' . $destinationPath . $newName;
+		$destinationFile = $KUINK_BRIDGE_CFG->dataroot . '/' . $destinationPath . $newName;
 		$destinationFile = str_replace ( '//', '/', $destinationFile );
-		
-		mkdir ( dirname ( $destinationFile ), 0755, true );
+		//var_dump($originalFile);
+		mkdir ( dirname ( $destinationFile ), 0777, true );
 		copy ( $originalFile, $destinationFile );
 		
 		// register new file into fw_file

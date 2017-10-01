@@ -86,7 +86,7 @@ class Badge extends Formatter {
 			$displayValue = number_format ( ( float ) $perc, $decimals, ',', '.' ) . '%';
 			
 			// $displayValue = $value;
-		$formatter = '<span class="badge badge-' . $palleteName . '">' . $displayValue . '</span>';
+		$formatter = '<span class="label label-' . $palleteName . '">' . $displayValue . '</span>';
 		return $formatter;
 	}
 	

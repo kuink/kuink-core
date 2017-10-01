@@ -40,7 +40,8 @@ $KUINK_CFG->dirRoot = $KUINK_BRIDGE_CFG->dirroot;
 $KUINK_CFG->kuinkRoot = $KUINK_BRIDGE_CFG->kuinkroot; // 'mod/kuink/';
 $KUINK_CFG->themeRoot = 'kuink-core/';
 $KUINK_CFG->apiUrl = 'api.php?idcontext=' . $contextId;
-$KUINK_CFG->streamUrl = 'stream.php';
+$KUINK_CFG->streamUrl = $KUINK_CFG->wwwRoot.'stream.php';
+$KUINK_CFG->streamFileUrl = $KUINK_CFG->streamUrl.'?type=file&guid=';
 $KUINK_CFG->apiCompleteUrl = $wwwroot . '/' . $KUINK_CFG->apiUrl . '&neonfunction=';
 $KUINK_CFG->guestUrl = $wwwroot . '/mod/kuink/auth_guest.php';
 $KUINK_CFG->dataRoot = $KUINK_BRIDGE_CFG->dataroot;
@@ -62,14 +63,17 @@ switch ($KUINK_CFG->environment) {
 		$KUINK_CFG->theme = $KUINK_BRIDGE_CFG->theme;
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';		
+		$KUINK_CFG->enableEmailSending = false;
 		break;
 	case 'test' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';
+		$KUINK_CFG->enableEmailSending = false;
 		break;
 	case 'prod' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';
+		$KUINK_CFG->enableEmailSending = true;
 		break;
 	default :
 		throw new \Exception ( 'Invalid environment' . $KUINK_CFG->environment, 1 );
