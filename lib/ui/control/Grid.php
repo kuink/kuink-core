@@ -1167,8 +1167,8 @@ class Grid extends Control {
 							if ($cond_fieldvalue == $action_condvalue || $conditionTrue == 1) {
 								$action_url = '';
 								$action_constructor = array ();
-								$confirm_label = ($action ['confirm'] == '') ? 'false' : ( string ) $action ['confirm'];
-								$newContext = ($action ['newcontext'] == '') ? 'false' : ( string ) $action ['newcontext'];
+								$confirm_label = (( ( string ) $action ['confirm']) === '') ? 'false' : ( string ) $action ['confirm'];
+								$newContext = (( ( string ) $action ['newcontext']) === '') ? 'false' : ( string ) $action ['newcontext'];
 								$target = '';
 								if ($newContext == 'true') {
 									// Remove de idContext from the url then set target _blank
