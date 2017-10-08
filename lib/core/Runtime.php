@@ -74,7 +74,7 @@ class User {
 		$kuinkUser ['publicKey'] = $person ['public_key']; // $USER->email;
 		                                                 // $kuink_user['tipo'] = $current_user->tipo;
 		$kuinkUser ['idExternal'] = $KUINK_BRIDGE_CFG->auth->user->id; // $current_user->idexternal;
-		$kuinkUser ['lang'] = $USER->lang;
+		$kuinkUser ['lang'] = $KUINK_BRIDGE_CFG->auth->user->lang;
 		
 		// @todoSTI: Joao Patricio get this value from person table
 		$kuinkUser ['timezone'] = 'Europe/Lisbon';

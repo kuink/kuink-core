@@ -1,5 +1,7 @@
 <?php
 
+use Kuink\UI\Formatter\Dump;
+
 // This file is part of Kuink Application Framework
 //
 // Kuink Application Framework is free software: you can redistribute it and/or modify
@@ -291,7 +293,11 @@ class FileLib {
 		// print('pathname:'.$pathname);
 		if (file_exists ( $pathName ) and ! is_dir ( $pathName )) {
 			ob_clean ();
-			send_file ( $pathName, $file );
+			header ( 'Content-Type: ' . mime_content_type($pathName) );
+			header ( 'Content-Length: ' . filesize ( $pathName ) );
+			header('Content-Disposition: attachment; filename="'.$file.'"');
+
+			readfile ( $pathName );
 		} else {
 			header ( 'HTTP/1.0 404 not found' );
 			print_error ( 'filenotfound', 'error' ); // this is not displayed on IIS??
@@ -348,7 +354,11 @@ class FileLib {
 		$destinationPath = str_replace ( '//', '/', $destinationPath );
 		$destinationFile = $KUINK_BRIDGE_CFG->dataroot . '/' . $destinationPath . $newName;
 		$destinationFile = str_replace ( '//', '/', $destinationFile );
-		//var_dump($originalFile);
+		
+		//var_dump($copyTo);
+		//var_dump($baseUploadDir . '/' . $copyTo);
+		//var_dump(dirname ( $destinationFile ));
+		
 		mkdir ( dirname ( $destinationFile ), 0777, true );
 		copy ( $originalFile, $destinationFile );
 		
@@ -457,7 +467,7 @@ class FileLib {
 	 *       
 	 */
 	function createFile($params) {
-		global $CFG, $KUINK_BRIDGE_CFG;
+		global  $KUINK_BRIDGE_CFG, $KUINK_CFG;
 		
 		$config = $this->nodeconfiguration ['config'];
 		$baseUploadDir = $config ['neonUploadFolderBase']; // /kuink/ folder
@@ -480,8 +490,10 @@ class FileLib {
 		$destinationPath = $baseUploadDir . '/' . $path;
 		$destinationPath = str_replace ( '//', '/', $destinationPath );
 		
-		$destination = $CFG->dataroot . '/' . $destinationPath . '/' . $filename . '.' . $extension;
+		$destination = $KUINK_CFG->dataRoot . '/' . $destinationPath . '/' . $filename . '.' . $extension;
 		$destination = str_replace ( '//', '/', $destination );
+		
+		//var_dump($destination);
 		
 		// Write the file
 		$handle = fopen ( $destination, 'w' ) or die ( 'Cannot open file:  ' . $destination );
@@ -509,7 +521,7 @@ class FileLib {
 		return $record;
 	}
 	function getFileChecksum($params) {
-		global $CFG;
+		global $KUINK_CFG;
 		
 		$id = ( string ) $params ['id'];
 		// load file
@@ -520,7 +532,7 @@ class FileLib {
 		) );
 		
 		// full origin path
-		$originalFile = $CFG->dataroot . '/' . $file ['path'] . '/' . $file ['name'];
+		$originalFile = $KUINK_CFG->dataRoot . '/' . $file ['path'] . '/' . $file ['name'];
 		$originalFile = str_replace ( '//', '/', $originalFile );
 		
 		return md5_file ( $originalFile );
@@ -535,11 +547,13 @@ class FileLib {
 		$path = ( string ) $params ['path'];
 		
 		$base = $KUINK_CFG->appRoot . 'apps/';
+		$base = str_replace ( '//', '/', $base );		
 		$pathName = realpath ( $base . $path );
 		$pos = strpos ( $pathName . '/', $base );
 		if ($pos === FALSE)
 			throw new \Exception ( 'No permission to access ' . $pathName );
 		$contents = $this->directorySubDirs ( $pathName );
+
 		return $contents;
 	}
 	
@@ -725,19 +739,18 @@ class FileLib {
 	static private function directorySubDirs($directory) {
 		// open this directory
 		$myDirectory = opendir ( $directory );
-		
+
 		// get each entry
 		while ( $entryName = readdir ( $myDirectory ) ) {
 			if ($entryName != '.' && $entryName != '..' && is_dir ( $directory . '/' . $entryName ))
 				$dirArray [] = $entryName;
 		}
-		
+	
 		// close directory
 		closedir ( $myDirectory );
 		
 		// sort 'em
 		sort ( $dirArray );
-		
 		// remove self
 		// unset( $dirArray[0] );
 		return $dirArray;
