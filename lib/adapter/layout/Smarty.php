@@ -46,7 +46,10 @@ class Smarty extends \Smarty {
 		$this->assign ( '_photoUrl', $KUINK_CFG->photoRemote );
 		$this->assign ( '_environment', $KUINK_CFG->environment );
 		
-		// TODO: remove this PMT
+		//Get rid of unnecessary reporting
+		$this->error_reporting = E_ALL & ~E_NOTICE;
+		$this->muteExpectedErrors();
+		//Do not use this in production
 		// $this->force_compile = true;
 	}
 	public function setAppTemplate($appTemplate) {
@@ -184,7 +187,7 @@ class Smarty extends \Smarty {
 		$this->assign ( '_actionsSource', $actionsSource );
 	}
 	static function getTemplate($templateName, $data) {
-		$smarty = new Smarty ();
+		$smarty = new \Smarty ();
 		$smarty->setTemplateDir ( dirname ( __FILE__ ) . '/../../../theme/default/template/' );
 		$smarty->setCompileDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache_compiled/' );
 		$smarty->setCacheDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache/' );
@@ -196,7 +199,8 @@ class Smarty extends \Smarty {
 		
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 		
-		$smarty = new Smarty ();
+		$smarty = new \Smarty ();
+
 		$templateDir = $KUINK_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/templates/';
 		$smarty->setTemplateDir ( $templateDir );
 		// print($templateDir);
@@ -207,7 +211,7 @@ class Smarty extends \Smarty {
 	}
 	static function expandTemplate($templateCode, $data) {
 		global $KUINK_CFG;
-		$smarty = new Smarty ();
+		$smarty = new \Smarty ();
 		$templateDir = $KUINK_CFG->appRoot . 'files/temp/';
 		
 		// Create template file

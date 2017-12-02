@@ -63,14 +63,21 @@ class NTLMSoapClient extends \SoapClient
     	curl_setopt($this->ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
     	curl_setopt($this->ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC | CURLAUTH_NTLM);
     	curl_setopt($this->ch, CURLOPT_USERPWD, $this->user.':'.$this->passwd);
+    	curl_setopt($this->ch, CURLINFO_HEADER_OUT, true);
+    	
+    	$KUINK_TRACE[] = 'Request: ' . '<pre>'.htmlspecialchars($request).'</pre>';
     
     	$response = curl_exec($this->ch);
+    	$headerData = curl_getinfo($this->ch);
+
+    	$KUINK_TRACE[] = 'Response: ' . '<pre>'.htmlspecialchars($response).'</pre>';
+    	$KUINK_TRACE[] = 'HttpCode: ' . $headerData['http_code'];    	
     
     	if ($response === false) {
-    		$KUINK_TRACE = 'Exception calling webservice';
-    		$KUINK_TRACE = 'Request: ' . $this->__getLastRequest();
-    		$KUINK_TRACE = 'Response: ' . $this->__getLastResponse();
-    		$KUINK_TRACE = 'Error: ' . curl_error($this->ch) . ':' . curl_errno($this->ch);
+    		$KUINK_TRACE[] = 'Exception calling webservice';
+    		$KUINK_TRACE[] = 'Request: ' . $request;
+    		$KUINK_TRACE[] = 'Response: ' . $response;
+    		$KUINK_TRACE[] = 'Error: ' . curl_error($this->ch) . ':' . curl_errno($this->ch);
     		throw new \Exception(
     				'Curl error: ' . curl_error($this->ch),
     				curl_errno($this->ch)
@@ -291,8 +298,8 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
   		$KUINK_TRACE[]='Error calling webservice '.$this->dataSource->name.':'.$entity.':'.$e->getMessage() ;
   	}
   	
-  	$KUINK_TRACE[]='<pre>'.htmlspecialchars($this->soapClient->__getLastRequest()).'</pre>';
-  	$KUINK_TRACE[]='<pre>'.htmlspecialchars($this->soapClient->__getLastResponse()).'</pre>';  	
+  	//$KUINK_TRACE[]='<pre>'.htmlspecialchars($this->soapClient->__getLastRequest()).'</pre>';
+  	//$KUINK_TRACE[]='<pre>'.htmlspecialchars($this->soapClient->__getLastResponse()).'</pre>';  	
 
   	return $response;
   }

@@ -4,7 +4,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
+
 namespace Kuink\Core\DataSourceConnector;
+
 
 use Kuink\Core\NodeManager;
 use Kuink\Core\NodeType;
@@ -26,8 +28,10 @@ class DDChanges {
  * @author paulo.tavares
  */
 class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
+	
 	var $db; // The PDO object containing the connection
 	var $lastAffectedRows; // The affected rows of last statement
+	
 	function connect() {
 		// kuink_mydebug(__CLASS__, __METHOD__);
 		if (! $this->db) {
@@ -227,6 +231,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		global $KUINK_TRACE;
 		
 		$this->connect ();
+		$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
+		$acl = ($aclPermissions == 'false') ? 'false' : 'true';
+		$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::delete.all' : $aclPermissions;
 		
 		if (isset ( $params ['_sql'] )) {
 			$sql = $this->prepareStatementToExecute ( $params );
@@ -237,9 +244,24 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		$KUINK_TRACE [] = __METHOD__;
 		$KUINK_TRACE [] = $sql;
 		
-		$this->executeSql ( $sql, $params );
+		$canDelete = true;
+	  	if ($acl == 'true') {
+	  		//In this case only allow the deletion if the user has the right capabilities
+	  		$aclPermissions = str_replace(',', "','", $aclPermissions);
+	  		$aclPermissions = str_replace(' ', "", $aclPermissions);
+	  		$aclPermissions = "'".$aclPermissions."'";
+	  		
+	  		//Try to load the record with the permissions
+	  		$record = $this->load($params);
+	  		$canDelete = (count($record) > 0);
+	  	
+	  	}
+  	 
+	  	if ($canDelete)
+			$this->executeSql($sql, $params);
+
 		return $this->lastAffectedRows;
-	}
+		}
 	
 	/**
 	 * *

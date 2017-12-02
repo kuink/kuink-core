@@ -236,6 +236,30 @@ class Runtime {
 	}
 	
 	/**
+	 * Build capabilities from an access control list
+	 * @param $idAcl - the acl identifier
+	 */
+	public function getAllRolesAcl($idAcl){
+		//print_object($idAcl);
+		$roles = null;
+		if ($idAcl){
+			//get the value from fw_config
+			$dataAccess = new \Kuink\Core\DataAccess('framework/framework,acl,getRoles', 'framework', 'acl');
+			$params['id'] = $idAcl;
+			$params['id_person'] = $this->nodeconfiguration[NodeConfKey::USER]['id'];
+			$resultset = $dataAccess->execute($params);
+			//print_object($resultset);
+			if ($resultset){
+				foreach ($resultset as $role){
+					$roles[$role['code']] = 1;
+				}
+			}
+	
+			return $roles;
+		}
+	}	
+	
+	/**
 	 * Add capability to current nodeconfiguration
 	 * 
 	 * @param $capability Capability
@@ -1451,6 +1475,9 @@ class Runtime {
 				$result = $this->inst_permissions ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				if ($result == 0)
 					throw new \Exception ( 'No permission!' );
+				break;
+			case 'AccessControlList':
+				$result = $this->inst_accessControlList( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  $variables, $exit );
 				break;
 			case 'Role' :
 				$result = $this->inst_role ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
@@ -3349,6 +3376,42 @@ class Runtime {
 		
 		return $value;
 	}
+	
+	function inst_accessControlList( &$nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  &$variables, &$exit )
+	{
+		global $SESSION;
+	
+		//get the id_acl
+		if ($instruction_xmlnode->count() > 0)
+		{
+			$newinstruction_xmlnode = $instruction_xmlnode->children();
+			$idAcl = (string)$this->instruction_execute ($nodeconfiguration, $nodexml, $action_xmlnode, $newinstruction_xmlnode[0], $actionname,  $variables, $exit);
+		}
+		else
+			$idAcl = (string)$instruction_xmlnode[0];
+	
+			$this->buildAllCapabilities($idAcl);
+	
+			$roles = $nodeconfiguration[NodeConfKey::ROLES];
+			$rolesAcl = $this->getAllRolesAcl($idAcl);
+			//print_object($rolesAcl);
+			foreach ($rolesAcl as $roleKey=>$roleValue)
+				$roles[$roleKey] = 1;
+	
+				//$roles[$value] = 1;
+				$nodeconfiguration[NodeConfKey::ROLES] = $roles;
+				$this->nodeconfiguration[NodeConfKey::ROLES] = $roles;
+				//print_object($nodeconfiguration[NodeConfKey::ROLES]);
+	
+				//$variables['ROLES'] = $this->nodeconfiguration[NodeConfKey::ROLES];
+				$variables['CAPABILITIES'] = $this->nodeconfiguration[NodeConfKey::CAPABILITIES];
+				$variables['ROLES'] = $this->nodeconfiguration[NodeConfKey::ROLES];
+				$nodeconfiguration = $this->nodeconfiguration;
+	
+				return $idAcl;
+	}
+	
+	
 	function inst_role(&$nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
 		global $SESSION;
 		
@@ -3618,14 +3681,11 @@ class Runtime {
 				// $value = ($key == '') ? $variable : $variable[$key];
 			$value = '';
 			switch ($key) {
-				case '' :
-					$value = $variables [$varname];
-					break;
-				case '__first' :
-					$value = array_values ( $variables [$varname] ) [0];
-					break;
+				case '' : $value = $variables [$varname]; break;
+				case '__first' : $value = array_values ( $variables [$varname] ) [0]; break;
+				case '__length' : $value = count ( $variables [$varname] ); break;
 				default :
-					$value = $variables [$varname] [$key];
+					$value = $variables[$varname][$key];
 			}
 		}
 		
