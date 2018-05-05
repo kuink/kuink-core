@@ -165,6 +165,7 @@ class Runtime {
 		$server_info ['name'] = $_SERVER ['SERVER_NAME'];
 		$server_info ['ip'] = $_SERVER ['SERVER_ADDR'];
 		$server_info ['port'] = $_SERVER ['SERVER_PORT'];
+		$server_info ['userAgent'] = $_SERVER ['HTTP_USER_AGENT'];
 		$server_info ['wwwRoot'] = $KUINK_CFG->wwwRoot;
 		$server_info ['appRoot'] = $KUINK_CFG->appRoot;
 		$server_info ['apiUrl'] = $KUINK_CFG->apiUrl;

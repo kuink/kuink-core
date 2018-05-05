@@ -102,6 +102,8 @@ class FieldProperty {
 	const EVENT = 'event';
 	const DECORATION = 'decoration';
 	const INPUT_SIZE = 'inputsize';
+	const LABEL_SIZE = 'labelsize';
+	const LABEL_POSITION = 'labelposition';	
 	const MODAL = 'modal';
 	const SEARCHABLE = 'searchable';
 	const PRINTABLE = 'printable';
@@ -112,6 +114,8 @@ class FieldProperty {
 	const COLLAPSED = 'collapsed';
 	const RUNAT = 'runat';
 	const VALIDATE = 'validate';
+	const ALLOW_DELETE = 'allowdelete';
+	const CLOSE = 'close';	
 }
 
 /**
@@ -159,6 +163,8 @@ class FieldPropertyDefaults {
 	const EVENT = '';
 	const DECORATION = '';
 	const INPUT_SIZE = 'large';
+	const LABEL_SIZE = 'small';
+	const LABEL_POSITION = 'left';	
 	const MODAL = 'false';
 	const SEARCHABLE = 'false';
 	const PRINTABLE = 'true';
@@ -169,6 +175,8 @@ class FieldPropertyDefaults {
 	const COLLAPSED = 'true';
 	const RUNAT = 'server';
 	const VALIDATE = 'true';
+	const ALLOW_DELETE = 'false';	
+	const CLOSE = 'false';	
 }
 
 /**
@@ -261,10 +269,54 @@ class Form extends Control {
 		$this->listFormFields = array ();
 		$this->rulesClient = array ();
 		$this->rulesServer = array ();
-		
+	
+		//Add the first tab
+		$this->addTab('_default', '');
+				
 		$this->static_bind = array ();
 	}
 	
+	/***
+	 * Adds a tab to the form
+	 * @param $id tabid
+	 * @param $label tab label
+	 */
+	private function addTab( $id, $label )
+	{
+		if ($id == '_default')
+			$this->tabs[-1] = array(FieldProperty::ID=>$id, FieldProperty::LABEL=>$label, 'columns'=>array(0) );
+		else
+			$this->tabs[] = array(FieldProperty::ID=>$id, FieldProperty::LABEL=>$label, 'columns'=>array(0) );
+	}
+
+	/***
+	 * Adds a column to the current tab
+	 */
+	private function addCurrentTabColumn()
+	{
+		if (count($this->tabs[count($this->tabs)-2]['columns']) == 0)
+			$this->tabs[count($this->tabs)-2]['columns'][] = 1;
+		else 
+			$this->tabs[count($this->tabs)-2]['columns'][count($this->tabs[count($this->tabs)-2]['columns'])-1] += 1;
+	}
+
+	/***
+	 * Closes a column to the current tab
+	 */
+	private function closeCurrentTabColumn()
+	{
+		$this->tabs[count($this->tabs)-2]['columns'][] = 0;
+	}
+
+
+	/***
+	 * Determines if this form has tabs
+	 */
+	private function hasTabs()
+	{
+		return ((count($his->tabs) > 1) ? 1 : 0);
+	}
+
 	/**
 	 * Dynamically adding a rule to a form field
 	 * 
@@ -438,7 +490,6 @@ class Form extends Control {
 		if ($showHelp != 'false')
 			$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $id, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		$attributes [FieldProperty::HELP] = $help;
-		
 		$attributes [FieldProperty::NAME] = $this->getProperty ( $id, FieldProperty::NAME, false, FieldPropertyDefaults::NAME, $formfield );
 		$attributes [FieldProperty::REQUIRED] = $this->getProperty ( $id, FieldProperty::REQUIRED, false, FieldPropertyDefaults::REQUIRED, $formfield );
 		$attributes [FieldProperty::DISABLED] = $this->getProperty ( $id, FieldProperty::DISABLED, false, FieldPropertyDefaults::DISABLED, $formfield );
@@ -451,7 +502,6 @@ class Form extends Control {
 		$attributes [FieldProperty::COLS] = $this->getProperty ( $id, FieldProperty::COLS, false, FieldPropertyDefaults::COLS, $formfield );
 		$attributes [FieldProperty::ROWS] = $this->getProperty ( $id, FieldProperty::ROWS, false, FieldPropertyDefaults::ROWS, $formfield );
 		$attributes [FieldProperty::MULTILANG] = $this->getProperty ( $id, FieldProperty::MULTILANG, false, FieldPropertyDefaults::MULTILANG, $formfield );
-		
 		$attributes [FieldProperty::DATASOURCE] = $this->getProperty ( $id, FieldProperty::DATASOURCE, false, FieldPropertyDefaults::DATASOURCE, $formfield );
 		$attributes [FieldProperty::DATASOURCE_PARAMS] = $this->getProperty ( $id, FieldProperty::DATASOURCE_PARAMS, false, FieldPropertyDefaults::DATASOURCE_PARAMS, $formfield );
 		$attributes [FieldProperty::DATASOURCE_INITIAL] = $this->getProperty ( $id, FieldProperty::DATASOURCE_INITIAL, false, FieldPropertyDefaults::DATASOURCE_INITIAL, $formfield );
@@ -459,24 +509,20 @@ class Form extends Control {
 		$attributes [FieldProperty::BINDVALUE] = $this->getProperty ( $id, FieldProperty::BINDVALUE, false, FieldPropertyDefaults::BINDVALUE, $formfield );
 		$attributes [FieldProperty::BINDIMAGE] = $this->getProperty ( $id, FieldProperty::BINDIMAGE, false, FieldPropertyDefaults::BINDIMAGE, $formfield );
 		$attributes [FieldProperty::BINDRESULTS] = $this->getProperty ( $id, FieldProperty::BINDRESULTS, false, FieldPropertyDefaults::BINDRESULTS, $formfield );
-		
 		$attributes [FieldProperty::STARTYEAR] = $this->getProperty ( $id, FieldProperty::STARTYEAR, false, FieldPropertyDefaults::STARTYEAR, $formfield );
 		$attributes [FieldProperty::STOPYEAR] = $this->getProperty ( $id, FieldProperty::STOPYEAR, false, FieldPropertyDefaults::STOPYEAR, $formfield );
 		$attributes [FieldProperty::NOW] = $this->getProperty ( $id, FieldProperty::NOW, false, FieldPropertyDefaults::NOW, $formfield );
-		
 		$attributes [FieldProperty::SKELETON] = $this->getProperty ( $id, FieldProperty::SKELETON, false, FieldPropertyDefaults::SKELETON, $formfield );
 		$attributes [FieldProperty::SKIN] = $this->getProperty ( $id, FieldProperty::SKIN, false, FieldPropertyDefaults::SKIN, $formfield );
-		
 		$attributes [FieldProperty::TYPE] = $this->getProperty ( $id, FieldProperty::TYPE, false, FieldPropertyDefaults::TYPE, $formfield );
 		$attributes [FieldProperty::ACTION] = $this->getProperty ( $id, FieldProperty::ACTION, false, FieldPropertyDefaults::ACTION, $formfield );
 		$attributes [FieldProperty::EVENT] = $this->getProperty ( $id, FieldProperty::EVENT, false, FieldPropertyDefaults::EVENT, $formfield );
-		
 		$attributes [FieldProperty::DECORATION] = $this->getProperty ( $id, FieldProperty::DECORATION, false, FieldPropertyDefaults::DECORATION, $formfield );
 		$attributes [FieldProperty::THEME] = $this->getProperty ( $id, FieldProperty::THEME, false, FieldPropertyDefaults::THEME, $formfield );
 		$attributes [FieldProperty::INPUT_SIZE] = $this->getProperty ( $id, FieldProperty::INPUT_SIZE, false, FieldPropertyDefaults::INPUT_SIZE, $formfield );
-		
+		$attributes [FieldProperty::LABEL_SIZE] = $this->getProperty($id, FieldProperty::LABEL_SIZE, false, FieldPropertyDefaults::LABEL_SIZE, $formfield);
+		$attributes [FieldProperty::LABEL_POSITION] = $this->getProperty($id, FieldProperty::LABEL_POSITION, false, FieldPropertyDefaults::LABEL_POSITION, $formfield);
 		$attributes [FieldProperty::DEFAULT_BUTTON] = $this->getProperty ( $id, FieldProperty::DEFAULT_BUTTON, false, FieldPropertyDefaults::DEFAULT_BUTTON, $formfield );
-		
 		$attributes [FieldProperty::MODAL] = $this->getProperty ( $id, FieldProperty::MODAL, false, FieldPropertyDefaults::MODAL, $formfield );
 		$attributes [FieldProperty::SEARCHABLE] = $this->getProperty ( $id, FieldProperty::SEARCHABLE, false, FieldPropertyDefaults::SEARCHABLE, $formfield );
 		$attributes [FieldProperty::COLLAPSIBLE] = $this->getProperty ( $id, FieldProperty::COLLAPSIBLE, false, FieldPropertyDefaults::COLLAPSIBLE, $formfield );
@@ -484,8 +530,9 @@ class Form extends Control {
 		$attributes [FieldProperty::RUNAT] = $this->getProperty ( $id, FieldProperty::RUNAT, false, FieldPropertyDefaults::RUNAT, $formfield );
 		$attributes [FieldProperty::NEWCONTEXT] = $this->getProperty ( $id, FieldProperty::NEWCONTEXT, false, FieldPropertyDefaults::NEWCONTEXT, $formfield );
 		$attributes [FieldProperty::PRINTABLE] = $this->getProperty ( $id, FieldProperty::PRINTABLE, false, FieldPropertyDefaults::PRINTABLE, $formfield );
-		
 		$attributes [FieldProperty::VALIDATE] = $this->getProperty ( $id, FieldProperty::VALIDATE, false, FieldPropertyDefaults::VALIDATE, $formfield );
+		$attributes [FieldProperty::ALLOW_DELETE] = $this->getProperty($id, FieldProperty::ALLOW_DELETE, false, FieldPropertyDefaults::ALLOW_DELETE, $formfield);
+		$attributes [FieldProperty::CLOSE] = $this->getProperty($id, FieldProperty::CLOSE, false, FieldPropertyDefaults::CLOSE, $formfield);
 		
 		return $attributes;
 	}
@@ -715,7 +762,7 @@ class Form extends Control {
 		
 		$form ['title'] = Core\Language::getString ( $title, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		$form ['_guid'] = $this->getProperty ( $this->name, FormProperty::NAME, false, $this->name );
-		;
+		$form ['name'] = $this->getProperty ( $this->name, FormProperty::NAME, false, $this->name );
 		$form ['baseUrl'] = $this->nodeconfiguration [Core\NodeConfKey::BASEURL] . '&form=' . $this->name;
 		$this->form = $form;
 		
@@ -791,19 +838,17 @@ class Form extends Control {
 		if ($visible == 'false')
 			return;
 			
-			// Add the tab to the tabs array
+		//Add the tab to the tabs array
 		if ($type == FieldType::TAB)
-			$this->tabs [] = array (
-					FieldProperty::ID => $id,
-					FieldProperty::LABEL => ( string ) $attributes [FieldProperty::LABEL],
-					'columns' => 0 
-			);
-		
-		if ($type == FieldType::COLUMN)
-			if (count ( $this->tabs ) == 0)
-				$this->columns += 1;
+			$this->addTab($id, (string)$attributes[FieldProperty::LABEL]);
+
+		if ($type == FieldType::COLUMN) {
+			if ($attributes[FieldProperty::CLOSE] == 'true') 
+				$this->closeCurrentTabColumn();
 			else
-				$this->tabs [count ( $this->tabs ) - 1] ['columns'] += 1;
+				$this->addCurrentTabColumn();
+		}
+
 		
 		if ($type == FieldType::CHECKBOXLIST || $attributes [FieldProperty::MULTILANG] == 'true')
 			$this->listFormFields [] = $id;
@@ -1220,6 +1265,7 @@ if ($persist == 'true') {
 		$this->build ();
 		$this->bindData ();
 		$this->updateValues ();
+		$this->calculateRows();		
 		
 		$neonUser = new \Kuink\Core\User ();
 		$neon_user = $neonUser->getUser ();
@@ -1236,7 +1282,7 @@ if ($persist == 'true') {
 		$params ['form'] = $this->form;
 		$params ['tabs'] = $this->tabs;
 		$params ['buttonsPosition'] = $this->buttonsPosition;
-		$params ['hasTabs'] = (count ( $this->tabs ) > 0);
+		$params ['hasTabs'] = (count($this->tabs) > 1); //If there is only one tab, don't show the headers
 		$params ['tabsPosition'] = $this->getProperty ( $this->name, FormProperty::TABS, false, FormPropertyDefaults::TABS );
 		$params ['fields'] = $this->fields;
 		$params ['rules'] = $this->rules;
@@ -1335,5 +1381,40 @@ if ($persist == 'true') {
 		$jsonRules = '[' . implode ( ',', $rules ) . ']';
 		return $jsonRules;
 	}
+
+		//Calculate whether one field should create a row or not
+		private function calculateRows(){
+			$fields = array();
+			//Making a copy ot the fields array to get an integer index. This will make the row calculation more simple
+			$inline = false;
+			foreach ($this->fields as $field) {
+				$fields[] = $field;
+			}
+	
+			//Count how many inline fields there are for each fields 
+			$lastNumberOfInlineFields = 1;
+			for ($i=0; $i<count($fields); $i++) {
+				$numberOfInlineFields = 1;
+				$j = $i+1;
+				//print(' | '.(string)($fields[$i]['attributes']['id']));
+				if ($lastNumberOfInlineFields == 1)
+					while (($fields[$j]['attributes']['inline'] != 'false') && ($j < count($fields))) {
+						//print('*');
+						$j++; 
+						$numberOfInlineFields++;
+					}
+				if ($numberOfInlineFields > 1)
+					$lastNumberOfInlineFields = $numberOfInlineFields;
+				$fieldId = $fields[$i]['attributes']['id'];
+				$nextFieldId = $fields[$i+1]['attributes']['id'];
+				$this->fields[$fieldId]['attributes']['_rowStart'] = (int)($this->fields[$fieldId]['attributes'][inline] == 'false');
+				$this->fields[$fieldId]['attributes']['_rowEnd'] = (int) (($this->fields[$nextFieldId]['attributes'][inline] == 'false') || ($i == count($fields)-1));
+				$this->fields[$fieldId]['attributes']['_rowLength'] = ($i == count($fields)) ? 1 : $lastNumberOfInlineFields;
+				if (($this->fields[$nextFieldId]['attributes']['inline'] == 'false') || ($i == count($fields)))
+					$lastNumberOfInlineFields = 1;
+			}
+			//print_object($this->fields);
+		}
+	
 }
 ?>

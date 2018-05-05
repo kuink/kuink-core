@@ -25,7 +25,7 @@ class Smarty extends \Smarty {
 	private $positionsHtml = array ();
 	private $menuItems = array ();
 	function __construct($themeName = "default") {
-		GLOBAL $KUINK_CFG;
+		GLOBAL $KUINK_CFG, $KUINK_BRIDGE_CFG;
 		parent::__construct ();
 		$this->setTemplateDir ( dirname ( __FILE__ ) . '/../../../theme/' . $themeName . '/template/' );
 		$this->setCompileDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache_compiled/' );
@@ -45,13 +45,29 @@ class Smarty extends \Smarty {
 		$this->assign ( '_imageUrl', $KUINK_CFG->imageRemote );
 		$this->assign ( '_photoUrl', $KUINK_CFG->photoRemote );
 		$this->assign ( '_environment', $KUINK_CFG->environment );
-		
+		$this->assign('_lang', $KUINK_BRIDGE_CFG->auth->user->lang);		
+		$this->assign('_userEmail', ($KUINK_BRIDGE_CFG->auth->user->email == 'root@localhost') ? '' : $KUINK_BRIDGE_CFG->auth->user->email);		
 		//Get rid of unnecessary reporting
 		$this->error_reporting = E_ALL & ~E_NOTICE;
 		$this->muteExpectedErrors();
 		//Do not use this in production
 		// $this->force_compile = true;
 	}
+
+	public function setTheme($themeName) {
+		$this->setTemplateDir(dirname(__FILE__).'/../../../theme/'.$themeName.'/template/');
+		$this->setCompileDir(dirname(__FILE__).'/../../../theme/theme_cache_compiled/');
+		$this->setCacheDir(dirname(__FILE__).'/../../../theme/theme_cache/');
+		
+		$this->themeName = $themeName;
+		$this->assign( 'THEME', $themeName );
+		//print_object('Setting theme '. $themeName);
+	}
+
+	public function getTheme() {
+		return($this->themeName);
+	}	
+
 	public function setAppTemplate($appTemplate) {
 		$this->appTemplate = $appTemplate;
 	}

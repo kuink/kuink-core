@@ -291,7 +291,12 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
   	$newParams = array();
   	foreach ($params as $key=>$value)
   		$newParams[$key] = (string)$value;
-  	
+
+  	//Inject in the request all mandatory params set in the datasource definition (param name params)
+  	$mandatoryParams=$this->dataSource->getParam('params', false, array());
+  	foreach ($mandatoryParams as $key=>$value)
+  		$newParams[$key] = (string)$value;
+  		
   	try {
   		$response = (array)$this->soapClient->$entity($newParams);
   	} catch (\Exception $e) {

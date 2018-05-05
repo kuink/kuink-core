@@ -61,7 +61,7 @@ abstract class Control {
 		$this->skeleton = ( string ) $this->getProperty ( $this->name, 'skeleton', false, '' );
 		$this->skin = ( string ) $this->getProperty ( $this->name, 'skin', false, '' );
 		$this->position = ( string ) $this->getProperty ( $this->name, 'position', false, '' );
-		$this->guid = uniqid ();
+		$this->guid = 'k'.uniqid(); //allways start with a letter
 		$this->refreshing = false;
 	}
 	function setRefreshing() {
@@ -155,12 +155,13 @@ abstract class Control {
 	function render($params) {
 		$layout = \Kuink\UI\Layout\Layout::getInstance ();
 		// Add the guid to the render
+		$params['_idContext'] = $idContext;		
 		$params ['_guid'] = $this->guid;
 		$params ['_name'] = $this->name;
 		$params ['_type'] = $this->type;
 		$params ['_position'] = $this->position;
 		$params ['_skin'] = $this->skin;
-		$params ['_skin'] = $this->skeleton;
+		$params ['_skeleton'] = $this->skeleton;
 		
 		$layout->addControl ( $this->type, $params, $this->skeleton, $this->skin, $this->position );
 	}

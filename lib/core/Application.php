@@ -122,20 +122,16 @@ class Application {
 		// Load framework.xml definiton
 		$this->loadFrameworkDefinition ();
 		
-		if ($KUINK_CFG->useNewDataAccessInfrastructure)
-			// Setup framework dataSources
-			\Kuink\Core\DataSourceManager::setupFrameworkDS ( $this );
-		else
-			// Setup framework databases:: deprecated
-			\Kuink\Core\DatabaseManager::setupFrameworkDB ( $this );
-			
+		// Setup framework dataSources
+		\Kuink\Core\DataSourceManager::setupFrameworkDS ( $this );
+
 			// Load all applications data to appManager
 		$this->appManager = new ApplicationManager ();
 		$this->appManager->load ();
 		// Check if this application exists
 		if (! $this->appManager->applicationExists ( $this->name ))
 			throw new \Exception ( 'Application ' . $this->name . ' does not exists or is not registered' );
-			
+		
 			// Set the company id
 		ProcessOrchestrator::setCompany ();
 		//print('----->'.ProcessOrchestrator::getCompany ().'<------');
@@ -143,11 +139,11 @@ class Application {
 		if ($KUINK_CFG->useNewDataAccessInfrastructure)
 			// Setup Company dataSources
 			\Kuink\Core\DataSourceManager::setupCompanyDataSources ( ProcessOrchestrator::getCompany () );
-			
+
 			// Load application.xml now that we have the app base in apps dir
 		$this->loadApplicationDefinition ();
 
-		
+	
 		if ($KUINK_CFG->useNewDataAccessInfrastructure)
 			// Setup framework dataSources
 			\Kuink\Core\DataSourceManager::setupApplicationDS ( $this );

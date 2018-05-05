@@ -16,6 +16,11 @@
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 class DateTimeLib {
 	private $nodeconfiguration;
+	
+	private function setDefaultTimezone() {
+		date_default_timezone_set ( 'UTC' );		
+	}
+	
 	function DateTimeLib($nodeconfiguration, $msg_manager) {
 		$this->nodeconfiguration = $nodeconfiguration;
 		return;
