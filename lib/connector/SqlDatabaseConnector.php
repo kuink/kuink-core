@@ -47,7 +47,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			
 			// Get the connection to the database
 			$this->db = new \PDO ( $dsn, $user, $passwd );
-			$this->db->exec ( "set names utf8" ); // Handle the utf8 problem
+			$this->db->exec ( "set names utf8" ); //TODO: Handle the utf8 problem
+			$this->db->exec("SET SESSION group_concat_max_len = 1000000"); //TODO: Move this to datasource configuration			
 		}
 	}
 	
@@ -146,7 +147,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			// Check if the multilang record exists, if so update or else create!!
 			foreach ( $structure as $langCode => $langValue ) {
 				$insertLangFields = array (
-						'id_ref' => $idRef,
+						'id' => $idRef,
 						'lang' => $langCode 
 				);
 				foreach ( $multilangFieldsArray as $multilangField ) {
@@ -158,7 +159,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 				if ($type == 2) { // Update
 					$testLoadFields = array ();
 					$testLoadFields ['_entity'] = $params ['_entity'] . '_lang';
-					$testLoadFields ['id_ref'] = $idRef;
+					$testLoadFields ['id'] = $idRef;
 					$testLoadFields ['lang'] = $langCode;
 					$testRecord = $this->load ( $testLoadFields );
 					
@@ -245,23 +246,23 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		$KUINK_TRACE [] = $sql;
 		
 		$canDelete = true;
-	  	if ($acl == 'true') {
-	  		//In this case only allow the deletion if the user has the right capabilities
-	  		$aclPermissions = str_replace(',', "','", $aclPermissions);
-	  		$aclPermissions = str_replace(' ', "", $aclPermissions);
-	  		$aclPermissions = "'".$aclPermissions."'";
-	  		
-	  		//Try to load the record with the permissions
-	  		$record = $this->load($params);
-	  		$canDelete = (count($record) > 0);
-	  	
-	  	}
+		if ($acl == 'true') {
+			//In this case only allow the deletion if the user has the right capabilities
+			$aclPermissions = str_replace(',', "','", $aclPermissions);
+			$aclPermissions = str_replace(' ', "", $aclPermissions);
+			$aclPermissions = "'".$aclPermissions."'";
+			
+			//Try to load the record with the permissions
+			$record = $this->load($params);
+			$canDelete = (count($record) > 0);
+		
+		}
   	 
-	  	if ($canDelete)
+		if ($canDelete)
 			$this->executeSql($sql, $params);
 
 		return $this->lastAffectedRows;
-		}
+	}
 	
 	/**
 	 * *
@@ -372,10 +373,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		return $output;
 	}
 	private function transformMultilangData($data, $lang, $langInline) {
-		$ignoreKeys = array (
-				'id',
-				'id_ref' 
-		);
+		$ignoreKeys = array ('id');
 		$langKey = 'lang';
 		
 		if (isset ( $data [0] ))
@@ -425,7 +423,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			// Get the multilang data
 			$paramsMultilang = array ();
 			$paramsMultilang ['_entity'] = $entity . '_lang';
-			$paramsMultilang ['id_ref'] = $params ['id'];
+			$paramsMultilang ['id'] = $params ['id'];
 			if ($lang != '*') {
 				$paramsMultilang ['lang'] = $lang;
 			}
@@ -455,7 +453,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		// add the multilang data if it is set
 		if (count ( $multilangTransformedRecords > 0 )) {
 			foreach ( $multilangTransformedRecords as $key => $multilangData )
-				$record [$key] = $multilangData;
+			if ($key != 'id')
+				$record[$key] = $multilangData;
+
 		}
 		
 		return $record;
@@ -494,6 +494,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		
 		$pageNum = $this->getParam ( $params, '_pageNum', false, 0 );
 		$pageSize = $this->getParam ( $params, '_pageSize', false, 0 );
+		$lang = (string)$this->getParam($params, '_lang', false, '');		
 		$offset = $pageNum * $pageSize;
 		
 		if ($lang != '' && $lang == '*')
@@ -534,6 +535,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			$output ['records'] = $records;
 		} else
 			$output = $records;
+			if ($lang != '') {
+				//Expand multilang data
+			}
 		
 		return $output;
 	}
@@ -550,6 +554,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		unset ( $params ['_sql'] );
 		unset ( $params ['_debug_'] );
 		unset ( $params ['_multilang_fields'] );
+  	unset ( $params ['_acl']);
+  	unset ( $params ['_aclPermissions']);
 		
 		if ($ignoreNulls)
 			foreach ( $params as $key => $value )
@@ -596,6 +602,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		unset ( $params ['_pageNum'] );
 		unset ( $params ['_pageSize'] );
 		unset ( $params ['_pk'] );
+  	unset ( $params ['_acl'] );
+  	unset ( $params ['_aclPermissions'] );
+		
 		
 		$where = (count ( $params ) > 0) ? ' WHERE ' : '';
 		$count = 0;
@@ -606,8 +615,22 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			$count ++;
 		}
 		
-		$sql = "SELECT count(*) FROM `$entity` $where";
+		if ($acl == 'true')  	
+			$sql = "SELECT id_acl FROM `$entity` $where";
+		else 
+			$sql = "SELECT count(*) FROM `$entity` $where";
 		
+		if ($acl == 'true') {
+			$aclPermissions = str_replace(',', "','", $aclPermissions);
+			$aclPermissions = str_replace(' ', "", $aclPermissions);
+			$aclPermissions = "'".$aclPermissions."'";
+		
+			$sql = "SELECT count(_aclBase.id_acl) FROM (".$sql.") _aclBase
+					WHERE _aclBase.id_acl IN 
+						(SELECT _aclc.id_acl FROM _fw_access_control_list_capability _aclc
+						WHERE _aclc.id_acl = _aclBase.id_acl AND _aclc.code IN (".$aclPermissions.") AND _aclc.id_person='".$this->user['id']."') ";
+		}
+	
 		return $sql;
 	}
 	private function getPreparedStatementSelect($params, $ignoreNulls = false) {
@@ -618,6 +641,10 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		$pageSize = $this->getParam ( $params, '_pageSize', false, 0 );
 		$lang = ( string ) $this->getParam ( $params, '_lang', false, '' );
 		$pk = $this->getParam ( $params, '_pk', false, 'id' );
+
+  	$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
+  	$acl = ($aclPermissions == 'false') ? 'false' : 'true';
+  	$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::view.all' : $aclPermissions;
 		
 		unset ( $params ['_entity'] );
 		unset ( $params ['_attributes'] );
@@ -628,6 +655,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		unset ( $params ['_debug_'] );
 		unset ( $params ['_lang'] );
 		unset ( $params ['_lang_inline'] );
+  	unset ( $params ['_acl'] );
+  	unset ( $params ['_aclPermissions'] );
 		
 		$count = 0;
 		$whereClauses = '';
@@ -654,7 +683,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		// Handle Multilang
 		$multilang = '';
 		if ($lang != '') {
-			$multilang = ' LEFT OUTER JOIN ' . $entity . '_lang l ON (l.id_ref = e.id AND l.lang =\'' . $lang . '\')';
+			$multilang = ' LEFT OUTER JOIN '.$entity.'_lang l ON (l.id = e.id AND l.lang =\''.$lang.'\')';
 		}
 		
 		// concatenate e. to all attributes
@@ -674,13 +703,18 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	}
 	private function getPreparedStatementInsert($params) {
 		$entity = $this->getParam ( $params, '_entity', true );
-		
+  	$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
+  	$acl = ($aclPermissions == 'false') ? 'false' : 'true';
+		$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::view.all' : $aclPermissions;
+				
 		unset ( $params ['_entity'] );
 		unset ( $params ['_attributes'] );
 		unset ( $params ['_sort'] );
 		unset ( $params ['_pageNum'] );
 		unset ( $params ['_pageSize'] );
 		unset ( $params ['_pk'] );
+  	unset ( $params ['_acl'] );
+  	unset ( $params ['_aclPermissions'] );
 		
 		$fields = '';
 		$values = '';
@@ -701,6 +735,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	}
 	private function getPreparedStatementDelete($params) {
 		$entity = $this->getParam ( $params, '_entity', true );
+  	$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
+  	$acl = ($aclPermissions == 'false') ? 'false' : 'true';
+  	$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::view.all' : $aclPermissions;
 		
 		unset ( $params ['_entity'] );
 		unset ( $params ['_attributes'] );
@@ -708,6 +745,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		unset ( $params ['_pageNum'] );
 		unset ( $params ['_pageSize'] );
 		unset ( $params ['_pk'] );
+  	unset ( $params ['_acl'] );
+  	unset ( $params ['_aclPermissions'] );
 		
 		$where = '';
 		$count = 0;
@@ -726,6 +765,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	private function getPreparedStatementUpdate($params) {
 		$entity = $this->getParam ( $params, '_entity', true );
 		$pk = $this->getParam ( $params, '_pk', false, 'id' );
+		$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
+  	$acl = ($aclPermissions == 'false') ? 'false' : 'true';
+  	$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::update.all' : $aclPermissions;
 		
 		// Get the primary keys
 		$pks = explode ( ',', $pk );
@@ -737,12 +779,16 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		unset ( $params ['_pageSize'] );
 		unset ( $params ['_pk'] );
 		unset ( $params ['_multilang_fields'] );
+  	unset ( $params ['_acl'] );
+  	unset ( $params ['_aclPermissions'] );
 		
 		$where = '';
 		$count = 0;
+  	$onlyPks = array();		
 		foreach ( $pks as $field ) {
 			if ($count > 0)
 				$where .= ' AND ';
+			$onlyPks[$field] = $params[$field]; 
 			unset ( $params [$field] );
 			$where .= '`' . $field . '` = ' . ':' . $field . ' ';
 			$count ++;
@@ -760,7 +806,22 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			$count ++;
 		}
 		
-		$sql = "UPDATE `$entity` SET $set WHERE $where";
+		$canUpdate = true;
+  	if ($acl == 'true') {
+  		$onlyPks['_aclPermissions'] = $aclPermissions;
+  		$onlyPks['_entity'] = $entity;
+  		//Try to load the record with the permissions
+  		//print_object($onlyPks);
+  		$record = $this->load($onlyPks);
+  		//print_object($record);
+  		$canUpdate = (count($record) > 0);
+  	}
+  	
+  	if ($canUpdate)
+  		$sql = "UPDATE `$entity` SET $set WHERE $where";
+  	else
+  		$sql = "UPDATE `$entity` SET $set WHERE 1=0"; //Do nothing
+
 		
 		return $sql;
 	}
@@ -768,6 +829,10 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	// Returns sql query from xsql
 	// $count - replce select with select count(*) and remove order by
 	private function xsql($instruction, $params, $count = false) {
+  	$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
+  	$acl = ($aclPermissions == 'false') ? 'false' : 'true';
+  	$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::view.all' : $aclPermissions;
+		
 		// global $CFG;
 		// global $KUINK_TRACE;
 		// global $DB;
@@ -797,11 +862,11 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   			switch( $xinst_name )
   			{
   				case 'XSelect':
-  					$selectFields = trim($this->xparse($xinst, '', 'SELECT *', 'XField', $params));
-  					//If this is a select *, then we must remove the * because select field, * generates an sql error
-  					$selectFields = ($selectFields == '*') ? ' ' : ', '.$selectFields;
-  					$sql .= ($count) ? 'SELECT COUNT(*) AS _total '.$selectFields.' ' : $this->xparse($xinst, 'SELECT', 'SELECT *', 'XField', $params);
-  					break;
+						$selectFields = trim($this->xparse($xinst, '', 'SELECT *', 'XField', $params));
+						//If this is a select *, then we must remove the * because select field, * generates an sql error
+						$selectFields = ($selectFields == '*') ? ' ' : ', '.$selectFields;
+						$sql .= ($count && $acl == 'false') ? 'SELECT COUNT(*) AS _total '.$selectFields.' ' : $this->xparse($xinst, 'SELECT', 'SELECT *', 'XField', $params);
+					break;
   				case 'XFrom':
   					$sql .= $this->xparse($xinst, 'FROM', 'FROM','XTable', $params);
   					break;
@@ -836,13 +901,26 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   	if ($hasGroupBy && $count)
   		$sql = 'SELECT COUNT(*) as _total FROM ('.$sql.') __total';
 
-  	//print_object( $sql );
-
-  	//if ($this->db->inTransaction())
-  	//$sql .= ' FOR UPDATE';
+		if ($acl == 'true') {
+			$aclPermissions = str_replace(',', "','", $aclPermissions);
+			$aclPermissions = str_replace(' ', "", $aclPermissions);
+			$aclPermissions = "'".$aclPermissions."'";
+			
+			if ($count) {
+				//$countSql = str_replace('select', 'select distinct ', strtolower($sql));	
+				$sql = "SELECT count(_aclBase.id_acl) as _total FROM (".$sql.") _aclBase
+						WHERE _aclBase.id_acl IN 
+						(SELECT _aclc.id_acl FROM _fw_access_control_list_capability _aclc
+							WHERE _aclc.id_acl = _aclBase.id_acl AND _aclc.code IN (".$aclPermissions.") AND _aclc.id_person='".$this->user['id']."' ".$limit.")";
+			}
+			else
+				$sql = "SELECT _aclBase.* FROM (".$sql.") _aclBase 
+						WHERE _aclBase.id_acl IN 
+						(SELECT _aclc.id_acl FROM _fw_access_control_list_capability _aclc
+							WHERE _aclc.id_acl = _aclBase.id_acl AND _aclc.code IN (".$aclPermissions.") AND _aclc.id_person='".$this->user['id']."' ".$limit.")";
+		}
 
   	return $sql;
-		
 	}
 	
 	// xchild [XField, XCondition,...]
@@ -954,7 +1032,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	  	if ($domain === null)
 			return null;  	
 	  	
-		$domAttrs = $domain->attributes();
+			$domAttrs = $domain->attributes();
 	  	
 	  	foreach($domAttrs as $key=>$value)
 	  		$domArray[$key] = (string)$value;
@@ -1036,20 +1114,10 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 				$entityArrayLang = Array ();
 				$entityArrayLang ['__attributes'] ['name'] = $name . '_lang';
 				// $entityArrayLang['__attributes']['multilang'] = 'true';
-				$entityArrayLang ['id'] = array (
-						'name' => 'id',
-						'domain' => 'id' 
-				);
-				$entityArrayLang ['id_ref'] = array (
-						'name' => 'id_ref',
-						'domain' => 'foreign',
-						'refentity' => $entData ['name'],
-						'refattr' => 'id' 
-				);
-				$entityArrayLang ['lang'] = array (
-						'name' => lang,
-						'domain' => 'lang' 
-				);
+				//$entityArrayLang['id'] = array('name'=>'id', 'domain'=>'id');
+				$entityArrayLang['id'] = array('name'=>'id', 'domain'=>'foreign', 'refentity'=>$entData['name'], 'refattr'=>'id', 'pk'=>'true');
+				$entityArrayLang['lang'] = array('name'=>lang, 'domain'=>'lang', 'pk'=>'true');
+
 				foreach ( $entityArray as $key => $field ) {
 					$fieldMultilang = (isset ( $field ['multilang'] )) ? $field ['multilang'] : 'false';
 					if ($fieldMultilang == 'true' && $key != '__attributes')
@@ -1766,6 +1834,11 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		
 		return;
 	}
+
+  public function getSchemaName($params) {
+  	$schemaName = (string)$this->dataSource->getParam('database', false);
+  	return $schemaName;
+  }  
 }
 
 ?>

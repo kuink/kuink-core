@@ -39,9 +39,11 @@ class ParserFunctions {
 		$result = ( string ) $value;
 		if (is_array ( $value ))
 			$result = json_encode ( $value );
-		
 		return $result;
 	}
+  static function __isSet( $value ) {
+  	return (($value !== '') && ($value !== null));
+  }
 }
 
 ?>

@@ -157,6 +157,10 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 		$this->conn->Show ( OPENTBS_DOWNLOAD, $outputFileName ); // Also merges all [onshow] automatic fields.
 		exit ();
 	}
+
+	public function getSchemaName($params) {
+		return null;
+	}
 }
 
 ?>

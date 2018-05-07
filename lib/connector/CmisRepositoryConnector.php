@@ -95,6 +95,9 @@ class CmisRepositoryConnector extends \Kuink\Core\DataSourceConnector {
 		
 		return $properties;
 	}
+	public function getSchemaName($params) {
+		return null;
+	}
 }
 
 ?>

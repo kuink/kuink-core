@@ -722,6 +722,10 @@ class curl_cache {
 			}
 		}
 	}
+
+	public function getSchemaName($params) {
+		return null;
+	}
 }
 
 ?>

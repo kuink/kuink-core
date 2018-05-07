@@ -83,13 +83,28 @@ switch ($type) {
 		
 		if (file_exists ( $pathName ) and ! is_dir ( $pathName )) {
 			ob_clean ();
-			header ( 'Content-Type: text/csv' );
+			$mimeType = mime_content_type($filePath);
+			header( 'Content-Type: ' . $mimeType);
 			header ( 'Content-Length: ' . filesize ( $pathName ) );
 			readfile ( $pathName );
 		} else {
 			header ( 'HTTP/1.0 404 not found' );
 			print_error ( 'filenotfound', 'error' );
 		}
+		break;
+	case "daily":
+		$pathName = realPath($NEON_CFG->dataRoot.'/kuink/files/daily/'.$guid);
+		if ((file_exists($pathName) and !is_dir($pathName)) and (strpos($pathName, $NEON_CFG->dataRoot.'/kuink/files/daily/') !== false)) {
+			ob_clean();
+			$mimeType = mime_content_type($pathName);
+			header('Content-Type: '.$mimeType);
+			header('Content-Length: '.filesize($pathName));
+			readfile($pathName);	
+		} else {
+			header('HTTP/1.0 404 not found');
+			print_error('filenotfound', 'error'); //this is not displayed on IIS??
+		}
+		break;
 }
 
 ?>

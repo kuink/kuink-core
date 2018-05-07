@@ -263,6 +263,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		$appBase = ( string ) $params ['base'];
 		$application = ( string ) $params ['application'];
 		$xmlDefinition = ( string ) $params ['xmlDefinition'];
+		$langXmlDefinition = (string) $params ['langXmlDefinition'];
 		$override = isset ( $params ['override'] ) ? ( string ) $params ['override'] : 'false';
 		
 		$baseFilePath = $KUINK_CFG->appRoot . "apps/$appBase";
@@ -283,7 +284,15 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		
 		if (! file_exists ( $fileName ))
 			file_put_contents ( $fileName, $xmlDefinition );
-		
+		$filePath = $NEON_CFG->appRoot."apps/$appBase/$application/lang";
+		$fileName = $filePath.'/pt.xml';      
+		//Check if the path exists
+		if (!is_dir($filePath))
+			mkdir($filePath);
+		if (file_exists($fileName) && $override == 'true')
+			unlink($fileName);
+		if (!file_exists($fileName))
+			file_put_contents($fileName, $langXmlDefinition);
 		return;
 	}
 	function processAdd($params) {

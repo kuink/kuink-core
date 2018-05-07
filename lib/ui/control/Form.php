@@ -247,6 +247,7 @@ class Form extends Control {
 	var $tabs; // Tabs present in the form <Tab id="..."/>
 	var $columns; // Number of columns in the form if it doesn't have TABS!! If it has, then tey will be in the $this->tabs array
 	var $dataBound; // Data Bound to the form with datasource and formatters completed
+	var $dataBoundWithoutFormatter; //Data Bound without the formatters applied to the data	
 	var $fieldFormatter; // holds the formatters of the fields (used in bindData)
 	var $rulesClient; // Array to hold client side rules (dynamic rules)
 	var $rulesServer; // Array to hold server side rules (dynamic rules)
@@ -266,6 +267,7 @@ class Form extends Control {
 		$this->tabs = array ();
 		$this->columns = 0;
 		$this->dataBound = array ();
+		$this->dataBoundWithoutFormatter = array(); //original values before formatter		
 		$this->listFormFields = array ();
 		$this->rulesClient = array ();
 		$this->rulesServer = array ();
@@ -323,6 +325,9 @@ class Form extends Control {
 	 * @param unknown_type $field_properties        	
 	 */
 	function addRule($params) {
+		global $KUINK_LAYOUT;
+		$theme = $KUINK_LAYOUT->getTheme(); 
+
 		$numParams = count ( $params );
 		if (count ( $params ) == 5 || count ( $params ) == 6) {
 			$id = ( string ) $this->getParam ( $params, 0, true );
@@ -335,7 +340,7 @@ class Form extends Control {
 			throw new \Exception ( $this->type . '->' . $this->name . '. addRule: invalid number of parameters.' );
 		
 		if ($runat == 'client') {
-			$clientCondition = $this->conditionToJavascript ( $ruleCondition, $this->name );
+			$clientCondition = $this->conditionToJavascript($ruleCondition, ($theme=='default') ? $this->name : $this->guid);			
 			$this->rulesClient [] = array (
 					'field' => $id,
 					'attr' => $ruleAttr,
@@ -373,6 +378,9 @@ class Form extends Control {
 	 * @param unknown $fieldRule        	
 	 */
 	function addFieldRule($fieldRule) {
+		global $KUINK_LAYOUT;
+		$theme = $KUINK_LAYOUT->getTheme();
+		
 		$fieldId = ( string ) $fieldRule [0];
 		$rule = $fieldRule [1];
 		
@@ -384,7 +392,7 @@ class Form extends Control {
 		if ($runat == 'client') {
 			$datasource = $rule ['datasource'];
 			$datasourceParams = $rule ['datasourceparams'];
-			$clientCondition = $this->conditionToJavascript ( $rule ['condition'], $this->name );
+			$clientCondition = $this->conditionToJavascript($rule['condition'], ($theme=='default') ? $this->name : $this->guid);			
 			$clientValueTrue = isset ( $rule ['valuetrue'] ) ? $rule ['valuetrue'] : $rule ['value'];
 			$clientValueFalse = isset ( $rule ['valuefalse'] ) ? $rule ['valuefalse'] : $oldAttrValue;
 			
@@ -670,6 +678,9 @@ class Form extends Control {
 	
 	// If this field has rules, then register them
 	private function addRules($formfield, $id, $attributes) {
+		global $KUINK_LAYOUT;
+		$theme = $KUINK_LAYOUT->getTheme();
+		
 		$f_xml = $formfield->children ();
 		foreach ( $f_xml as $child ) {
 			$childname = ( string ) $child->getname ();
@@ -683,8 +694,7 @@ class Form extends Control {
 				
 				$oldAttrValue = ( string ) $attributes [$ruleAttr];
 				if ($ruleRunAt == 'client') {
-					
-					$clientCondition = $this->conditionToJavascript ( $ruleCondition, $this->name );
+					$clientCondition = $this->conditionToJavascript($ruleCondition ,($theme=='default') ? $this->name : $this->guid);
 					if ($datasource != '') {
 						// var_dump($datasource);
 						$clientDataSourceUrl = $this->getDataSourceUrl ( $datasource, $datasourceParams );
@@ -761,7 +771,7 @@ class Form extends Control {
 			return;
 		
 		$form ['title'] = Core\Language::getString ( $title, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
-		$form ['_guid'] = $this->getProperty ( $this->name, FormProperty::NAME, false, $this->name );
+		$form ['_guid'] = $this->getProperty( $this->name, FormProperty::NAME, false, $this->name);//Default theme doesnt support the guid so keep it this way
 		$form ['name'] = $this->getProperty ( $this->name, FormProperty::NAME, false, $this->name );
 		$form ['baseUrl'] = $this->nodeconfiguration [Core\NodeConfKey::BASEURL] . '&form=' . $this->name;
 		$this->form = $form;
@@ -883,8 +893,8 @@ class Form extends Control {
 		if ($attributes [FieldProperty::REQUIRED] == 'true' && ($type != FieldType::cSTATIC))
 			$this->rules [$id] [] = 'required';
 			
-			// Adding formatters
-		if ($type == FieldType::cSTATIC) {
+		// Adding formatters
+		if ($type == FieldType::cSTATIC || $type == FieldType::FILE) {
 			$this->addFormatter ( $formfield, $id );
 		}
 		
@@ -928,6 +938,7 @@ class Form extends Control {
 			
 			// Get the value of the field from the databound property
 		$value = isset ( $this->dataBound [$id] ) ? $this->dataBound [$id] : null;
+		$originalValue = isset( $this->dataBoundWithoutFormatter[ $id ] ) ? $this->dataBoundWithoutFormatter[ $id ] : null;		
 		
 		// Finally add the field to the fields collection
 		// Do not add container field, just the dynamic fields included
@@ -938,7 +949,8 @@ class Form extends Control {
 					'options' => $options,
 					'skeleton' => $skeleton,
 					'skin' => $skin,
-					'value' => $value 
+					'value' => $value,
+					'original'=>$originalValue 
 			);
 			$this->fields [$id] = $field;
 		}
@@ -1124,16 +1136,16 @@ class Form extends Control {
 				$this->bind_data [] = $this->defaultData;
 			}
 		} else  // Store the data in context
-if ($persist == 'true') {
-			// $this->setContextVariable($this->name.'_contextData', $this->bind_data);
-			
-			$newStoredData = array ();
-			foreach ( $this->bind_data as $bind_data )
-				foreach ( $bind_data as $newBindKey => $newBindData )
-					$newStoredData [$newBindKey] = $newBindData;
-				// print_object($newStoredData);
-			$this->setContextVariable ( $this->name . '_contextData', $newStoredData );
-		}
+			if ($persist == 'true') {
+				// $this->setContextVariable($this->name.'_contextData', $this->bind_data);
+				
+				$newStoredData = array ();
+				foreach ( $this->bind_data as $bind_data )
+					foreach ( $bind_data as $newBindKey => $newBindData )
+						$newStoredData [$newBindKey] = $newBindData;
+					// print_object($newStoredData);
+				$this->setContextVariable ( $this->name . '_contextData', $newStoredData );
+			}
 		
 		// print_object( $this->bind_data );
 		// print_object( $this->static_bind );
@@ -1170,8 +1182,8 @@ if ($persist == 'true') {
 		// neon_mydebug('INICIO','*************************************');
 		if (isset ( $this->bind_data ))
 			foreach ( $this->bind_data as $bind_data ) {
-				
 				$bind_data = ( array ) $bind_data;
+				$bind_data_original = array();				
 				foreach ( $bind_data as $key => $value ) {
 					// If this is a static bind, then expand the value from the datasource
 					$static_bind = isset ( $this->static_bind [( string ) $key] ) ? $this->static_bind [( string ) $key] : '';
@@ -1213,6 +1225,8 @@ if ($persist == 'true') {
 						// neon_mydebug($key,$value.'::'.$static_bind);
 						$bind_data [$key] = $value;
 					}
+					//Save the value before applying the formatters
+					$bind_data_original[$key] = $value;
 					
 					// Check if there is a formatter
 					// print_object( $this->fieldFormatter );
@@ -1235,6 +1249,7 @@ if ($persist == 'true') {
 				
 				// print_object($bind_data);
 				$this->dataBound = array_merge ( $this->dataBound, $bind_data );
+				$this->dataBoundWithoutFormatter = array_merge($this->dataBoundWithoutFormatter,$bind_data_original);				
 			}
 	}
 	
@@ -1244,6 +1259,7 @@ if ($persist == 'true') {
 	function updateValues() {
 		foreach ( $this->fields as $key => $value ) {
 			$this->fields [$key] ['value'] = isset ( $this->dataBound [$key] ) ? $this->dataBound [$key] : '';
+			$this->fields[ $key ]['original'] = isset( $this->dataBoundWithoutFormatter[ $key ] ) ? $this->dataBoundWithoutFormatter[ $key ] : '';
 		}
 		// var_dump( $this->fields );
 	}
@@ -1267,8 +1283,8 @@ if ($persist == 'true') {
 		$this->updateValues ();
 		$this->calculateRows();		
 		
-		$neonUser = new \Kuink\Core\User ();
-		$neon_user = $neonUser->getUser ();
+		$kuinkUser = new \Kuink\Core\User ();
+		$user = $kuinkUser->getUser ();
 		
 		$listFormFields = implode ( ',', $this->listFormFields );
 		
@@ -1295,10 +1311,10 @@ if ($persist == 'true') {
 		
 		$dateTimeLib = new \DateTimeLib ( $this->nodeconfiguration, null );
 		$personTimeZoneOffset = $dateTimeLib->getTzOffset ( array (
-				0 => $neon_user ['timezone'] 
+				0 => $user ['timezone'] 
 		) );
 		$params ['personTimeZoneOffset'] = $personTimeZoneOffset;
-		$params ['personTimeZone'] = $neon_user ['timezone'];
+		$params ['personTimeZone'] = $user ['timezone'];
 		$params ['validate'] = $this->validate;
 		
 		// var_dump( $this->tabs );

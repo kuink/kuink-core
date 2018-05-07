@@ -30,54 +30,54 @@ class Language {
 		$KUINK_TRANSLATION [$app_name] = self::loadLaguageFile ( $appBase . '/' . $app_name, $lang );
 		$KUINK_TRANSLATION ['framework'] = self::loadLaguageFile ( 'framework/framework', $lang );
 	}
-	static public function getString($identifier, $app_name = 'framework', $params = null) {
+	
+	static private function getTranslation($xPathElement, $xPathAttribute, $identifier, $app_name='framework', $params=null){
 		global $KUINK_TRANSLATION;
 		global $KUINK_APPLICATION;
 		
-		// print($identifier.'::'.$app_name.'::');
 		$lang_manager = null;
-		if (isset ( $KUINK_TRANSLATION [$app_name] ))
-			$lang_manager = $KUINK_TRANSLATION [$app_name];
+		if (isset($KUINK_TRANSLATION[ $app_name ]))
+			$lang_manager = $KUINK_TRANSLATION[ $app_name ];
 		
-		if (is_null ( $lang_manager )) {
-			// load the file
-			// print('loading::'.$app_name.'::'.$identifier);
-			$lang_manager = self::loadLaguageFile ( $app_name, $KUINK_APPLICATION->getLang () );
-			
-			// print('loaded...'.$app_name);
+		if (is_null( $lang_manager ))
+		{
+			$lang_manager = self::loadLaguageFile( $app_name, $KUINK_APPLICATION->getLang() );
+	
 			if ($lang_manager == null)
 				return $identifier;
-			
-			$GLOBALS ['KUINK_TRANSLATION'] [$app_name] = $lang_manager;
-			// var_dump( $GLOBALS['KUINK_TRANSLATION'] );
+	
+			$GLOBALS['KUINK_TRANSLATION'][ $app_name ] = $lang_manager;
 		}
-		
-		if (! $identifier)
+	
+		if (!$identifier)
 			return '';
+	
+		$langstring = $lang_manager->xpath($xPathElement.'[@'.$xPathAttribute.'="'. $identifier .'"]/@value');
+
+		if ($langstring == null)
+		{
+			$string = $lang_manager->xpath($xPathElement.'[@'.$xPathAttribute.'="'. $identifier .'"]');
+			$langstring = isset($string[0][0]) ? (string)$string[0][0] : '';
+		}
+		else
+			$langstring = isset($langstring[0]['value']) ? (string)$langstring[0]['value'] : '';
 			
-			// get the identifier in the xml file
-		$langstring = $lang_manager->xpath ( '/Lang/Strings/String[@key="' . $identifier . '"]/@value' );
-		if ($langstring == null) {
-			$string = $lang_manager->xpath ( '/Lang/Strings/String[@key="' . $identifier . '"]' );
-			$langstring = isset ( $string [0] [0] ) ? ( string ) $string [0] [0] : '';
-		} else
-			$langstring = isset ( $langstring [0] ['value'] ) ? ( string ) $langstring [0] ['value'] : '';
-			
-			// Expand parameters
+		//Expand parameters
 		$index = 0;
 		if ($langstring != null && $params != null)
-			foreach ( $params as $param ) {
-				$langstring = str_replace ( '{' . $index ++ . '}', ( string ) $param, $langstring );
+			foreach ($params as $param)
+			{
+				$langstring = str_replace ('{'.$index++.'}', (string)$param, $langstring);
 			}
-			
-			// var_dump($langstring);
+		
+		$paramsList = (count($params) > 0) ? ' ('.implode(',', $params).')' : '';
 		
 		if ($app_name == 'framework')
-			$result = ($langstring == null) ? $identifier : ( string ) $langstring;
+			$result = ($langstring == null) ? $identifier.$paramsList : (string)$langstring;
 		else
-			$result = ($langstring == null) ? self::getString ( ( string ) $identifier, 'framework', $params ) : ( string ) $langstring;
+			$result = ($langstring == null) ? self::getTranslation($xPathElement, $xPathAttribute, (string)$identifier, 'framework', $params) : (string)$langstring;
 		
-		return ($result);
+		return($result);
 	}
 	static public function getHelpString($identifier, $app_name = 'framework') {
 		global $KUINK_TRANSLATION;
@@ -100,6 +100,12 @@ class Language {
 			// kuink_mydebug($app_name.'.'.$identifier, $result);
 			// print($result);
 		return ($result);
+	}
+	static public function getString( $identifier, $appName='framework', $params=null ) {
+		return self::getTranslation('/Lang/Strings/String', 'key', $identifier, $appName, $params);
+	}
+	static public function getExceptionString( $identifier, $appName='framework', $params=null ) {
+		return self::getTranslation('/Lang/ExceptionStrings/Exception', 'name', $identifier, $appName, $params);
 	}
 	static private function loadLaguageFile($app_name, $lang) {
 		global $KUINK_TRACE;

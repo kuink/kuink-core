@@ -130,6 +130,10 @@ class RestConnector extends \Kuink\Core\DataSourceConnector {
 		curl_close ( $curl );
 		return $curl_response;
 	}
+
+	public function getSchemaName($params) {
+		return null;
+	}
 }
 
 ?>

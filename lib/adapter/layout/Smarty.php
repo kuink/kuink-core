@@ -45,8 +45,8 @@ class Smarty extends \Smarty {
 		$this->assign ( '_imageUrl', $KUINK_CFG->imageRemote );
 		$this->assign ( '_photoUrl', $KUINK_CFG->photoRemote );
 		$this->assign ( '_environment', $KUINK_CFG->environment );
-		$this->assign('_lang', $KUINK_BRIDGE_CFG->auth->user->lang);		
-		$this->assign('_userEmail', ($KUINK_BRIDGE_CFG->auth->user->email == 'root@localhost') ? '' : $KUINK_BRIDGE_CFG->auth->user->email);		
+		$this->assign ( '_lang', $KUINK_BRIDGE_CFG->auth->user->lang );		
+		$this->assign ( '_userEmail', ($KUINK_BRIDGE_CFG->auth->user->email == 'root@localhost') ? '' : $KUINK_BRIDGE_CFG->auth->user->email );		
 		//Get rid of unnecessary reporting
 		$this->error_reporting = E_ALL & ~E_NOTICE;
 		$this->muteExpectedErrors();
@@ -192,6 +192,9 @@ class Smarty extends \Smarty {
 	public function setBreadCrumb($breadcrumbEntries) {
 		$this->assign ( "breadcrumbEntries", $breadcrumbEntries );
 	}
+	public function setRefresh($actionUrl){
+		$this->assign("_refresh", $actionUrl);
+	}    
 	public function setGlobalVariable($name, $value) {
 		$this->assign ( $name, $value );
 	}

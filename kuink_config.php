@@ -48,6 +48,8 @@ $KUINK_CFG->dataRoot = $KUINK_BRIDGE_CFG->dataroot;
 $KUINK_CFG->appRoot = $KUINK_CFG->dataRoot . '/kuink/';
 $KUINK_CFG->layoutCache = false;
 $KUINK_CFG->externalServiceRoot = $KUINK_CFG->appRoot . 'apps/_externalServices/';
+$KUINK_CFG->defaultTimezone = 'Europe/Lisbon';
+$KUINK_CFG->useGlobalACL = false; //default
 
 // Getting the environment configuration dev|test|prod
 $fileContents = (file_exists ( $KUINK_CFG->appRoot . 'env.txt' )) ? file_get_contents ( $KUINK_CFG->appRoot . '/env.txt' ) : 'dev';
@@ -64,16 +66,19 @@ switch ($KUINK_CFG->environment) {
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';		
 		$KUINK_CFG->enableEmailSending = false;
+		$KUINK_CFG->useGlobalACL = false;
 		break;
 	case 'test' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';
 		$KUINK_CFG->enableEmailSending = false;
+		$KUINK_CFG->useGlobalACL = false;		
 		break;
 	case 'prod' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';
 		$KUINK_CFG->enableEmailSending = true;
+		$KUINK_CFG->useGlobalACL = false;		
 		break;
 	default :
 		throw new \Exception ( 'Invalid environment' . $KUINK_CFG->environment, 1 );

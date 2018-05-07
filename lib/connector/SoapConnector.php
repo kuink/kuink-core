@@ -257,7 +257,16 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
 
     return $resultData; 
   }
-  
+	
+	// convert object to array
+	protected function object_to_array($obj) {
+    $arrObj = is_object ( $obj ) ? get_object_vars ( $obj ) : $obj;
+    foreach ( $arrObj as $key => $val ) {
+      $val = (is_array ( $val ) || is_object ( $val )) ? $this->object_to_array ( $val ) : $val;
+      $arr [$key] = $val;
+    }
+    return $arr;
+  }
   
   /***
    */
@@ -281,7 +290,7 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
   	$action=$prefix.$wsFunction;
   	$version=$this->dataSource->getParam('version', true);
   	$this->user=$this->dataSource->getParam('user', true);
-  	$this->passwd=$this->dataSource->getParam('passwd', true);;
+  	$this->passwd=$this->dataSource->getParam('passwd', true);
   	$oneWay=0;
   	 
   	$entity = (string) $params['_entity'];
@@ -296,15 +305,13 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
   	$mandatoryParams=$this->dataSource->getParam('params', false, array());
   	foreach ($mandatoryParams as $key=>$value)
   		$newParams[$key] = (string)$value;
-  		
   	try {
-  		$response = (array)$this->soapClient->$entity($newParams);
+			// hack to cast to array a object of objects
+			$response = $this->object_to_array($this->soapClient->$entity($newParams));
+
   	} catch (\Exception $e) {
   		$KUINK_TRACE[]='Error calling webservice '.$this->dataSource->name.':'.$entity.':'.$e->getMessage() ;
   	}
-  	
-  	//$KUINK_TRACE[]='<pre>'.htmlspecialchars($this->soapClient->__getLastRequest()).'</pre>';
-  	//$KUINK_TRACE[]='<pre>'.htmlspecialchars($this->soapClient->__getLastResponse()).'</pre>';  	
 
   	return $response;
   }
@@ -453,12 +460,14 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
 		<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
 		  <soap:Body>'.$call.'
 		  </soap:Body>
-		</soap:Envelope> 
-  	';
+		</soap:Envelope>';
   
   	return $envelope;
-  }  
-  
+	}  
+	
+	public function getSchemaName($params) {
+		return null;
+	}
 }
 
 ?>

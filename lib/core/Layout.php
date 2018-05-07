@@ -52,6 +52,10 @@ class Layout {
 	}
 	public function setTheme($theme) {
 		$this->theme = $theme;
+		$this->layoutAdapter->setTheme($theme);		
+	}
+	public function getTheme(){
+		return $this->layoutAdapter->getTheme();
 	}
 	public function setAppTemplate($appTemplate) {
 		$this->layoutAdapter->setAppTemplate ( $appTemplate );
@@ -158,6 +162,9 @@ class Layout {
 	}
 	public function setBreadCrumb($breadcrumbEntries) {
 		$this->layoutAdapter->setBreadCrumb ( $breadcrumbEntries );
+	}
+	public function setRefresh($actionUrl){
+		$this->layoutAdapter->setRefresh($actionUrl);
 	}
 }
 

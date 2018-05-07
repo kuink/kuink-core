@@ -24,6 +24,7 @@ class DataAccess {
 	var $dataAccessXml_domobject;
 	var $directMethod; // call directly this method from the connector
 	var $daApplication; // The app name of the dataaccess nid
+	var $user; //The current user executing this dataaccess	
 	function __construct($dataAccessNid, $appName, $processName, $dataSourceName = '') {
 		global $KUINK_CFG, $KUINK_TRACE, $KUINK_APPLICATION;
 		$this->application = $appName;
@@ -78,6 +79,9 @@ class DataAccess {
 			}
 		}
 	}
+	function setUser($user) {
+		$this->user = $user;
+	}
 	function execute($params = null) {
 		global $KUINK_DATASOURCES;
 		global $KUINK_TRACE;
@@ -88,6 +92,7 @@ class DataAccess {
 		$dataSourceName = $this->dataSourceName;
 		
 		$dataSource = $KUINK_DATASOURCES [$dataSourceName];
+		$dataSource->setUser($this->user);
 		// var_dump($dataSource);
 		
 		if (is_a ( $dataSource->connector, 'Kuink\Core\DataSourceConnector\SqlDatabaseConnector' )) {
@@ -113,8 +118,25 @@ class DataAccess {
 							$arrayValues [] = '\'' . $arrayValue . '\'';
 						$newParams [$key] = implode ( ',', $arrayValues );
 					}
-				} else
-					$newParams [$key] = $value;
+				} else {
+					if ((!is_array($value)) && (in_array($key, $ignoreArrays))) {
+						//Check if the value has the multilang token and split it into a multilang array
+						$multilangXmlString = '<'.$key.'>'.$value.'</'.$key.'>';
+						//print_object($multilangXmlString);
+						$multilangXml = simplexml_load_string($multilangXmlString);
+						//print_object($multilangXml);
+						$multilangArr = array();
+						foreach($multilangXml->children() as $multilangEntry) {
+							$multiLangKey = (string)$multilangEntry->getName();
+							$multilangValue = (string)$multilangEntry[0];
+							$multilangArr[$multiLangKey] = $multilangValue;
+						}
+						$newParams[$key] = $multilangArr;
+					} else {
+						//This is not a multilang field, neither an array. Add it as it is
+							$newParams[$key] = $value;
+					}
+				}
 			}
 			/*
 			 * $newParams = null;

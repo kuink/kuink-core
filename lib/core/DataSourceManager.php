@@ -92,20 +92,20 @@ class DataSourceManager {
 		foreach( $dsParamsXml as $dsParamXml ) {
 			$paramName = (string)$dsParamXml['name'];
 			$paramValue = trim((string)$dsParamXml[0]);
-				
+			
 			if ($paramValue != '')
 				$dsParams[$paramName] = $paramValue;
-				else {
-					//This is a parameter matrioska so build it
-					$dsChildParamsXml = $dsParamXml->xpath('./Param');
-					$buildedParams = self::buildParams($dsChildParamsXml);
-					if (count($buildedParams) == 0)
-						$dsParams[$paramName] = ''; //The matrioska is empty
-						else
-							$dsParams[$paramName] = $buildedParams;
-				}
+			else {
+				//This is a parameter matrioska so build it
+				$dsChildParamsXml = $dsParamXml->xpath('./Param');
+				$buildedParams = self::buildParams($dsChildParamsXml);
+				if (count($buildedParams) == 0)
+					$dsParams[$paramName] = ''; //The matrioska is empty
+				else 
+					$dsParams[$paramName] = $buildedParams;
+			}
 		}
-		return $dsParams;
+		return $dsParams; 
 	}
 	
 	static public function addDataSourceXml($dataSource, $context) {
@@ -144,7 +144,7 @@ class DataSourceManager {
 		
 		$dsParamsXml = $dataSource->xpath('./Param');
         
-        $dsParams = self::buildParams($dsParamsXml);
+		$dsParams = self::buildParams($dsParamsXml);
         
 		self::addDataSource ( $dsName, $dsConnector, $context, $dsParams, $dsBypass );
 		

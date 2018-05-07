@@ -18,7 +18,6 @@ namespace Kuink\UI\Control;
 
 use Kuink\Core as Core;
 
-// require_once('NeonControl.php');
 /**
  * Default values for properties
  * 
@@ -45,6 +44,7 @@ class GridDefaults {
 	const PIVOT_COLS = '';
 	const PIVOT_DATA = '';
 	const PIVOT_SEPARATOR = '|';
+	const PIVOT_SORT = '';	
 	const TREE = 'false';
 	const TREE_ID = '';
 	const TREE_PARENT_ID = '';
@@ -80,6 +80,7 @@ class GridProperty {
 	const PIVOT_COLS = 'pivotcols';
 	const PIVOT_DATA = 'pivotdata';
 	const PIVOT_SEPARATOR = 'pivotseparator';
+	const PIVOT_SORT = 'pivotsort';	
 	const TREE = 'tree';
 	const TREE_ID = 'treeid';
 	const TREE_PARENT_ID = 'treeparentid';
@@ -212,6 +213,7 @@ class Grid extends Control {
 	var $sort; // Stores the sorting of this grid 1_asc 2_desc where 1 and 2 are the column numbers
 	var $hidden; // Stores the hidden columns of this grid, can be changed in rendered grids
 	var $tablecolumns;
+	var $tablecolnotvisible; //Collumns not visible	
 	var $tablesubcolumns;
 	var $tableinfercolumns; // list of columns infered
 	var $tableheaders;
@@ -242,6 +244,7 @@ class Grid extends Control {
 	var $pivotcols;
 	var $pivotdata;
 	var $pivotseparator;
+	var $pivotsort; //Sort the pivot data	
 	var $dynamicColumns; // Fields dynamically added to a container
 	var $dynamicRules; // Field rules dynamically added to a field
 	var $dynamicFormatters; // Field rules dynamically added to a field
@@ -631,6 +634,7 @@ class Grid extends Control {
 		$this->pivotcols = ( string ) $this->getProperty ( $this->name, GridProperty::PIVOT_COLS, false, GridDefaults::PIVOT_COLS );
 		$this->pivotdata = ( string ) $this->getProperty ( $this->name, GridProperty::PIVOT_DATA, false, GridDefaults::PIVOT_DATA );
 		$this->pivotseparator = ( string ) $this->getProperty ( $this->name, GridProperty::PIVOT_SEPARATOR, false, GridDefaults::PIVOT_SEPARATOR );
+		$this->pivotsort = (string) $this->getProperty($this->name, GridProperty::PIVOT_SORT, false, GridDefaults::PIVOT_SORT);		
 		if ($this->pivot == 'true')
 			$this->infer = 'true';
 			// Hack to rteplace form in base url
@@ -745,8 +749,10 @@ class Grid extends Control {
 			
 			$this->tablecoltype [$index] = $coltype;
 			
-			if ($visible != 'true')
-				continue;
+			if ($visible != 'true') {
+				$this->tablecolnotvisible[] = $colname;
+					continue;
+			}
 			
 			$formatter = '';
 			$method = '';
@@ -845,15 +851,20 @@ class Grid extends Control {
 			$pivotLines = explode ( ',', $this->pivotlines );
 			$pivotCols = explode ( ',', $this->pivotcols );
 			$pivotData = explode ( ',', $this->pivotdata );
+			$pivotSort = explode(',', $this->pivotsort);
 			$count = 0;
 			$utilsLib = new \UtilsLib ();
+			$setLib = new \SetLib();			
 			foreach ( $this->bind_data as $data ) {
-				$this->bind_data [$count ++] = $utilsLib->pivotTable ( array (
-						( array ) $data,
-						$this->pivotlines,
-						$this->pivotcols,
-						$this->pivotdata 
-				) );
+				$unsortedData = $utilsLib->pivotTable(array((array) $data, $this->pivotlines, $this->pivotcols, $this->pivotdata));
+				//print_object($unsortedData);
+				if (trim($this->pivotsort != '')) {
+					$mergedData = array_merge(array($unsortedData), $pivotSort);
+					$sortedData = $setLib->SortBy($mergedData);
+				} else 
+					$sortedData = $unsortedData;
+					
+				$this->bind_data[$count++] = $sortedData;
 			}
 		}
 		// var_dump($this->bind_data[0]);
@@ -864,7 +875,7 @@ class Grid extends Control {
 			foreach ( $this->bind_data as $data ) {
 				$record = ( array ) reset ( $data );
 				foreach ( $record as $key => $value ) {
-					if (! in_array ( $key, $this->tablecolumns )) {
+					if (!in_array($key, $this->tablecolumns) && !in_array($key, $this->tablecolnotvisible)) { // && (strpos($key, '__infer_') > 0)					
 						$this->tableinfercolumns [] = $key;
 						$this->tablecolumns [] = $key;
 						$this->tableheaders [] = $key;

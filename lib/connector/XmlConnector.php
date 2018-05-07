@@ -145,6 +145,10 @@ class XmlConnector extends \Kuink\Core\DataSourceConnector {
 		// var_dump($headline);
 		return $headline;
 	}
+
+  public function getSchemaName($params) {
+  	return null;
+  }
 }
 
 ?>

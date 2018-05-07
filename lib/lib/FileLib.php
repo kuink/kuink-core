@@ -83,7 +83,7 @@ class FileLib {
 	function upload($params) {
 		// global $msg_manager;
 		global $KUINK_BRIDGE_CFG;
-		global $trace;
+		global $KUINK_TRACE;
 		// global $_Files;
 		
 		// var_dump($_FILES);
@@ -117,7 +117,7 @@ class FileLib {
 			// kuink_mydebug('filename', $filename);
 			
 			if ($file ['error'] != 0) {
-				$trace [] = 'FileLib::Upload ERROR - ' . $file ['error'];
+				$KUINK_TRACE[] = 'FileLib::Upload ERROR - '.$file['error'];
 				$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Erro no upload do ficheiro.' );
 			}
 			
@@ -293,17 +293,90 @@ class FileLib {
 		// print('pathname:'.$pathname);
 		if (file_exists ( $pathName ) and ! is_dir ( $pathName )) {
 			ob_clean ();
-			header ( 'Content-Type: ' . mime_content_type($pathName) );
-			header ( 'Content-Length: ' . filesize ( $pathName ) );
-			header('Content-Disposition: attachment; filename="'.$file.'"');
-
-			readfile ( $pathName );
+			header('Accept-Ranges: bytes');
+			header('Content-Disposition: attachment; filename=' . $file);
+			header('Content-Type: application/octet-stream');
+			readfile($pathname);
+			die();
 		} else {
 			header ( 'HTTP/1.0 404 not found' );
 			print_error ( 'filenotfound', 'error' ); // this is not displayed on IIS??
 		}
 	}
 	
+	function downloadTmp($params)
+	{
+		global $KUINK_CFG;
+
+		$file = ($params[0]) ? (string)$params[0] : '';
+
+		// ========================================
+		// send the file
+		// ========================================
+		$pathname = $KUINK_CFG->tmpRoot.'/'.$file;
+
+		if (file_exists($pathname) and !is_dir($pathname)) {
+			ob_clean();
+			header('Accept-Ranges: bytes');
+			header('Content-Disposition: attachment; filename=' . $file);
+			header('Content-Type: application/octet-stream');
+			//send_file($pathname, $file);
+			readfile($pathname);
+			die();
+			//print_object($pathname.'::'.$file);
+		} else {
+			header('HTTP/1.0 404 not found');
+			print_error('filenotfound', 'error'); //this is not displayed on IIS??
+		}
+	}
+
+	/**
+	* Copy a folder to another destination
+	* @param source : path to original folder under neon/files/
+	* @param destination : path to destination under neon/files/ where to copy the folder to
+	* @return 1 if successfuly copied, 0 otherwise
+	* @author André Bittencourt
+	* @since 2016-02-04
+	**/
+	function copyFolder($params) {
+			global $KUINK_CFG;
+
+			$config = $this->nodeconfiguration['config'];
+
+			$baseUploadDir = $config['neonUploadFolderBase']; // /neon/ folder
+
+			$source = isset($params['source']) ? $params['source'] : false;
+			$source = $KUINK_CFG->dataroot.'/'.$baseUploadDir.$source;
+
+			$result = 0;
+			if($source != false) {
+				$destination = isset($params['destination']) ? $params['destination'] : false;
+				$destination = $KUINK_CFG->dataroot.'/'.$baseUploadDir.$destination;
+
+				if($destination != false) {
+					if(!is_dir($destination)){
+						$oldumask = umask(0);
+						mkdir($destination, 0755);
+						umask($oldumask);
+					}
+
+					$dir_handle = @opendir($source) or die("Unable to open");
+					while ($file = readdir($dir_handle)) {
+						if($file!="." && $file!=".." && !is_dir("$source/$file"))
+							copy("$source/$file","$destination/$file");
+						if($file!="." && $file!=".." && is_dir("$source/$file")) {
+							$recursiveParams = array("source"=>"$source/$file","destination"=>"$destination/$file");
+							$this->copyFolder($recursiveParams);
+						}
+					}
+					closedir($dir_handle);
+					$result = 1;
+				}
+			}
+
+			return $result;
+	}
+
 	/**
 	 * Copy a file record to another destination
 	 * 

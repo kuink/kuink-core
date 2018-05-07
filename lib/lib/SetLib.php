@@ -101,7 +101,7 @@ class SetLib {
 	 * @param unknown_type $params
 	 *        	(array, value)
 	 * @throws Exception
-	 * @return string
+	 * @return boolean
 	 */
 	function ValueIn($params) {
 		if (count ( $params ) != 2)
@@ -122,7 +122,7 @@ class SetLib {
 	 * @param unknown_type $params
 	 *        	(array, key)
 	 * @throws Exception
-	 * @return string
+	 * @return boolean
 	 */
 	function KeyIn($params) {
 		if (count ( $params ) != 2)
@@ -136,7 +136,19 @@ class SetLib {
 		}
 		return $result; // return array_key_exists($params[1], $params[0]);
 	}
+
+	/**
+	 * Checks if array is multidimentional
+	 * @param unknown_type $params (array)
+	 * @throws Exception
+	 * @return boolean
+	 */
+	function is_multi_array( $params ) {
+		rsort( $params[0] );
+		return isset( $params[0][0] ) && is_array( $params[0][0] );
+	}
 	
+
 	/**
 	 * sort array by value(s) from key(s)
 	 * 
@@ -200,9 +212,11 @@ class SetLib {
 					".º" => "o" 
 			);
 			foreach ( $keys as $field ) {
-				$arrayA = strtr ( $a [$field], $encode_chars_array );
-				$arrayB = strtr ( $b [$field], $encode_chars_array );
-				$diff = strnatcmp ( $arrayA, $arrayB ); // strnatcasecmp($a[$field], $b[$field]);
+				$arrayA = strtr($a[$field], $encode_chars_array);
+				$arrayB = strtr($b[$field], $encode_chars_array);
+				$arrayA = is_string($arrayA) ? strtolower($arrayA) : $arrayA;
+				$arrayB = is_string($arrayB) ? strtolower($arrayB) : $arrayB;
+				$diff = strnatcmp($arrayA, $arrayB); //strnatcasecmp($a[$field], $b[$field]);
 				if ($diff != 0) {
 					return $diff;
 				}
@@ -294,34 +308,34 @@ class SetLib {
 	 * @throws Exception
 	 * @return string
 	 */
-	function paginate($params) {
-		if (count ( $params ) != 3)
-			throw new Exception ( __METHOD__ . ' must have two parameters' );
-		$array = $params ["array"];
-		$pagenum = $params ["pagenum"];
-		$pagesize = $params ["pagesize"];
-		$result = array ();
-		$result ['records'] = array_slice ( $array, ($pagenum * $pagesize), $pagesize );
-		$result ['total'] = count ( $array );
-		
+	function paginate( $params )
+	{
+		if (count($params) != 3)
+			throw new Exception(__METHOD__.' must have two parameters');
+		$array = is_array($params["array"][0]) == 1 ? $params["array"] : array($params["array"]);
+		$pagenum = $params["pagenum"];
+		$pagesize = $params["pagesize"];
+		$result = array();
+		$result['records'] = array_slice($array, ($pagenum*$pagesize), $pagesize);
+		$result['total'] = count($array);
+
 		return $result;
 	}
 
-/**
- * Join two sets into one.
- * ==== MORE COMMENT ===
- * 
- * @todo STI: Joao Patricio
- *      
- */
-	/*
-	 * function joinSets($params){
-	 * $one = $params[0];
-	 * $two = $params[1];
-	 * $common = $params[2];
-	 * var_dump($one);
-	 * }
-	 */
+
+    /**
+    * Join two sets into one.
+    * ==== MORE COMMENT ===
+    **/
+    
+    function merge($params){
+      $one = $params[0];
+      $two = $params[1];
+      $merged = array_merge($one, $two);
+      
+      return $merged;
+    }
+
 }
 
 ?>

@@ -98,6 +98,9 @@ class DocumentConverterConnector extends \Kuink\Core\DataSourceConnector {
 		
 		$this->connect ();
 	}
+  public function getSchemaName($params) {
+  	return null;
+  }
 }
 
 ?>

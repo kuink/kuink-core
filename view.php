@@ -30,6 +30,8 @@ require_once ($KUINK_INCLUDE_PATH . 'kuink_includes.php');
 require_once ('locallib.php');
 // require_once($KUINK_INCLUDE_PATH.'test.php');
 
+date_default_timezone_set ( 'UTC' );
+
 $kuink_session_active = isset ( $_SESSION ['KUINK_CONTEXT'] ['KUINK_SESSION_ACTIVE'] ) ? $_SESSION ['KUINK_CONTEXT'] ['KUINK_SESSION_ACTIVE'] : 0;
 if ($kuink_session_active != 1 && $_GET ['startnode'] != '')
 	redirect ( $KUINK_BRIDGE_CFG->wwwroot, 0 );

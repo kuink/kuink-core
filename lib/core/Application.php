@@ -83,7 +83,7 @@ class Application {
 	public $appManager; // Application manager
 	public $nodeconfiguration;
 	function __construct($name, $lang, $config) {
-		global $KUINK_CFG;
+		global $KUINK_CFG, $KUINK_LAYOUT;
 		
 		// If it's not a restart and there's an application in the stack, the use it
 		// Get the application to execute from the top of process stack
@@ -265,16 +265,19 @@ class Application {
 		global $KUINK_BRIDGE_CFG, $KUINK_TRACE, $KUINK_CFG;
 		
 		$idCompany = ProcessOrchestrator::getCompany ();
+		$idNumber=($KUINK_BRIDGE_CFG->auth->user->id) ? (string)$KUINK_BRIDGE_CFG->auth->user->id : 0;		
 		// Load the roles
 		try {
-			$idNumber = ($KUINK_BRIDGE_CFG->auth->user->id) ? ( string ) $KUINK_BRIDGE_CFG->auth->user->id : 0;
-			$datasource = new \Kuink\Core\DataSource ( null, 'framework/framework,user,user.getRoles', 'framework', 'user' );
-			$pars = array (
-					'id_person' => $idNumber,
-					'id_company' => $idCompany 
-			);
-			$alocs = $datasource->execute ( $pars );
-			if (isset ( $alocs ))
+			if ($KUINK_CFG->useGlobalACL) {	
+			  $datasource = new \Kuink\Core\DataSource( null, 'framework/framework,acl,getRoles','framework', 'user');
+			  $pars=array( 'acl_code'=>'_global', 'id_person'=>$idNumber, 'id_company' => $idCompany );
+			} else {
+			  $datasource = new \Kuink\Core\DataSource( null, 'framework/framework,user,user.getRoles','framework', 'user');
+			  $pars=array( 'id_person'=>$idNumber, 'id_company' => $idCompany );
+			}
+			$alocs = $datasource->execute($pars);
+		  
+     	if (isset($alocs))
 				foreach ( $alocs as $aloc ) {
 					if ($KUINK_CFG->useNewDataAccessInfrastructure)
 						$this->addRole ( ( string ) $aloc ['code'] );

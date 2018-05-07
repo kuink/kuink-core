@@ -24,6 +24,7 @@ namespace Kuink\Core\Exception;
  *        
  */
 class ERROR_CODE {
+	const E_GENERIC = 000;	
 	const E_NOT_IMPLEMENTED = 001;
 	const E_NODE_LOAD = 101;
 	const E_NODE_MUST_BE_LOADED = 102;
@@ -45,6 +46,20 @@ class Exception extends \Exception {
 	// custom string representation of object
 	public function __toString() {
 		return $this->className . ": [{$this->code}]: {$this->message}\n";
+	}
+}
+//Generic Exception
+class GenericException extends \Exception {
+	var $name; //The exception name
+	function __construct($name, $message){
+		$code = ERROR_CODE::E_GENERIC;
+		$this->name = $name;
+		$previous = null;
+		parent::__construct("Kuink Framework :: ($this->name) :: " . $message, $code, $previous);
+	}
+	
+	public function __toString() {
+		return  $this->className. ": [{$this->code}]: {$this->message}\n";
 	}
 }
 // General

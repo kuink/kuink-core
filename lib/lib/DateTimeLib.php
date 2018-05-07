@@ -159,6 +159,7 @@ class DateTimeLib {
 		return 0;
 	}
 	function getWeekDay($params) {
+  	$this->setDefaultTimezone();		
 		$value = isset ( $params [0] ) ? $params [0] : false;
 		return ($value) ? date ( "w", $value ) : date ( "w" );
 	}

@@ -193,6 +193,10 @@ class GoogleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector {
 	function getAll($params) {
 		throw new NotImplementedException ( __CLASS__, __METHOD__ );
 	}
+
+	public function getSchemaName($params) {
+  	return null;
+  }
 }
 
 ?>

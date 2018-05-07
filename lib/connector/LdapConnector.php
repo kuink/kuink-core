@@ -89,7 +89,6 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		$info ['unixHomeDirectory'] .= ( string ) $this->getParam ( $user, 'uid', true );
 		
 		$homeDirectoryKey = 'homeDirectory.' . $this->getParam ( $user, 'personTypeCode', true );
-		;
 		$homeDirectory = ( string ) $this->dataSource->getParam ( $homeDirectoryKey, false );
 		
 		// If not found then get the default
@@ -600,6 +599,11 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		}
 		return $adpassword;
 	}
+	
+	public function getSchemaName($params) {
+		return null;
+	}
+	
 }
 
 ?>

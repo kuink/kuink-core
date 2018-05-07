@@ -18,6 +18,9 @@ namespace Kuink\Core;
 
 use Kuink\UI\Layout\Layout;
 use Kuink\Core;
+use Kuink\Core\Exception\ERROR_CODE;
+use Kuink\Core\Exception\GenericException;
+
 
 /**
  * Enum values used for Action types
@@ -32,7 +35,7 @@ class ActionType {
 }
 class User {
 	function getUser() {
-		global $KUINK_BRIDGE_CFG;
+		global $KUINK_BRIDGE_CFG, $KUINK_CFG;
 		
 		$currentNode = ProcessOrchestrator::getCurrentNode ();
 		$rwx = $currentNode->rwx;
@@ -77,7 +80,7 @@ class User {
 		$kuinkUser ['lang'] = $KUINK_BRIDGE_CFG->auth->user->lang;
 		
 		// @todoSTI: Joao Patricio get this value from person table
-		$kuinkUser ['timezone'] = 'Europe/Lisbon';
+		$kuinkUser ['timezone'] = $KUINK_CFG->defaultTimezone;
 		// get the client ip address
 		$kuinkUser ['ip'] = $_SERVER ["REMOTE_ADDR"];
 		
@@ -202,19 +205,59 @@ class Runtime {
 	 * @param $roles Node
 	 *        	configuration roles
 	 */
-	public function buildAllCapabilities() {
-		$roles = $this->nodeconfiguration [NodeConfKey::ROLES];
-		if (count ( $roles ) > 0) {
-			$rolesFilter = array ();
-			foreach ( $roles as $roleName => $roleValue ) {
-				$rolesFilter [] = '\'' . $roleName . '\'';
-			}
-			$rolesFilterStr = implode ( ',', $rolesFilter );
+	public function buildAllCapabilities($idAcl=null, $aclCode=null, $force=false){
+		Global $NEON_CFG;
+		
+			$roles = $this->nodeconfiguration[NodeConfKey::ROLES];
+			$capabilities = $this->nodeconfiguration[NodeConfKey::CAPABILITIES];
 			
-			$this->buildCapabilitiesOfList ( $rolesFilterStr );
+			//Only rebuild if the capabilites are not set
+			if (count($capabilities) == 0 || $force) {
+				//print_object('NEW...');
+				if (count($roles)>0) {
+					$rolesFilter = array();
+					foreach ($roles as $roleName => $roleValue) {
+						$rolesFilter[] = '\''.$roleName.'\'';
+					}
+					$rolesFilterStr = implode(',', $rolesFilter);
+					//print_object($rolesFilterStr);
+						
+					if (!($KUINK_CFG->useGlobalACL))
+						$this->buildCapabilitiesOfList($rolesFilterStr);
+						
+					if ($idAcl || $aclCode) {
+						$this->buildCapabilitiesOfAcl($idAcl, $aclCode);
+					}
+				}
+			}
+	}
+
+
+	/**
+	 * Build capabilities from an access control list
+	 * @param $idAcl - the acl identifier
+	 */
+	public function buildCapabilitiesOfAcl($idAcl, $aclCode){
+		//print_object($idAcl);
+		if ($idAcl || $aclCode){
+			//get the value from fw_config
+			$dataAccess = new \Kuink\Core\DataAccess('framework/framework,acl,getPermissions', 'framework', 'acl');
+			$params['id'] = $idAcl;
+			$params['code'] = $aclCode;			
+			$params['id_person'] = $this->nodeconfiguration[NodeConfKey::USER]['id'];
+			$params['id_company'] = $this->nodeconfiguration[NodeConfKey::USER]['idCompany'];
+			$resultset = $dataAccess->execute($params);
+			//print_object($resultset);
+			if ($resultset){
+				foreach ($resultset as $capability){
+					$this->addCapability($capability);
+				}
+			}
+			
+			return $this->nodeconfiguration[NodeConfKey::CAPABILITIES];
 		}
 	}
-	
+
 	/**
 	 * Build capabilities from a list of roles
 	 * 
@@ -249,6 +292,7 @@ class Runtime {
 			$params['id'] = $idAcl;
 			$params['id_person'] = $this->nodeconfiguration[NodeConfKey::USER]['id'];
 			$resultset = $dataAccess->execute($params);
+			$params['id_company'] = $this->nodeconfiguration[NodeConfKey::USER]['idCompany'];			
 			//print_object($resultset);
 			if ($resultset){
 				foreach ($resultset as $role){
@@ -306,14 +350,7 @@ class Runtime {
 		global $SESSION;
 		global $KUINK_APPLICATION;
 		global $KUINK_LAYOUT;
-		// kuink_mydebug('FUNCTION', $function_name);
-		// var_dump( $function_params );
-		
-		// var_dump( $this->app_name);
-		// var_dump( $this->process_name);
-		// var_dump( $this->node_name);
-		// die();
-		
+
 		// Registering global apis
 		// This shouldn't be here
 		\Kuink\Core\ProcessOrchestrator::registerAPI ( 'framework,ticket,api,add' );
@@ -565,7 +602,7 @@ class Runtime {
 			
 			// Add the roles stored in session:
 			$new_roles = $this->nodeconfiguration [NodeConfKey::ROLES];
-			global $SESSION;
+			global $SESSION, $KUINK_CFG;
 			
 			$currentStackRoles = ProcessOrchestrator::getNodeRoles ();
 			
@@ -577,7 +614,11 @@ class Runtime {
 				// var_dump( $node_roles );
 			$this->nodeconfiguration [NodeConfKey::NODE_ROLES] = $node_roles;
 			$this->nodeconfiguration [NodeConfKey::ROLES] = $new_roles;
-			$this->buildAllCapabilities ();
+			if ($NEON_CFG->useGlobalACL)
+				$this->buildAllCapabilities(null, '_global');
+			else
+				$this->buildAllCapabilities();
+
 			$this->variables['ROLES'] = $this->nodeconfiguration[NodeConfKey::ROLES];
 			$this->variables['CAPABILITIES'] = $this->nodeconfiguration[NodeConfKey::CAPABILITIES];			
 			$action_permissions = $this->getActionPermissions ( $nodexml );
@@ -604,19 +645,36 @@ class Runtime {
 				$html = $this->action_execute ( $this->nodeconfiguration, $nodexml, $action_xmlnode, $actionname, $this->variables );
 				// var_dump($this->nodeconfiguration);
 			}
-		} catch ( \Exception $e ) {
-			// TODO: - Set a new entry automatically in bugtracking tool
+		} catch(\Error $e) {
+			//TODO: - Set a new entry automatically in bugtracking tool
 			
 			// - Resgister user, timestamp, application, process, node, action, variables, instruction, executionstack?!?
 			if ($function_name) {
-				throw new \Exception ( $e->getMessage () );
+				//throw new \Exception($e->getMessage());
+				throw $e;
 			} else {
-				$msg_manager = \Kuink\Core\MessageManager::getInstance ();
-				$msg_manager->add ( MessageType::EXCEPTION, 'Exception:: ' . $e->getMessage () );
+				$msg_manager = \Kuink\Core\MessageManager::getInstance();
+				$msg_manager->add(MessageType::EXCEPTION,'Exception:: '. $e->getMessage());
 			}
-			// Rollback transactions
-			\Kuink\Core\DataSourceManager::rollbackTransaction ();
+			//Rollback transactions
+			\Kuink\Core\DataSourceManager::rollbackTransaction();
+				
 		}
+		catch(\Exception $e) {
+			//TODO: - Set a new entry automatically in bugtracking tool
+
+			// - Resgister user, timestamp, application, process, node, action, variables, instruction, executionstack?!?
+		      if ($function_name) {
+			      //throw new \Exception($e->getMessage());
+		      		throw $e;
+		  		} else {
+		      	$msg_manager = \Kuink\Core\MessageManager::getInstance();
+		        $msg_manager->add(MessageType::EXCEPTION,'Exception:: '. $e->getMessage());
+		      }
+		      //Rollback transactions
+		      \Kuink\Core\DataSourceManager::rollbackTransaction();
+		}
+
 		
 		if ($this->event_raised) {
 			// kuink_mydebug(__METHOD__,'Event Raised: '.$this->event_raised_name);
@@ -858,6 +916,10 @@ class Runtime {
 			$action_permissions [$action_name] = ($has_permission > 0);
 		}
 		return $action_permissions;
+	}
+	function setRolesAndCapabilities($roles, $capabilities) {
+		$this->nodeconfiguration[NodeConfKey::ROLES] = $roles;
+		$this->nodeconfiguration[NodeConfKey::CAPABILITIES] = $capabilities;
 	}
 	function getNodeRoles($roles, $nodexml) {
 		$perms = $nodexml->xpath ( '/Node/Permissions//Role' );
@@ -1149,6 +1211,7 @@ class Runtime {
 				$layout->setAppName ( $app_desc );
 				$layout->setProcessName ( $proc_desc );
 				$layout->setNodeName ( $node_desc );
+				$layout->setRefresh($nodeconfiguration[NodeConfKey::BASEURL].'&action=init');
 				// print '<h1 align="center" class="headingblock header outline"> '.$app_desc.' » '.$proc_desc.'</h1>';
 				// print '<h2 align="center" class="headingblock header outline"> '. $node_desc.'</h2>';
 			}
@@ -1268,6 +1331,8 @@ class Runtime {
 		$local_variables ['SYSTEM'] = $variables ['SYSTEM'];
 		$local_variables ['CONTEXT'] = $variables ['CONTEXT'];
 		$local_variables ['EVENT_PARAMS'] = $variables ['EVENT_PARAMS'];
+		$local_variables ['ROLES'] = $variables ['ROLES'];
+		$local_variables ['CAPABILITIES'] = $variables ['CAPABILITIES'];
 		
 		// PARAMS will hold the function params data instead of node params
 		// $local_variables['PARAMS'] = $variables['PARAMS'];
@@ -1279,8 +1344,9 @@ class Runtime {
 		// Get the function definition
 		$funct_xmlnode = $nodexml->xpath ( '/Node/Library/Function [@name="' . $function_name . '"]' );
 		
-		if ($funct_xmlnode == null)
-			throw new \Exception ( 'Function ' . $function_name . ' not found! Check the function name in the node.' );
+		if ($funct_xmlnode == null) {
+			throw new GenericException('framework/runtime::functionNotFound', 'Function '.$nodeconfiguration[NodeConfKey::APPLICATION].','.$nodeconfiguration[NodeConfKey::PROCESS].','.$nodeconfiguration[NodeConfKey::NODE].','.$function_name.' not found! Check the function name in the node.');
+		}
 			
 			// Get the function parameters to create the ones with default value
 		$funct_params = $funct_xmlnode [0]->xpath ( './Params/Param' );
@@ -1480,6 +1546,9 @@ class Runtime {
 			case 'AccessControlList':
 				$result = $this->inst_accessControlList( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  $variables, $exit );
 				break;
+			case 'AccessControlList':
+				$result = $this->inst_accessControlList( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  $variables, $exit );
+				break;
 			case 'Role' :
 				$result = $this->inst_role ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
@@ -1611,7 +1680,7 @@ class Runtime {
 			default :
 				// Check the libraries
 				$manager = isset ( $this->libraries [$instructionname] ) ? $this->libraries [$instructionname] : null;
-				// TODO STI: PMT this is just transitive while old controls are not migrated to NeonControl
+				// TODO: PMT this is just transitive while old controls are not migrated to Control
 				if ($manager == null) {
 					// $object = (string)$instruction_xmlnode[0]['object'];
 					$object = ( string ) $this->get_inst_attr ( $instruction_xmlnode, 'object', $variables, false );
@@ -1671,27 +1740,27 @@ class Runtime {
 	 * Send a mail
 	 * 
 	 * @param
-	 *        	[Neon_Param] to
+	 *        	[Param] to
 	 * @param
-	 *        	[Neon_Param] to_email
+	 *        	[Param] to_email
 	 * @param
-	 *        	[Neon_Param] from
+	 *        	[Param] from
 	 * @param
-	 *        	[Neon_Param] from_email
+	 *        	[Param] from_email
 	 * @param
-	 *        	[Neon_Param] cc
+	 *        	[Param] cc
 	 * @param
-	 *        	[Neon_Param] bcc
+	 *        	[Param] bcc
 	 * @param
-	 *        	[Neon_Param] reply_to
+	 *        	[Param] reply_to
 	 * @param
-	 *        	[Neon_Param] subject
+	 *        	[Param] subject
 	 * @param
-	 *        	[Neon_Param] body
+	 *        	[Param] body
 	 * @param
-	 *        	[Neon_Param] charset
+	 *        	[Param] charset
 	 * @param
-	 *        	[Neon_Param] content_type
+	 *        	[Param] content_type
 	 * @return JSON Mail headers
 	 */
 	function inst_mail($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
@@ -1952,31 +2021,61 @@ class Runtime {
 	}
 	
 	// return true if all the params are equal
-	function inst_exception($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
-		$code = ( string ) $instruction_xmlnode ['code'];
-		// Execute inner instructions
-		
-		$message = "No message";
-		// Execute inner instructions
-		$newinstruction_xmlnode = $instruction_xmlnode->children ();
-		if (count ( $newinstruction_xmlnode ) > 0)
-			$message = ( string ) $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $newinstruction_xmlnode [0], $actionname, $variables, $exit );
-		else
-			$message = ( string ) $instruction_xmlnode [0];
-		
-		switch ($code) {
-			case 'ZeroRowsAffected' :
-				throw new Exception\ZeroRowsAffected ( $message );
-				break;
-			case 'ClassNotFound' :
-				throw new Exception\ClassNotFound ( $message );
-				break;
-			case 'InvalidParameters' :
-				throw new Exception\InvalidParameters ( $message );
-				break;
+	function inst_exception( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  &$variables, &$exit ) {
+		global $KUINK_TRACE;
+		$name = (string) $this->get_inst_attr($instruction_xmlnode, 'name', $variables, false, '');
+		$conditionExpr = (string) $this->get_inst_attr($instruction_xmlnode, 'condition', $variables, false, '');
+				
+		//If condition is set then evaluate it and only continue if it is true
+		if ($conditionExpr != '') {
+			$eval = new \Kuink\Core\EvalExpr();
+				$value = $eval->e( $conditionExpr, $variables, TRUE);
+				if (!$value)
+					return; //If the condition is not true then return immediately, else let it flow
+		}
+		$KUINK_TRACE[] = '*** EXCEPTION ('.$name.') - '.$message;   
+		if ($name != '') {	
+			//This is an exception with a name specified so act differently
+			$paramsxml = $instruction_xmlnode->xpath('./Param');
+				
+			$values = array();
 			
-			default :
-				throw new \Exception ( $message );
+			foreach($paramsxml as $param)
+			if ($param->count() > 0)
+				$values[] = $this->inst_aux_getvalue($nodeconfiguration, $nodexml, $action_xmlnode, $param[0], $actionname,$instructionname,  $variables, $exit);
+			else
+				$values[] = (string)$param[0];
+		
+			$message = (string)\Kuink\Core\Language::getExceptionString($name, $nodeconfiguration[NodeConfKey::APPLICATION], $values);
+			$NEON_TRACE[] = '*** EXCEPTION ('.$name.') - '.$message;           	
+			throw new Exception\GenericException($name, $message);
+		}
+	 
+		//Legacy behavior
+		//Execute inner instructions
+
+		$message = "No message";
+		//Execute inner instructions
+
+		$newinstruction_xmlnode = $instruction_xmlnode->children();
+		if (count($newinstruction_xmlnode) > 0)
+			$message = (string) $this->instruction_execute ($nodeconfiguration, $nodexml, $action_xmlnode, $newinstruction_xmlnode[0], $actionname,  $variables, $exit);
+		else
+			$message = (string)$instruction_xmlnode[0];
+		$KUINK_TRACE[] = '*** EXCEPTION ('.$name.') - '.$message;
+		switch ($code) {
+			case 'ZeroRowsAffected':
+				throw new Exception\ZeroRowsAffected($message);
+				break;
+			case 'ClassNotFound':
+				throw new Exception\ClassNotFound($message);
+				break;
+			case 'InvalidParameters':
+				throw new Exception\InvalidParameters($message);
+				break;
+
+			default:
+				throw new \Exception($message);
 				break;
 		}
 	}
@@ -2273,7 +2372,6 @@ class Runtime {
 			$value = $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction [0], $actionname, $variables, $exit );
 			
 			// Now load the result and execute it
-			// neon_mydebugxml('Eval', $value);
 			libxml_use_internal_errors ( true );
 			$eval_instructions_xml = simplexml_load_string ( $value );
 			$errors = libxml_get_errors ();
@@ -2297,52 +2395,98 @@ class Runtime {
 		}
 		return $eval_value;
 	}
-	function inst_try($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
-		// Get the condition to the 'If' instruction
-		$instructionsxml = $instruction_xmlnode->xpath ( './Instructions' );
+	function inst_try( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  &$variables, &$exit )
+	{
+		global $KUINK_TRACE;
 		
+		//Get the condition to the 'If' instruction
+		$instructionsxml = $instruction_xmlnode->xpath('./Instructions');
+
 		if (! $instructionsxml)
-			throw new \Exception ( "Instruction: $instructionname. No 'Instructions' block supplied to the instruction." );
-		
-		$instructions = $instructionsxml [0]->children ();
-		// var_dump($instructions);
+			throw new \Exception("Instruction: $instructionname. No 'Instructions' block supplied to the instruction.");
+
+		$instructions = $instructionsxml[0]->children();
+		//print_object($instructions);
 		$value = '';
 		try {
-			foreach ( $instructions as $new_instruction ) {
-				// var_dump($exit);
-				// var_dump($new_instruction);
-				
-				$value .= $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction [0], $actionname, $variables, $exit );
+			foreach ($instructions as $new_instruction ) {
+				//print_object($exit);
+				//print_object($new_instruction);
+
+				$value .= $this->instruction_execute ($nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction[0], $actionname,  $variables, $exit);
 			}
-		} catch ( \Exception $e ) {
-			$value = '';
-			$catchxml = $instruction_xmlnode->xpath ( './Catch' );
+		}
+		catch ( GenericException $e ) {
+			$exceptionName = $e->name;
+			//print_object(get_class($e));
+			//print_object($e->name);
 			
-			// If 'Catch' does not exist, rethrown the exception....
-			if (! $catchxml)
+			$KUINK_TRACE[] = 'Exception detected '.$e->__toString(); 
+			
+			if ($exceptionName != '' && $exceptionName != null) {
+				//This is a typed exception 
+				
+				//try to catch this exception directly
+				$catchxml = $instruction_xmlnode->xpath('./Catch[@exception="'.$exceptionName.'"]');
+				//There's a match?
+				if (!$catchxml || count($catchxml) == 0) {
+					//If no then try to find a general catch
+					$catchxml = $instruction_xmlnode->xpath('./Catch[not(@exception)]');
+				} else {
+					$KUINK_TRACE[] = 'Direct Catch '.$exceptionName;
+				}
+			} else {
+				//old behaviour
+				$catchxml = $instruction_xmlnode->xpath('./Catch');
+			}
+			
+			//If 'Catch' does not exist, rethrown the exception....
+			if (!$catchxml || count($catchxml) == 0) {
+				$KUINK_TRACE[] = 'Exception not catched';
 				throw $e;
-				
-				// Add the exception message to variables
-			$variables ['EXCEPTION'] ['message'] = ( string ) $e->getMessage ();
-			
-			$msgVar = ( string ) $this->get_inst_attr ( $catchxml [0], 'msg', $variables, false );
-			if ($msgVar != '')
-				$variables [$msgVar] = $e->getMessage ();
-			
-			$instructions = $catchxml [0]->children ();
-			// var_dump($instructions);
-			$value = '';
-			foreach ( $instructions as $new_instruction ) {
-				// print('NEW INST::');
-				// var_dump($new_instruction);
-				
-				$value .= $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction [0], $actionname, $variables, $exit );
 			}
-			// Remove the exception message from variables
-			unset ( $variables ['EXCEPTION'] );
+			$KUINK_TRACE[] = 'Default Catch';
+
+			//Add the exception message to variables
+			//Set the temporary EXCEPTION variable
+			$variables['EXCEPTION']['name'] = $exceptionName;
+			$variables['EXCEPTION']['message'] = (string)$e->__toString();
+
+            $msgVar = (string)$this->get_inst_attr($catchxml[0], 'msg', $variables, false);
+            if ( $msgVar != '')
+              $variables[ $msgVar ] = $e->getMessage();
+
+			$instructions = $catchxml[0]->children();
+			$value = '';
+			foreach ($instructions as $new_instruction ) {
+				$value .= $this->instruction_execute ($nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction[0], $actionname,  $variables, $exit);
+			}
+			//Clean the last exception
+			unset($variables['EXCEPTION']);
+		}
+		catch (\Exception $e) {
+			$KUINK_TRACE[] = 'Exception: '.$e->getMessage();			
+			//print_object(get_class($e));
+			//print_object($e->getPrevious());
+			
+			$catchxml = $instruction_xmlnode->xpath('./Catch');
+			if (!$catchxml || count($catchxml) == 0) {
+				$KUINK_TRACE[] = 'Exception not catched';
+				throw $e;
+			}
+			$msgVar = (string)$this->get_inst_attr($catchxml[0], 'msg', $variables, false);
+			if ( $msgVar != '')
+				$variables[ $msgVar ] = $e->getMessage();
+			
+			$instructions = $catchxml[0]->children();
+			$value = '';
+			foreach ($instructions as $new_instruction ) {
+				$value .= $this->instruction_execute ($nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction[0], $actionname,  $variables, $exit);
+			}
 		}
 		return $value;
 	}
+
 	
 	/**
 	 * Gets a variable value
@@ -3306,7 +3450,7 @@ class Runtime {
 				// var_dump($paramname);
 				// var_dump($value);
 			
-			if (is_array ( $value ) || is_object ( $value ))
+				if (is_array($value) || is_object($value) || ($value==NULL) )
 				$params [$paramname] = $value;
 			else
 				$params [$paramname] = ( string ) $value;
@@ -3340,7 +3484,6 @@ class Runtime {
 				$params ['_id_creator'] = $variables ['USER'] ['id'];
 				$params ['_creation'] = $dateTime->Now ();
 				$params ['_creation_ip'] = $variables ['USER'] ['ip'];
-				;
 			}
 			
 			if ($dataAccessNid == 'insert' || $dataAccessNid == 'update' || $dataAccessNid == 'execute') {
@@ -3349,8 +3492,9 @@ class Runtime {
 				$params ['_modification_ip'] = $variables ['USER'] ['ip'];
 			}
 		}
-		
+		$method = (string)$instruction_xmlnode['method'];
 		$dataAccess = new \Kuink\Core\DataAccess ( $dataAccessNid, $customappname, $master_process_name, $dataSourceName );
+		$dataAccess->setUser($variables['USER']);
 		$resultset = $dataAccess->execute ( $params );
 		
 		// var_dump($resultset);
@@ -3391,27 +3535,26 @@ class Runtime {
 		else
 			$idAcl = (string)$instruction_xmlnode[0];
 	
-			$this->buildAllCapabilities($idAcl);
-	
-			$roles = $nodeconfiguration[NodeConfKey::ROLES];
-			$rolesAcl = $this->getAllRolesAcl($idAcl);
-			//print_object($rolesAcl);
-			foreach ($rolesAcl as $roleKey=>$roleValue)
-				$roles[$roleKey] = 1;
-	
-				//$roles[$value] = 1;
-				$nodeconfiguration[NodeConfKey::ROLES] = $roles;
-				$this->nodeconfiguration[NodeConfKey::ROLES] = $roles;
-				//print_object($nodeconfiguration[NodeConfKey::ROLES]);
-	
-				//$variables['ROLES'] = $this->nodeconfiguration[NodeConfKey::ROLES];
-				$variables['CAPABILITIES'] = $this->nodeconfiguration[NodeConfKey::CAPABILITIES];
-				$variables['ROLES'] = $this->nodeconfiguration[NodeConfKey::ROLES];
-				$nodeconfiguration = $this->nodeconfiguration;
-	
-				return $idAcl;
-	}
-	
+		$this->buildAllCapabilities($idAcl,null,true);
+		
+		$roles = $nodeconfiguration[NodeConfKey::ROLES];
+		$rolesAcl = $this->getAllRolesAcl($idAcl);
+		//print_object($rolesAcl);
+		foreach ($rolesAcl as $roleKey=>$roleValue)
+			$roles[$roleKey] = 1;
+
+		//$roles[$value] = 1;
+		$nodeconfiguration[NodeConfKey::ROLES] = $roles;
+		$this->nodeconfiguration[NodeConfKey::ROLES] = $roles;
+		//print_object($nodeconfiguration[NodeConfKey::ROLES]);
+		
+		//$variables['ROLES'] = $this->nodeconfiguration[NodeConfKey::ROLES];
+		$variables['CAPABILITIES'] = $this->nodeconfiguration[NodeConfKey::CAPABILITIES];
+		$variables['ROLES'] = $this->nodeconfiguration[NodeConfKey::ROLES];
+		$nodeconfiguration = $this->nodeconfiguration;
+
+		return $idAcl;
+	}	
 	
 	function inst_role(&$nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
 		global $SESSION;
@@ -3495,128 +3638,7 @@ class Runtime {
 		
 		$varname = substr ( $string, 1 );
 	}
-	function inst_var_OLD($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
-		// TODO:: This function needs urgent refactoring
-		global $KUINK_TRACE;
-		
-		// check if this is a set or a get
-		$set = (($instruction_xmlnode->count () > 0) || ($instruction_xmlnode [0] != ''));
-		
-		$varname = $this->get_inst_attr ( $instruction_xmlnode, 'name', $variables, true );
-		$sessiontype = $this->get_inst_attr ( $instruction_xmlnode, 'session', $variables, false );
-		$clear = $this->get_inst_attr ( $instruction_xmlnode, 'clear', $variables, false );
-		$key = $this->get_inst_attr ( $instruction_xmlnode, 'key', $variables, false );
-		$sum = $this->get_inst_attr ( $instruction_xmlnode, 'sum', $variables, false );
-		
-		$processVar = $this->get_inst_attr ( $instruction_xmlnode, 'process', $variables, false, 'false' );
-		
-		// dumping variable data to debug
-		$dump = $this->get_inst_attr ( $instruction_xmlnode, 'dump', $variables, false, 'false' );
-		if ($dump == 'true') {
-			$layout = \Kuink\UI\Layout\Layout::getInstance ();
-			if ($sessiontype == 'true') {
-				global $SESSION;
-				$dumpdata = $_SESSION ['KUINK_CONTEXT'] ['VARIABLES'] [$varname];
-				$layout->addHtml ( '<pre class="prettyprint linenums">' . $varname . '::' . ( string ) var_export ( $dumpdata, true ) . '</pre>', 'debugMessages' );
-			}
-			if ($processVar == 'true') {
-				$dumpdata = ProcessOrchestrator::getProcessVariable ( $varname );
-				$layout->addHtml ( '<pre class="prettyprint linenums">' . $varname . '::' . ( string ) var_export ( $dumpdata, true ) . '</pre>', 'debugMessages' );
-			} else {
-				$layout->addHtml ( '<pre class="prettyprint linenums">' . $varname . '::' . ( string ) var_export ( $variables [$varname], true ) . '</pre>', 'debugMessages' );
-			}
-		}
-		
-		$KUINK_TRACE [] = $varname;
-		
-		if ($sum != '') {
-			$variables [$varname] += ( int ) $sum;
-		}
-		
-		// Do we want to clear a variable?
-		if (strtoupper ( $clear ) == 'TRUE') {
-			// Clear the variable and exit
-			if (strtoupper ( $sessiontype ) == 'TRUE')
-				$this->inst_clearsessionvar ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-			else if (strtoupper ( $processVar ) == 'TRUE')
-				ProcessOrchestrator::unsetProcessVariable ( $varname );
-			else
-				$this->inst_clearvar ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-			
-			return;
-		}
-		
-		// Are we retrieving a key from an array variable?
-		if ($key != '' && ! $set && $sessiontype != 'true' && $processVar != 'true') {
-			$variable = isset ( $variables [$varname] ) ? $variables [$varname] : null;
-			// var_dump($variable);
-			if ($variable == null)
-				return null;
-			else {
-				// print(count($variable));
-				// var_dump($variable);
-				$value = '';
-				if (gettype ( $variable ) == 'array') {
-					if (count ( $variable ) == 1) {
-						reset ( $variable );
-						$aux = current ( $variable );
-						// print( gettype($aux) );
-						// var_dump($aux);
-						if (gettype ( $aux ) == 'object')
-							$variable = ( array ) $aux;
-					}
-				} else
-					$variable = ( array ) $variable;
-				
-				$value = isset ( $variable [$key] ) ? $variable [$key] : ''; // ( gettype($variable)== 'array') ? $variable[$key] : $variable->$key;
-				return $value;
-			}
-		}
-		
-		// Is this a process variable
-		if (strtoupper ( $processVar ) == 'TRUE') {
-			$value = $this->inst_var_process ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-			return $value;
-		}
-		
-		// Is this a session variable?
-		if (strtoupper ( $sessiontype ) == "TRUE") {
-			$value = $this->inst_var_session ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit, $key );
-			return $value;
-		}
-		// var_dump( $instruction_xmlnode );
-		
-		// Local Variable Handling
-		// Are we setting a value or retrieving?
-		if ($set) {
-			if ($instruction_xmlnode->count () > 0) {
-				$newinstruction_xmlnode = $instruction_xmlnode->children ();
-				$value = $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $newinstruction_xmlnode [0], $actionname, $variables, $exit );
-				// var_dump($value);
-				// //kuink_mydebug('TEM sim senhor', "$value");
-			} else
-				$value = ( string ) $instruction_xmlnode [0];
-			
-			if (isset ( $instruction_xmlnode ['key'] )) {
-				if ($key != '') {
-					// die("entrou");
-					$var = $variables [$varname];
-					$var [$key] = (is_array ( $value )) ? $value : ( string ) $value;
-					$variables [$varname] = $var;
-				} else {
-					// Add an array entry
-					$var = $variables [$varname];
-					$var [] = (is_array ( $value )) ? $value : ( string ) $value;
-					$variables [$varname] = $var;
-				}
-			} else
-				$variables [$varname] = $value;
-		}
-		// kuink_mydebug($varname, "$value" );
-		// var_dump( $variables['var_'.$varname] );
-		
-		return isset ( $variables [$varname] ) ? $variables [$varname] : null;
-	}
+	
 	function inst_var($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
 		global $SESSION;
 		
@@ -3635,12 +3657,6 @@ class Runtime {
 		// Clear the variable
 		if ($clear == 'true') {
 			if ($session == 'true') {
-				/*
-				 * if ($key != '')
-				 * unset($_SESSION['KUINK_CONTEXT']['VARIABLES'][$varname][$key]);
-				 * else
-				 * unset($_SESSION['KUINK_CONTEXT']['VARIABLES'][$varname]);
-				 */
 				ProcessOrchestrator::unsetSessionVariable ( $varname, $key );
 			} else if ($process == 'true') {
 				ProcessOrchestrator::unsetProcessVariable ( $varname, $key );
@@ -3715,27 +3731,29 @@ class Runtime {
 		if ($dump == 'true') {
 			$this->dumpVariable ( $varname, $value );
 		}
-		// Setting the value in the variable
-		if ($session == 'true') {
-			ProcessOrchestrator::setSessionVariable ( $varname, $key, $value );
-		} else if ($process == 'true') {
-			ProcessOrchestrator::setProcessVariable ( $varname, $key, $value );
-		} else { // local variable
-			if ($keyIsSet && $key != '') {
-				$var = $variables [$varname];
-				$var [$key] = (is_array ( $value ) || $value == null) ? $value : ( string ) $value;
-				$variables [$varname] = $var;
-			} else if ($keyIsSet && $key == '') {
-				// Add an array entry
-				$var = $variables [$varname];
-				$var [] = (is_array ( $value )) ? $value : ( string ) $value;
-				$variables [$varname] = $var;
-			} else
-				$variables [$varname] = $value;
+
+		//Only set the value if this is a set...
+		if ($set || $setValue != '' || $sum <> 0) {
+			//Setting the value in the variable
+			if ( $session == 'true' ) {
+				ProcessOrchestrator::setSessionVariable($varname, $key, $value);
+			} else if ($process == 'true') {
+				ProcessOrchestrator::setProcessVariable($varname, $key, $value);
+			} else { //local variable
+				if ($keyIsSet && $key != '') {
+						$var = $variables[$varname];
+						$var[$key]= (is_array($value) || $value == null) ? $value : (string)$value;
+						$variables[$varname] = $var;
+				} else if ($keyIsSet && $key == '') {
+						//Add an array entry
+						$var = $variables[$varname];
+						$var[]= (is_array($value)) ? $value : (string)$value;
+						$variables[$varname] = $var;
+				} else
+					$variables[$varname] = $value;
+			}
 		}
-		
 		// Allways return the variable value
-		
 		return $value;
 	}
 	function dumpVariable($var, $value) {
@@ -3931,9 +3949,7 @@ class Runtime {
 	</style>
 	';
 		foreach ( $this->current_controls as $control ) {
-			// neon_mydebugxml( $control->name, '');
 			$controlHtml = $control->getHtml ();
-			// neon_mydebugxml( $control->name, $controlHtml);
 			// $controlHtml='';
 			$html .= $controlHtml;
 		}

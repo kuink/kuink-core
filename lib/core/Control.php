@@ -154,8 +154,9 @@ abstract class Control {
 	 */
 	function render($params) {
 		$layout = \Kuink\UI\Layout\Layout::getInstance ();
+		$idContext = \Kuink\Core\ProcessOrchestrator::getContextId();
 		// Add the guid to the render
-		$params['_idContext'] = $idContext;		
+		$params ['_idContext'] = $idContext;		
 		$params ['_guid'] = $this->guid;
 		$params ['_name'] = $this->name;
 		$params ['_type'] = $this->type;
@@ -350,36 +351,55 @@ abstract class Control {
 		
 		return $value;
 	}
-	function callFormatter($formatter_name, $value, $formatter_params = null, $formatter_params_expand_data = null) {
-		// kuink_mydebug($formatter_name, $value);
-		// Expand the formatter params data
-		$this->expandFormatterParams ( $formatter_params_expand_data, $formatter_params );
+
+	function callFormatter($formatter_name, $value, $formatter_params = null, $formatter_params_expand_data = null)
+	{
+		//neon_mydebug($formatter_name, $value);
+		//Expand the formatter params data
 		
-		// If there is a datasource expand it
-		if (isset ( $formatter_params ['datasource'] )) {
-			$datasource = ( string ) $formatter_params ['datasource'];
-			if (isset ( $this->datasources [$datasource] ))
-				$formatter_params ['datasource'] = $this->datasources [$datasource];
-			else
-				throw new \Exception ( 'Datasource ' . $datasource . ' not found.' );
+		//Check if ther's a condition and evaluate 
+		$condition = isset($formatter_params['condition']) ? (string)$formatter_params['condition'] : '';
+		
+		if ($condition != '') {
+			//Evaluate the condition
+			$conditionResult = true;
+			$eval = new \Kuink\Core\EvalExpr();
+			try {
+				$variables = [];
+				$variables['value'] = $value;
+				$conditionResult = $eval->e( $condition, $variables, TRUE);
+				//print_object($conditionResult);
+				 
+			} catch ( \Exception $e) {
+				print_object('Exception: eval');
+				die();
+			}
+			
+		if (!$conditionResult)    		
+				return $value;
 		}
 		
-		// kuink_mydebug($formatter_name, $value);
-		$params = array ();
-		$params [0] = $formatter_name;
-		$params [1] = (isset ( $formatter_params ['method'] )) ? ( string ) $formatter_params ['method'] : 'format';
-		$params [2] = $value;
-		$params [3] = $formatter_params;
-		
-		$formatter = new \FormatterLib ( $this->nodeconfiguration, null );
-		
-		// var_dump( $formatter );
-		
-		// var_dump( $params );
-		$result = $formatter->format ( $params );
-		
-		// kuink_mydebug($formatter_name.'.'.$value, $result);
-		
+		 $this->expandFormatterParams($formatter_params_expand_data, $formatter_params);
+		 
+		//If there is a datasource expand it
+		if (isset($formatter_params['datasource'])) {
+			$datasource = (string)$formatter_params['datasource'];
+			if (isset($this->datasources[ $datasource ]))
+				$formatter_params['datasource'] = $this->datasources[ $datasource ];
+			else
+				throw new \Exception('Datasource '.$datasource.' not found.');
+		}
+
+		$params = array();
+		$params[0] = $formatter_name;
+		$params[1] = ( isset($formatter_params['method'])) ? (string)$formatter_params['method'] : 'format';
+		$params[2] = $value;
+		$params[3] = $formatter_params;
+
+		$formatter = new \FormatterLib($this->nodeconfiguration, null);
+
+		$result = $formatter->format( $params );
+
 		return $result;
 	}
 	
