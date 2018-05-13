@@ -214,10 +214,10 @@ class Application {
 	/**
 	 * Loads the application xml definition file
 	 */
-	private function loadFrameworkDefinition() {
+    private function loadFrameworkDefinition()
+    {
 		global $KUINK_CFG;
-		
-		$this->fwXmlDefinition = simplexml_load_file ( $KUINK_CFG->appRoot . 'apps/framework/framework.xml' );
+        $this->fwXmlDefinition = simplexml_load_file($KUINK_CFG->appRoot . 'apps/framework/framework/framework.xml');
 	}
 	
 	/**
