@@ -2,8 +2,7 @@
 global $KUINK_INCLUDE_PATH;
 
 require_once ($KUINK_INCLUDE_PATH . 'kuink_config.php');
-
-// Kuink::Core Libraries
+//// Kuink::Core Libraries
 require_once ($KUINK_INCLUDE_PATH . 'lib/core/Control.php');
 require_once ($KUINK_INCLUDE_PATH . 'lib/core/Runtime.php');
 require_once ($KUINK_INCLUDE_PATH . 'lib/core/Formatter.php');
@@ -44,6 +43,9 @@ require_once ($KUINK_INCLUDE_PATH . 'lib/lib/AsciiLib.php');
 require_once ($KUINK_INCLUDE_PATH . 'lib/lib/ReflectionLib.php');
 require_once ($KUINK_INCLUDE_PATH . 'lib/lib/MessageLib.php');
 require_once ($KUINK_INCLUDE_PATH . 'lib/lib/MetadataLib.php');
+require_once ($KUINK_INCLUDE_PATH . 'lib/adapter/authentication/UsernamePasswordStrategy.php');
+require_once ($KUINK_INCLUDE_PATH . 'lib/adapter/authentication/PlainStrategy.php');
+require_once ($KUINK_INCLUDE_PATH . 'lib/lib/AuthenticationLib.php');
 
 // Kuink::Tools
 require_once ($KUINK_INCLUDE_PATH . 'lib/tools/zend_libs/autoload.php');
