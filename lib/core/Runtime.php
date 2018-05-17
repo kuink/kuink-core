@@ -206,7 +206,7 @@ class Runtime {
 	 *        	configuration roles
 	 */
 	public function buildAllCapabilities($idAcl=null, $aclCode=null, $force=false){
-		Global $NEON_CFG;
+		Global $KUINK_CFG;
 		
 			$roles = $this->nodeconfiguration[NodeConfKey::ROLES];
 			$capabilities = $this->nodeconfiguration[NodeConfKey::CAPABILITIES];
@@ -614,7 +614,7 @@ class Runtime {
 				// var_dump( $node_roles );
 			$this->nodeconfiguration [NodeConfKey::NODE_ROLES] = $node_roles;
 			$this->nodeconfiguration [NodeConfKey::ROLES] = $new_roles;
-			if ($NEON_CFG->useGlobalACL)
+			if ($KUINK_CFG->useGlobalACL)
 				$this->buildAllCapabilities(null, '_global');
 			else
 				$this->buildAllCapabilities();
@@ -700,7 +700,8 @@ class Runtime {
 	function show_trace($show_trace) {
 		global $SESSION, $KUINK_TRACE, $KUINK_MANUAL_TRACE;
 		
-		if ($show_trace == 'true' && $this->type == 'nodes' && $this->is_fw_admin) {
+		if (1==1) {
+		//if ($show_trace == 'true' && $this->type == 'nodes' && $this->is_fw_admin) {
 			$html = '<div class="container-fluid"><div class="row-fluid"><div class="span12">';
 			$html .= '<h4><i class="fa fa-wrench fa-2x" ></i> Developer Tracing Tools</h4>';
 			$html .= '<br/>Manual Trace » ';
@@ -2047,7 +2048,7 @@ class Runtime {
 				$values[] = (string)$param[0];
 		
 			$message = (string)\Kuink\Core\Language::getExceptionString($name, $nodeconfiguration[NodeConfKey::APPLICATION], $values);
-			$NEON_TRACE[] = '*** EXCEPTION ('.$name.') - '.$message;           	
+			$KUINK_TRACE[] = '*** EXCEPTION ('.$name.') - '.$message;           	
 			throw new Exception\GenericException($name, $message);
 		}
 	 
