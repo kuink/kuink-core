@@ -128,7 +128,7 @@ class Language {
 		
 		if (! $neon_lang_file) {
 			$KUINK_TRACE [] = 'Loading lang file';
-			$KUINK_TRACE [] = var_dump ( $errors );
+			$KUINK_TRACE [] = var_export( $errors, true );
 			return '';
 		}
 		$KUINK_TRACE [] = "Language File lodaded: " . $langfilename;

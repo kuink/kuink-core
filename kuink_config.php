@@ -67,18 +67,21 @@ switch ($KUINK_CFG->environment) {
 		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';		
 		$KUINK_CFG->enableEmailSending = false;
 		$KUINK_CFG->useGlobalACL = false;
+		$KUINK_CFG->displayNativeErrors = false;		
 		break;
 	case 'test' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';
 		$KUINK_CFG->enableEmailSending = false;
 		$KUINK_CFG->useGlobalACL = false;		
+		$KUINK_CFG->displayNativeErrors = false;		
 		break;
 	case 'prod' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';
 		$KUINK_CFG->enableEmailSending = true;
 		$KUINK_CFG->useGlobalACL = false;		
+		$KUINK_CFG->displayNativeErrors = false;		
 		break;
 	default :
 		throw new \Exception ( 'Invalid environment' . $KUINK_CFG->environment, 1 );

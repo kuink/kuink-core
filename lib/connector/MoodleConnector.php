@@ -26,7 +26,7 @@ class MoodleConnector extends \Kuink\Core\DataSourceConnector {
 		$this->server = $this->dataSource->getParam ( 'server', true );
 		$this->port = $this->dataSource->getParam ( 'port', true );
 		$server = $this->dataSource->getParam ( 'server', true );
-		var_dump ( $server );
+		//var_dump ( $server );
 		$responseType = $this->dataSource->getParam ( 'responseType', true );
 		if ($responseType != '')
 			$this->responseType = $responseType;

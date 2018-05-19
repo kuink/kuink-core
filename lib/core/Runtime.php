@@ -3343,7 +3343,7 @@ class Runtime {
 							} else if ($value [$i] != '"')
 								$splitedValue .= $value [$i];
 						}
-						var_dump ( $splited );
+						//var_dump ( $splited );
 						$value = $splited;
 						
 						/*

@@ -59,9 +59,9 @@ class StringInstruction extends \Kuink\Core\Instruction {
 		$subject = ( string ) $params [2];
 		
 		$result = str_replace ( $search, $replace, $subject );
-		var_dump ( $search );
-		var_dump ( $replace );
-		var_dump ( $subject );
+		//var_dump ( $search );
+		//var_dump ( $replace );
+		//var_dump ( $subject );
 		return $result;
 	}
 	static public function stripslashes($instManager, $instructionXmlNode) {

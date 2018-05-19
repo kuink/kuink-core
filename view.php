@@ -47,6 +47,11 @@ $KUINK_APPLICATION = null; // The Application object to run
 
 global $KUINK_CFG;
 
+if (isset($KUINK_CFG->displayNativeErrors) && $KUINK_CFG->displayNativeErrors) {
+	error_reporting(E_ALL);
+	ini_set('display_errors', 1);
+}
+
 // Handling External Roles
 $roles = array ();
 
