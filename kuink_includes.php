@@ -58,7 +58,7 @@ require_once ($KUINK_INCLUDE_PATH . 'lib/tools/securimage/securimage.php');
 require_once ($KUINK_INCLUDE_PATH . 'lib/tools/googleClientAPI/autoload.php');
 include_once ($KUINK_INCLUDE_PATH . 'lib/tools/tbs_us/tbs_class.php'); // For manupulating tempaltes odt, docx files
 include_once ($KUINK_INCLUDE_PATH . 'lib/tools/tbs_us/tbs_plugin_opentbs.php'); // For manupulating templates odt, docx files
-include_once ($KUINK_INCLUDE_PATH . 'lib/tools/smarty/autoloader.php'); // For manupulating templates odt, docx files
+//include_once ($KUINK_INCLUDE_PATH . 'lib/tools/smarty/autoloader.php'); // For manupulating templates odt, docx files
                                                                              
 // Kuink::Instructions
 foreach ( glob ( $KUINK_INCLUDE_PATH . 'lib/instruction/*.php' ) as $filename ) {

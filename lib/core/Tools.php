@@ -41,7 +41,7 @@ class Tools {
 		
 		return $KUINK_CFG->wwwRoot;
 	}
-	static public function setUrlParams($baseurl, $params) {
+	static public function setUrlParams($baseurl, $params=array()) {
 		$url_parsed = parse_url ( $baseurl );
 		$query = ( string ) $url_parsed ['query'];
 		parse_str ( $query, $query_parsed );

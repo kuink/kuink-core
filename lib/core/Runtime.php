@@ -37,9 +37,14 @@ class User {
 	function getUser() {
 		global $KUINK_BRIDGE_CFG, $KUINK_CFG;
 		
+		if (isset($_SESSION['kuink.logged.user']))
+			$kuinkUser = $_SESSION['kuink.logged.user'];
+		else
+			$kuinkUser = array ();	
+
 		$currentNode = ProcessOrchestrator::getCurrentNode ();
-		$rwx = $currentNode->rwx;
-		$impersonate = $currentNode->idUserImpersonate;
+		$rwx = isset($currentNode->rwx) ? $currentNode->rwx : null;
+		$impersonate = isset($currentNode->idUserImpersonate) ? $currentNode->idUserImpersonate : null;
 		$kuinkUser = array ();
 		$kuinkUser ['rwx'] = $rwx;
 		$kuinkUser ['isImpersonated'] = isset ( $impersonate ) ? 1 : 0;
@@ -57,7 +62,7 @@ class User {
 			// get the idCompany
 		$kuinkUser ['idCompany'] = ProcessOrchestrator::getCompany ();
 		
-		// var_dump($kuinkUser['id']);
+		//var_dump($kuinkUser['id']);
 		
 		// Load the person from fw_person
 		// Set the public key
@@ -84,7 +89,7 @@ class User {
 		// get the client ip address
 		$kuinkUser ['ip'] = $_SERVER ["REMOTE_ADDR"];
 		
-		// var_dump($kuink_user);
+		//var_dump($kuinkUser);
 		return $kuinkUser;
 	}
 }
@@ -142,7 +147,7 @@ class Runtime {
 		$currentNode = ProcessOrchestrator::getCurrentNode ();
 		// die();
 		//print_r($currentNode->params);
-		$this->params = $currentNode->params;
+		$this->params = isset($currentNode->params) ? $currentNode->params : null;
 		//foreach ( $params as $key => $value )
 		//	$this->params [$key] = $value;
 			
@@ -181,14 +186,14 @@ class Runtime {
 		$this->variables ['SYSTEM'] = $server_info;
 		$this->nodeconfiguration [NodeConfKey::SYSTEM] = $server_info;
 		
-		$nodeContext ['application'] = $currentNode->application;
-		$nodeContext ['process'] = $currentNode->process;
-		$nodeContext ['node'] = $currentNode->node;
-		$nodeContext ['action'] = $currentNode->action;
+		$nodeContext ['application'] = isset($currentNode->application) ? $currentNode->application : null;
+		$nodeContext ['process'] = isset($currentNode->process) ? $currentNode->process : null;
+		$nodeContext ['node'] = isset($currentNode->node) ? $currentNode->node : null;
+		$nodeContext ['action'] = isset($currentNode->action) ? $currentNode->action : null;
 		$nodeContext ['idContext'] = ProcessOrchestrator::getContextId ();
-		$nodeContext ['processGuid'] = $currentNode->nodeGuid;
-		$nodeContext ['nodeGuid'] = $currentNode->nodeGuid;
-		$nodeContext ['nid'] = $currentNode->application . ',' . $currentNode->process . ',' . $currentNode->nodeGuid;
+		$nodeContext ['processGuid'] = isset($currentNode->nodeGuid) ? $currentNode->nodeGuid : null;
+		$nodeContext ['nodeGuid'] = isset($currentNode->nodeGuid) ? $currentNode->nodeGuid : null;
+		$nodeContext ['nid'] = (isset($currentNode) && $currentNode !== false) ? $currentNode->application . ',' . $currentNode->process . ',' . $currentNode->nodeGuid : ',,';
 		$this->variables ['CONTEXT'] = $nodeContext;
 		
 		// kuink_mydebug('NODE', $node_name);
@@ -630,11 +635,11 @@ class Runtime {
 			
 			// var_dump( $nodexml );
 			// Get the action definition xml node
-			$action_xmlnode = null;
-			
+
 			if ($function_name) {
 				// Execute directly a function
 				// kuink_mydebug('Executing Function::'.$function_name);
+				$action_xmlnode = null;
 				$exit = 0;
 				$value = $this->function_execute ( $this->nodeconfiguration, $nodexml, $action_xmlnode, $function_name, $this->variables, $exit, $function_params );
 				return $value;
@@ -717,7 +722,12 @@ class Runtime {
 			$html .= '<pre class="pre-scrollable">';
 			// var_dump( $KUINK_TRACE );
 			foreach ( $KUINK_MANUAL_TRACE as $key => $value ) {
-				$html .= '<p>' . $key . ' => ' . $value . '</p>';
+				$dump = '';
+				if (is_string($value))
+					$dump = $value;
+				else
+					$dump = var_export($value, true);				
+				$html .= $dump; //'<p>' . $key . ' => ' . $dump . '</p>';
 			}
 			$html .= '</pre></div>';
 			
@@ -738,9 +748,17 @@ class Runtime {
 			$html .= '<a href="javascript:;" onmousedown="if(document.getElementById(\'trace\').style.display == \'none\'){ document.getElementById(\'trace\').style.display = \'block\'; }else{ document.getElementById(\'trace\').style.display = \'none\'; }">Show/Hide</a><br/> ';
 			$html .= '<div id="trace" style="display:none">';
 			$html .= '<pre class="pre-scrollable">';
-			// var_dump( $KUINK_TRACE );
+			//var_dump( $KUINK_TRACE );
 			foreach ( $KUINK_TRACE as $key => $value ) {
-				$html .= '<p>' . $key . ' => ' . $value . '</p>';
+				//if (is_string($value))
+				//var_dump($value);
+				$dump = '';
+				if (is_string($value))
+					$dump = $value;
+				else
+					$dump = var_export($value, true);
+
+				$html .= '<pre>' . $key . ' => ' . $dump . '</pre>';
 			}
 			$html .= '</pre>';
 			$html .= '</div>';
@@ -841,7 +859,7 @@ class Runtime {
 		// $currentRWX = $stack->rwx;
 		
 		$stack = ProcessOrchestrator::getCurrentNode ();
-		$currentRWX = $stack->rwx;
+		$currentRWX = isset($stack->rwx) ? $stack->rwx : null;
 		
 		// var_dump($actions);
 		foreach ( $actions as $action ) {
@@ -1179,35 +1197,35 @@ class Runtime {
 				
 				// var_dump( $course );
 				$url = Tools::getWWWRoot ();
-				global $course;
-				
+				global $KUINK_BRIDGE_CFG;
+
 				$layout = \Kuink\UI\Layout\Layout::getInstance ();
-				$breadcrumbEntries = array (
-						array (
-								'label' => Language::getString ( 'home' ),
-								'href' => $url 
-						),
-						array (
-								'label' => $course->fullname,
-								'href' => $url . '/course/view.php?id=' . $course->id,
-								'last' => false 
-						),
-						array (
-								'label' => $app_desc,
-								'href' => $nodeconfiguration [NodeConfKey::BASEURL],
-								'last' => false 
-						),
-						array (
-								'label' => $proc_desc,
-								'href' => '',
-								'last' => false 
-						),
-						array (
-								'label' => $node_desc,
-								'href' => '',
-								'last' => true 
-						) 
+				$breadcrumbEntries = array ();
+				$breadcrumbEntries[] = array (
+					'label' => Language::getString ( 'home' ),
+					'href' => $url 
 				);
+				if (isset($KUINK_BRIDGE_CFG->trigger->url))
+					$breadcrumbEntries[] = array (
+						'label' => $KUINK_BRIDGE_CFG->trigger->label,
+						'href'  => $KUINK_BRIDGE_CFG->trigger->url,
+						'last'  => false 
+					);
+				$breadcrumbEntries[] = array (
+					'label' => $app_desc,
+					'href' => $nodeconfiguration [NodeConfKey::BASEURL],
+					'last' => false 
+				);
+				$breadcrumbEntries[] = array (
+					'label' => $proc_desc,
+					'href' => '',
+					'last' => false 
+				);
+				$breadcrumbEntries[] = array (
+					'label' => $node_desc,
+					'href' => '',
+					'last' => true 
+				); 
 				$layout->setBreadCrumb ( $breadcrumbEntries );
 				$layout->setAppName ( $app_desc );
 				$layout->setProcessName ( $proc_desc );
@@ -1224,7 +1242,7 @@ class Runtime {
 				
 				// We want jus this control
 				$refreshControlName = isset ( $_GET ['control'] ) ? $_GET ['control'] : null;
-				
+				if (isset($this->current_controls))
 				foreach ( $this->current_controls as $uielem ) {
 					$currentNode = ProcessOrchestrator::getCurrentNode ();
 					$rwx = $currentNode->rwx;
@@ -1254,7 +1272,7 @@ class Runtime {
 		$form_type = isset ( $_POST ['_FORM_TYPE'] ) ? $_POST ['_FORM_TYPE'] : null;
 		$multi = ($form_type == 'multi');
 		
-		$listFormFields = $_POST ['_FORM_LIST_FIELDS'];
+		$listFormFields = isset($_POST ['_FORM_LIST_FIELDS']) ? $_POST ['_FORM_LIST_FIELDS'] : null;
 		$listFormFieldsArr = explode ( ',', $listFormFields );
 		foreach ( $listFormFieldsArr as $listFormField ) {
 			if ($listFormField != '') {
@@ -1275,8 +1293,8 @@ class Runtime {
 			if ($multi) {
 				// if multi form then organize in form POSTDATA[id][field] = value
 				$newKey = explode ( '-', $key );
-				$id = $newKey [0];
-				$field = $newKey [1];
+				$id = isset($newKey [0]) ? $newKey [0] : '';
+				$field = isset($newKey [1]) ? $newKey [1] : '';
 				$postdata [$id] [$field] = $value;
 			} else if (is_array ( $value )) {
 				$valuearray = $value + array (
@@ -1411,7 +1429,7 @@ class Runtime {
 			throw new \Exception ( 'Instruction "' . $inst_name . '" needs attribute "' . $attr_name . '" which was not supplied.' );
 		}
 		$attr_value = ( string ) $instruction [$attr_name];
-		$type = $attr_value [0];
+		$type = isset($attr_value[0]) ? $attr_value[0] : null;
 		$var_name = substr ( $attr_value, 1, strlen ( $attr_value ) - 1 );
 		
 		if ($type == '$' || $type == '#' || $type == '@') {
@@ -1890,6 +1908,8 @@ class Runtime {
 		$param_values = ($function_params == '') ? array () : $variables [$function_params];
 		$param_vars = array ();
 		
+		$action_xmlnode = null;
+		$actionname = '';
 		foreach ( $paramsxml as $param ) {
 			
 			$paramname = ( string ) $param ['name'];
@@ -1921,9 +1941,9 @@ class Runtime {
 		if (trim ( $library ) != '') {
 			// Call a function in a different application,process
 			$lib_parts = explode ( ',', $library );
-			// var_dump($lib_parts);
-			if (count ( $lib_parts ) < 3)
+			if (count ( $lib_parts ) < 3) {
 				throw new \Exception ( 'ERROR: library name must be appname,processname,nodename' );
+			}
 			
 			$lib_appname = trim ( $lib_parts [0] );
 			$lib_processname = trim ( $lib_parts [1] );
@@ -1964,9 +1984,9 @@ class Runtime {
 		$item_name = $this->get_inst_attr ( $instruction_xmlnode, 'item', $variables, true );
 		$key_name = $this->get_inst_attr ( $instruction_xmlnode, 'key', $variables, false );
 		
-		$set = $variables [$var_name];
+		$set = isset($variables [$var_name]) ? $variables [$var_name] : array();
 		$value = '';
-		// var_dump($set);
+		//var_dump($set);
 		foreach ( $set as $key => $item ) {
 			// var_dump($key.'=>'.$item);
 			// $variables[$item_name] = (array)$item;
@@ -2034,7 +2054,7 @@ class Runtime {
 				if (!$value)
 					return; //If the condition is not true then return immediately, else let it flow
 		}
-		$KUINK_TRACE[] = '*** EXCEPTION ('.$name.') - '.$message;   
+		$KUINK_TRACE[] = '*** EXCEPTION ('.$name.')';   
 		if ($name != '') {	
 			//This is an exception with a name specified so act differently
 			$paramsxml = $instruction_xmlnode->xpath('./Param');
@@ -2413,8 +2433,9 @@ class Runtime {
 			foreach ($instructions as $new_instruction ) {
 				//print_object($exit);
 				//print_object($new_instruction);
-
-				$value .= $this->instruction_execute ($nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction[0], $actionname,  $variables, $exit);
+				$instResult = $this->instruction_execute ($nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction[0], $actionname,  $variables, $exit);
+				if (is_string($instResult))
+					$value .= $instResult;
 			}
 		}
 		catch ( GenericException $e ) {
@@ -3469,7 +3490,7 @@ class Runtime {
 		
 		// Adding the _pk parameter
 		// var_dump($pks);
-		$params ['_pk'] = implode ( ',', $pks );
+		$params ['_pk'] = isset($pks) ? implode ( ',', $pks ) : null;
 		
 		// var_dump($dataAccessNid);
 		// var_dump($nodeconfiguration);
@@ -3699,11 +3720,11 @@ class Runtime {
 				// $value = ($key == '') ? $variable : $variable[$key];
 			$value = '';
 			switch ($key) {
-				case '' : $value = $variables [$varname]; break;
+				case '' : $value = isset($variables [$varname]) ? $variables [$varname] : ''; break;
 				case '__first' : $value = array_values ( $variables [$varname] ) [0]; break;
 				case '__length' : $value = count ( $variables [$varname] ); break;
 				default :
-					$value = $variables[$varname][$key];
+					$value = isset($variables[$varname][$key]) ? $variables[$varname][$key] : '';
 			}
 		}
 		
@@ -3741,13 +3762,14 @@ class Runtime {
 			} else if ($process == 'true') {
 				ProcessOrchestrator::setProcessVariable($varname, $key, $value);
 			} else { //local variable
+				$varExists = isset($variables[$varname]);
 				if ($keyIsSet && $key != '') {
-						$var = $variables[$varname];
+						$var = ($varExists) ? $variables[$varname] : array();
 						$var[$key]= (is_array($value) || $value == null) ? $value : (string)$value;
 						$variables[$varname] = $var;
 				} else if ($keyIsSet && $key == '') {
 						//Add an array entry
-						$var = $variables[$varname];
+						$var = ($varExists) ? $variables[$varname] : array();
 						$var[]= (is_array($value)) ? $value : (string)$value;
 						$variables[$varname] = $var;
 				} else

@@ -103,6 +103,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		
 		$KUINK_TRACE [] = __METHOD__;
 		$KUINK_TRACE [] = $sql;
+		$KUINK_TRACE [] = $params;
 		
 		$this->executeSql ( $sql, $params );
 		
@@ -197,7 +198,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		}
 		
 		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $sql;
+		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
+		//$KUINK_TRACE [] = $params;
 		
 		$this->executeSql ( $sql, $params );
 		
@@ -595,6 +597,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		$sort = isset ( $params ['_sort'] ) ? ' ORDER BY ' . $params ['_sort'] : '';
 		$pageNum = $this->getParam ( $params, '_pageNum', false, 0 );
 		$pageSize = $this->getParam ( $params, '_pageSize', false, 0 );
+		$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
+  	$acl = ($aclPermissions == 'false') ? 'false' : 'true';
+  	$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::view.all' : $aclPermissions;
 		
 		unset ( $params ['_entity'] );
 		unset ( $params ['_attributes'] );
@@ -768,7 +773,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
   	$acl = ($aclPermissions == 'false') ? 'false' : 'true';
   	$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::update.all' : $aclPermissions;
-		
+
 		// Get the primary keys
 		$pks = explode ( ',', $pk );
 		
@@ -788,7 +793,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		foreach ( $pks as $field ) {
 			if ($count > 0)
 				$where .= ' AND ';
-			$onlyPks[$field] = $params[$field]; 
+			$onlyPks[$field] = isset($params[$field]) ? $params[$field] : null; 
 			unset ( $params [$field] );
 			$where .= '`' . $field . '` = ' . ':' . $field . ' ';
 			$count ++;
@@ -849,7 +854,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   	else
   	{
   		//Parse XSQL
-  		$sql = '';
+			$sql = '';
+			$limit = '';
 
   		$xinstructions = $xsql[0]->children();
   		//print_object($xinstructions);
@@ -895,8 +901,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   		//$param_value = mysql_escape_string($value);
   		$param_value = $value;
   		$sql = str_replace('{param->'.$key.'}', $param_value , $sql);
-  	}
-  	$sql = str_replace('{table_prefix}', "{$this->curr_db_prefix}" , $sql);
+		}
+		if (isset($this->curr_db_prefix))
+  		$sql = str_replace('{table_prefix}', "{$this->curr_db_prefix}" , $sql);
 
   	if ($hasGroupBy && $count)
   		$sql = 'SELECT COUNT(*) as _total FROM ('.$sql.') __total';
@@ -1838,7 +1845,35 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   public function getSchemaName($params) {
   	$schemaName = (string)$this->dataSource->getParam('database', false);
   	return $schemaName;
-  }  
+	}  
+	
+	/**
+	 * Replaces any parameter placeholders in a query with the value of that
+	 * parameter. Useful for debugging. Assumes anonymous parameters from 
+	 * $params are are in the same order as specified in $query
+	 *
+	 * @param string $query The sql query with parameter placeholders
+	 * @param array $params The array of substitution parameters
+	 * @return string The interpolated query
+	 */
+	public static function interpolateQuery($query, $params) {
+		$keys = array();
+
+		# build a regular expression for each parameter
+		foreach ($params as $key => $value) {
+				if (is_string($key)) {
+						$keys[] = '/:'.$key.'/';
+				} else {
+						$keys[] = '/[?]/';
+				}
+		}
+
+		$query = preg_replace($keys, $params, $query, 1, $count);
+
+		#trigger_error('replaced '.$count.' keys');
+
+		return $query;
+	}	
 }
 
 ?>

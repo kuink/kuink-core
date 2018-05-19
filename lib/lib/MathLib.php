@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 class MathLib {
-	function MathLib($nodeconfiguration, $msg_manager) {
+	function __construct($nodeconfiguration, $msg_manager) {
 		return;
 	}
 	function sum($params) {

@@ -17,7 +17,7 @@
 class UtilsLib {
 	var $nodeconfiguration;
 	var $msg_manager;
-	function UtilsLib($nodeconfiguration, $msg_manager) {
+	function __construct($nodeconfiguration, $msg_manager) {
 		$this->nodeconfiguration = $nodeconfiguration;
 		$this->msg_manager = $msg_manager;
 		return;
@@ -44,7 +44,7 @@ substr ( $charid, 0, 8 ) . $hyphen . substr ( $charid, 8, 4 ) . $hyphen . substr
 			return $uuid;
 		}
 	}
-	function Uuid($params) {
+	function Uuid($params=null) {
 		return exec ( 'cat /proc/sys/kernel/random/uuid' );
 	}
 	function ActionUrl($params) {

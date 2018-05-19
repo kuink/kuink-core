@@ -126,9 +126,9 @@ class EvalExpr {
 		
 		if ($varType == 0) { // LOCAL {
 			if ($key == '')
-				$return = $variables [$name];
+				$return = isset($variables [$name]) ? $variables [$name] : null;
 			else {
-				$return = $variables [$name] [$key];
+				$return = isset($variables [$name] [$key]) ? $variables [$name] [$key] : null;
 			}
 		} else if ($varType == 1) { // PROCESS
 			$return = ProcessOrchestrator::getProcessVariable ( $name, $key );
@@ -199,8 +199,8 @@ class EvalExpr {
 			// print($type.'»'.$varType.'::'.$matches[0].'::'.$varKey);
 			
 			$varValue = $this->getVariableValueExt ( $varName, $varKey, $varType, $variables, $stringIsolation );
-			$KUINK_TRACE [] = "VarType:$varType  name:$varName  key:$varKey   value:$varValue";
-			$expr = str_replace ( $matches [0], $varValue, $expr );
+			$KUINK_TRACE [] = "VarType:$varType  name:$varName  key:$varKey   value:".(is_array($varValue) ? '' : (string)$varValue);
+			$expr = str_replace ( $matches [0], (is_array($varValue) ? '' : (string)$varValue), $expr );
 			$expr2 = str_replace ( $matches [0], '', $expr2 );
 			// print ("Expr: " . $expr . " | Expr2:".$expr2. "<br/>");
 		}
@@ -605,7 +605,7 @@ class EvalMathStack {
 		return null;
 	}
 	function last($n = 1) {
-		return $this->stack [$this->count - $n];
+		return isset($this->stack [$this->count - $n]) ? $this->stack [$this->count - $n] : null;
 	}
 }
 

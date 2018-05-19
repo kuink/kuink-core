@@ -36,7 +36,8 @@ class Smarty extends \Smarty {
 		$this->assign ( 'THEME', $themeName );
 		
 		$context = \Kuink\Core\ProcessOrchestrator::getContext ();
-		$this->assign ( '_idContext', $context->id );
+		
+		$this->assign ( '_idContext', ($context == null) ? null : $context->id );
 		$this->assign ( '_apiUrl', $KUINK_CFG->apiUrl );
 		$this->assign ( '_kuinkRoot', $KUINK_CFG->kuinkRoot );
 		$this->assign ( '_themeRoot', $KUINK_CFG->themeRoot );
@@ -46,7 +47,10 @@ class Smarty extends \Smarty {
 		$this->assign ( '_photoUrl', $KUINK_CFG->photoRemote );
 		$this->assign ( '_environment', $KUINK_CFG->environment );
 		$this->assign ( '_lang', $KUINK_BRIDGE_CFG->auth->user->lang );		
-		$this->assign ( '_userEmail', ($KUINK_BRIDGE_CFG->auth->user->email == 'root@localhost') ? '' : $KUINK_BRIDGE_CFG->auth->user->email );		
+		$userEmail = '';
+		if (isset($KUINK_BRIDGE_CFG->auth->user->email) && ($KUINK_BRIDGE_CFG->auth->user->email != 'root@localhost'))
+			$userEmail = $KUINK_BRIDGE_CFG->auth->user->email;
+		$this->assign ( '_userEmail',  $userEmail  );		
 		//Get rid of unnecessary reporting
 		$this->error_reporting = E_ALL & ~E_NOTICE;
 		$this->muteExpectedErrors();
@@ -89,14 +93,14 @@ class Smarty extends \Smarty {
 	public function render($html) {
 		global $KUINK_CFG;
 		$POSITION = array ();
-		
 		// Set post redirect pattern to prevent double-click and F5
 		// var_dump($_GET);
 		// var_dump($_SERVER);
 		
 		$currentNode = \Kuink\Core\ProcessOrchestrator::getCurrentNode ();
+		$qstrForm = isset($_GET ['form']) ? $_GET ['form'] : '';
 		// var_dump($currentNode);
-		$redirectUrl = $currentNode->url . '&action=' . $currentNode->action . '&actionvalue=' . $currentNode->actionValue . '&form=' . $_GET ['form'];
+		$redirectUrl = $currentNode->url . '&action=' . $currentNode->action . '&actionvalue=' . $currentNode->actionValue . '&form=' . $qstrForm;
 		$this->setRedirectHeader ( $redirectUrl );
 		
 		foreach ( $this->positionsHtml as $key => $value ) {

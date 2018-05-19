@@ -669,22 +669,25 @@ class Reflection {
 	 */
 	static private function directoryContents($directory) {
 		// open this directory
-		$myDirectory = opendir ( $directory );
-		
-		// get each entry
-		while ( $entryName = readdir ( $myDirectory ) ) {
-			if ($entryName != '.' and $entryName != '..')
-				$dirArray [] = $entryName;
+		$dirArray = array();
+		if (is_dir($directory)) {
+			$myDirectory = opendir ( $directory );
+			
+			// get each entry
+			while ( $entryName = readdir ( $myDirectory ) ) {
+				if ($entryName != '.' and $entryName != '..')
+					$dirArray [] = $entryName;
+			}
+			
+			// close directory
+			closedir ( $myDirectory );
+			
+			// sort 'em
+			sort ( $dirArray );
+			
+			// remove self
+			// unset( $dirArray[0] );
 		}
-		
-		// close directory
-		closedir ( $myDirectory );
-		
-		// sort 'em
-		sort ( $dirArray );
-		
-		// remove self
-		// unset( $dirArray[0] );
 		
 		return $dirArray;
 	}

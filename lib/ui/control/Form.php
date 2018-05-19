@@ -1315,7 +1315,7 @@ class Form extends Control {
 		) );
 		$params ['personTimeZoneOffset'] = $personTimeZoneOffset;
 		$params ['personTimeZone'] = $user ['timezone'];
-		$params ['validate'] = $this->validate;
+		$params ['validate'] = isset($this->validate) ? $this->validate : null;
 		
 		// var_dump( $this->tabs );
 		// var_dump( $this->columns );
@@ -1413,7 +1413,7 @@ class Form extends Control {
 				$numberOfInlineFields = 1;
 				$j = $i+1;
 				//print(' | '.(string)($fields[$i]['attributes']['id']));
-				if ($lastNumberOfInlineFields == 1)
+				if ($lastNumberOfInlineFields == 1 && isset($fields[$j]))
 					while (($fields[$j]['attributes']['inline'] != 'false') && ($j < count($fields))) {
 						//print('*');
 						$j++; 
@@ -1422,11 +1422,11 @@ class Form extends Control {
 				if ($numberOfInlineFields > 1)
 					$lastNumberOfInlineFields = $numberOfInlineFields;
 				$fieldId = $fields[$i]['attributes']['id'];
-				$nextFieldId = $fields[$i+1]['attributes']['id'];
-				$this->fields[$fieldId]['attributes']['_rowStart'] = (int)($this->fields[$fieldId]['attributes'][inline] == 'false');
-				$this->fields[$fieldId]['attributes']['_rowEnd'] = (int) (($this->fields[$nextFieldId]['attributes'][inline] == 'false') || ($i == count($fields)-1));
+				$nextFieldId = isset($fields[$i+1]) ? $fields[$i+1]['attributes']['id'] : null;
+				$this->fields[$fieldId]['attributes']['_rowStart'] = (int)($this->fields[$fieldId]['attributes']['inline'] == 'false');
+				$this->fields[$fieldId]['attributes']['_rowEnd'] = (int) (isset($this->fields[$nextFieldId]) && ($this->fields[$nextFieldId]['attributes']['inline'] == 'false') || ($i == count($fields)-1));
 				$this->fields[$fieldId]['attributes']['_rowLength'] = ($i == count($fields)) ? 1 : $lastNumberOfInlineFields;
-				if (($this->fields[$nextFieldId]['attributes']['inline'] == 'false') || ($i == count($fields)))
+				if (isset($this->fields[$nextFieldId]) && ($this->fields[$nextFieldId]['attributes']['inline'] == 'false') || ($i == count($fields)))
 					$lastNumberOfInlineFields = 1;
 			}
 			//print_object($this->fields);

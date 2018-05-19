@@ -131,7 +131,7 @@ class Layout {
 		// kuink_mydebug( 'HEY', __DIR__.'/../../theme/'.$this->theme.'/ui/control/'.$template_name );
 		
 		$output = $smarty->fetch ( __DIR__ . '/../../theme/' . $this->theme . '/ui/control/' . $template_name );
-		
+		//var_dump( __DIR__ . '/../../theme/' . $this->theme . '/ui/control/' . $template_name);
 		$this->layoutAdapter->addHtml ( $output, $position );
 		// $LAYOUT->addHtml($output, $this->position);
 		

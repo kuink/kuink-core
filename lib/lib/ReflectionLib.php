@@ -17,7 +17,7 @@
 class ReflectionLib extends \Kuink\Core\Lib {
 	var $nodeconfiguration;
 	var $msg_manager;
-	function ReflectionLib($nodeconfiguration, $msg_manager) {
+	function __construct($nodeconfiguration, $msg_manager) {
 		$this->nodeconfiguration = $nodeconfiguration;
 		$this->msg_manager = $msg_manager;
 		return;
@@ -66,6 +66,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		return $bases;
 	}
 	function getApplications($params) {
+		$paramsDef = array();
 		$paramsDef [] = $this->addParam ( $paramsDef, 'base', 'text', true );
 		$params = $this->ckeckParams ( $paramsDef, $params );
 		
@@ -73,6 +74,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		return $applications;
 	}
 	function isPhysicalApplication($params) {
+		$paramsDef = array();
 		$paramsDef [] = $this->addParam ( $paramsDef, 'base', 'text', true );
 		$paramsDef [] = $this->addParam ( $paramsDef, 'application', 'text', true );
 		$params = $this->ckeckParams ( $paramsDef, $params );
@@ -82,6 +84,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		return $isApp;
 	}
 	function getApplicationProcesses($params) {
+		$paramsDef = array();
 		$paramsDef [] = $this->addParam ( $paramsDef, 'application', 'text', true );
 		$params = $this->ckeckParams ( $paramsDef, $params );
 		
@@ -90,6 +93,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		return $processes;
 	}
 	function getProcessLibraries($params) {
+		$paramsDef = array();
 		$paramsDef [] = $this->addParam ( $paramsDef, 'application', 'text', true );
 		$paramsDef [] = $this->addParam ( $paramsDef, 'process', 'text', true );
 		$params = $this->ckeckParams ( $paramsDef, $params );

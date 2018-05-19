@@ -163,7 +163,6 @@ abstract class Control {
 		$params ['_position'] = $this->position;
 		$params ['_skin'] = $this->skin;
 		$params ['_skeleton'] = $this->skeleton;
-		
 		$layout->addControl ( $this->type, $params, $this->skeleton, $this->skin, $this->position );
 	}
 	

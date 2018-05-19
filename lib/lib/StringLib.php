@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 class StringLib {
-	function StringLib($nodeconfiguration, $msg_manager) {
+	function __construct($nodeconfiguration, $msg_manager) {
 		return;
 	}
 	function contains($params) {
@@ -35,15 +35,15 @@ class StringLib {
 		}
 		return 0;
 	}
-	function Concatenate($params) {
+	function concatenate($params) {
 		$final_string = '';
-		
-		foreach ( $params as $param )
-			$final_string .= ( string ) $param;
+		foreach ( $params as $param ) {
+			$final_string .= !is_array($param) ? (string)$param : '';
+		}
 		
 		return $final_string;
 	}
-	function Replace($params) {
+	function replace($params) {
 		$search = ( string ) $params [0];
 		$replace = ( string ) $params [1];
 		$string = ( string ) $params [2];

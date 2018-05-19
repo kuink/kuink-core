@@ -61,7 +61,7 @@ $configuration = $KUINK_BRIDGE_CFG->configuration;
 $lang = $KUINK_BRIDGE_CFG->auth->user->lang;
 
 //Setting the modal default to widgetContainer to display widgets correctly
-$modal = (string)$_GET['modal'];
+$modal = isset($_GET['modal']) ? (string)$_GET['modal'] : '';
 //if ($modal == '') 
 //	$_GET['modal'] = 'widgetContainer';
 

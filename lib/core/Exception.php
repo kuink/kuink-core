@@ -59,7 +59,7 @@ class GenericException extends \Exception {
 	}
 	
 	public function __toString() {
-		return  $this->className. ": [{$this->code}]: {$this->message}\n";
+		return  (isset($this->className) ? $this->className : ''). ": [{$this->code}]: {$this->message}\n";
 	}
 }
 // General

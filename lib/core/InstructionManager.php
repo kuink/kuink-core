@@ -119,7 +119,7 @@ class InstructionManager {
 			$value = $attr_value;
 		return ($value == '') ? $default : $value;
 	}
-	public function getVariable($name, $key) {
+	public function getVariable($name, $key=null) {
 		if ($key == null || $key == '')
 			return $this->variables [$name];
 		else

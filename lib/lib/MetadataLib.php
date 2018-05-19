@@ -27,7 +27,7 @@ class MetadataLib {
 	var $metadataDefinitionXml;
 	var $metadataData; // array with data
 	var $expandArray; // array with data (single array with the final keys)
-	function MetadataLib($nodeconfiguration, $msg_manager) {
+	function __construct($nodeconfiguration, $msg_manager) {
 		$this->nodeconfiguration = $nodeconfiguration;
 		$this->msg_manager = $msg_manager;
 		return;

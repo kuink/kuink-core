@@ -21,7 +21,7 @@ class DateTimeLib {
 		date_default_timezone_set ( 'UTC' );		
 	}
 	
-	function DateTimeLib($nodeconfiguration, $msg_manager) {
+	function __construct($nodeconfiguration, $msg_manager) {
 		$this->nodeconfiguration = $nodeconfiguration;
 		return;
 	}
@@ -87,7 +87,7 @@ class DateTimeLib {
 	 * return time();
 	 * }
 	 */
-	function Now($params) {
+	function Now($params=null) {
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		
 		// compatibility mode

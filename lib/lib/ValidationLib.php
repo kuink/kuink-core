@@ -17,7 +17,7 @@
 class ValidationLib {
 	var $nodeconfiguration;
 	var $msg_manager;
-	function ValidationLib($nodeconfiguration, $msg_manager) {
+	function __construct($nodeconfiguration, $msg_manager) {
 		$this->nodeconfiguration = $nodeconfiguration;
 		$this->msg_manager = $msg_manager;
 		return;

@@ -61,6 +61,7 @@ class XmlConnector extends \Kuink\Core\DataSourceConnector {
 			
 			// $root = $this->dom->documentElement;
 			// var_dump($root);
+			$validateXml = false; //Get this from a configuration
 			
 			if ($validateXml)
 				$errors = libxml_get_errors ();

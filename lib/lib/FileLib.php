@@ -21,7 +21,7 @@ include_once (__DIR__ . '/UtilsLib.php');
 class FileLib {
 	var $msg_manager;
 	var $nodeconfiguration;
-	function FileLib($nodeconfiguration, $msg_manager) {
+	function __construct($nodeconfiguration, $msg_manager) {
 		$this->msg_manager = $msg_manager;
 		$this->nodeconfiguration = $nodeconfiguration;
 		return;

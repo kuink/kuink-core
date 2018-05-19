@@ -96,8 +96,8 @@ class Application {
 		$context = ProcessOrchestrator::prepareContext ( $baseApplication );
 		
 		$currentNode = ProcessOrchestrator::getCurrentNode ();
-		if (! $reset) {
-			$appName = (isset ( $currentNode ) && $currentNode->application != '') ? $currentNode->application : $name;
+		if (!$reset) {
+			$appName = (isset ($currentNode ) && isset($currentNode->application) && $currentNode->application != '') ? $currentNode->application : $name;
 		} else {
 			// Reset the stack;
 			ProcessOrchestrator::clearContexts ();
@@ -347,11 +347,12 @@ class Application {
 		$menu = array ();
 		$get_role = isset ( $_GET ['role'] ) ? ( string ) $_GET ['role'] : '';
 		// If user is admin then use the impersonate capability
+		$currentRole = '';
 		if (isset ( $this->roles ['framework.admin'] ))
-			$currentrole = ($get_role == '') ? key ( $this->roles ) : $get_role;
+			$currentRole = ($get_role == '') ? key ( $this->roles ) : $get_role;
 			
 			// Get the application top menu for the current role
-		$flowMenu = $this->xmlDefinition->xpath ( '/Application/Menus/Menu[contains(@role, \'' . $currentrole . '\') and not(@startuc=\'\')]' );
+		$flowMenu = $this->xmlDefinition->xpath ( '/Application/Menus/Menu[contains(@role, \'' . $currentRole . '\') and not(@startuc=\'\')]' );
 		$menu = $this->makeMenuItems ( $flowMenu );
 		
 		// var_dump($menu);
@@ -392,11 +393,13 @@ class Application {
 				}
 			
 			if ($hasRole) {
-				$href = $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $_GET ['id'] . '&idcontext=' . $_GET ['idcontext'] . '&startuc=' . $node ['startuc'] . '&startnode=' . $node ['startnode'] . '&event=' . $node ['event'] . '&trace=' . $_GET ['trace'];
-				$hrefNoContext = ($KUINK_CFG->allowMultipleContexts) ? $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $_GET ['id'] . '&idcontext=' . uniqid () . '&startuc=' . $node ['startuc'] . '&startnode=' . $node ['startnode'] . '&event=' . $node ['event'] . '&trace=' . $_GET ['trace'] : '';
+				$qstrId = isset($_GET['id']) ? $_GET['id'] : '';
+				$qstrTrace = isset($_GET['trace']) ? $_GET['trace'] : '';
+				$href = $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $qstrId . '&idcontext=' . $_GET ['idcontext'] . '&startuc=' . $node ['startuc'] . '&startnode=' . $node ['startnode'] . '&event=' . $node ['event'] . '&trace=' . $qstrTrace;
+				$hrefNoContext = ($KUINK_CFG->allowMultipleContexts) ? $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $qstrId . '&idcontext=' . uniqid () . '&startuc=' . $node ['startuc'] . '&startnode=' . $node ['startnode'] . '&event=' . $node ['event'] . '&trace=' . $qstrTrace : '';
 				$menu [] = array (
 						'label' => kuink_get_string ( ( string ) $node ['label'], $this->name ),
-						'target' => ($this->target) ? kuink_get_string ( ( string ) $node ['target'], $this->target ) : '_self',
+						'target' => isset($this->target) ? kuink_get_string ( ( string ) $node ['target'], $this->target ) : '_self',
 						'href' => $href,
 						'hrefNoContext' => $hrefNoContext,
 						'child' => $childMenus 
@@ -569,14 +572,14 @@ class Application {
 		
 		$fwConfig = $this->getFrameworkConfig ();
 		$fwConfig = $this->getApplicationConfig ( $fwConfig );
-		
+		$qstrId = isset($_GET [QueryStringParam::ID]) ? $_GET [QueryStringParam::ID] : '';
 		$get_trace = isset ( $_GET [QueryStringParam::TRACE] ) ? ( string ) $_GET [QueryStringParam::TRACE] : '';
 		$get_modal = isset ( $_GET [QueryStringParam::MODAL] ) ? ( string ) $_GET [QueryStringParam::MODAL] : 'false';
-		$baseUrl = $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $_GET [QueryStringParam::ID];
+		$baseUrl = $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $qstrId;
 		$baseUrlParams = array (
 				QueryStringParam::ID_CONTEXT => $_GET [QueryStringParam::ID_CONTEXT],
 				QueryStringParam::TRACE => isset ( $_GET [QueryStringParam::TRACE] ) ? ( string ) $_GET [QueryStringParam::TRACE] : '',
-				QueryStringParam::ACTION_VALUE => $currentNode->action_value,
+				QueryStringParam::ACTION_VALUE => isset($currentNode->action_value) ? $currentNode->action_value : '',
 				QueryStringParam::TRACE => $get_trace 
 		);
 		if ($get_modal != 'false' && $get_modal != 'widget')
@@ -587,9 +590,9 @@ class Application {
 		$nodeconfiguration [NodeConfKey::APPLICATION] = $node->application;
 		$nodeconfiguration [NodeConfKey::NODE] = $node->node;
 		$nodeconfiguration [NodeConfKey::PROCESS] = $node->process;
-		$nodeconfiguration [NodeConfKey::EVENT] = $currentNode->event;
-		$nodeconfiguration [NodeConfKey::ACTION] = $currentNode->action;
-		$nodeconfiguration [NodeConfKey::ACTION_VALUE] = $currentNode->actionValue;
+		$nodeconfiguration [NodeConfKey::EVENT] = isset($currentNode->event) ? $currentNode->event : null;
+		$nodeconfiguration [NodeConfKey::ACTION] = isset($currentNode->action) ? $currentNode->action : null;;
+		$nodeconfiguration [NodeConfKey::ACTION_VALUE] = isset($currentNode->actionValue) ? $currentNode->actionValue : null;
 		$nodeconfiguration [NodeConfKey::BASEURL] = $baseUrl;
 		$nodeconfiguration [NodeConfKey::CONFIG] = $fwConfig;
 		$nodeconfiguration [NodeConfKey::INSTANCE_CONFIG_RAW] = $this->config;

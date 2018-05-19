@@ -265,9 +265,10 @@ class Grid extends Control {
 		
 		$this->dynamicColumns = array ();
 		
-		$this->pagesize = $this->getPageSize ();
+		$this->pagesize = $this->getPageSize (null);
 		
 		$this->export = isset ( $_GET ['export'] ) ? true : false;
+		$this->tableinfercolumns = array();
 		
 		// Getting the page to display
 		// $currentStoredPage = \Kuink\Core\ProcessOrchestrator::getProcessVariable('__grid_'.$this->name, 'page');
@@ -466,7 +467,7 @@ class Grid extends Control {
 		if ($attributes [GridColumnProperty::HIDDEN] == 'true')
 			if (($this->hidden !== NULL) && (! (in_array ( $name, $this->hidden ))))
 				$attributes [GridColumnProperty::HIDDEN] = 'false';
-		if (in_array ( $name, $this->hidden ))
+		if (is_array($this->hidden) && in_array ( $name, $this->hidden ))
 			$attributes [GridColumnProperty::HIDDEN] = 'true';
 		
 		$attributes [GridColumnProperty::COLLAPSED] = $this->getProperty ( $name, GridColumnProperty::COLLAPSED, false, GridColumnDefaults::COLLAPSED, $column );
@@ -640,7 +641,7 @@ class Grid extends Control {
 			// Hack to rteplace form in base url
 		$freeze = $this->getProperty ( $this->name, GridProperty::FREEZE, false, GridDefaults::FREEZE, null, true );
 		if ($freeze != "true") {
-			$getForm = $_GET ['form'];
+			$getForm = isset($_GET ['form']) ? $_GET ['form'] : null;
 			$this->baseurl = str_replace ( 'form=' . $getForm, 'form=' . $this->name, $this->baseurl );
 		}
 		// var_dump($this->collapsible);
@@ -665,7 +666,7 @@ class Grid extends Control {
 		 * This applies to all params included under <View> element
 		 */
 		$view = $tablexml->xpath ( './View' );
-		$this->view_params = $this->buildViewParams ( $view [0] );
+		$this->view_params = isset($view[0]) ? $this->buildViewParams ( $view [0] ) : array();
 		
 		foreach ( $global_actions as $global_action ) {
 			$this->is_form = true;
@@ -699,8 +700,8 @@ class Grid extends Control {
 		                       
 		// Expand dynamic added columns
 		foreach ( $columns as $column ) {
+			$colname = ( string ) $this->getProperty ( '', GridColumnProperty::NAME, false, GridColumnDefaults::NAME, $column );			
 			$colType = ( string ) $this->getProperty ( $colname, GridColumnProperty::TYPE, false, GridColumnDefaults::TYPE, $column );
-			$colName = ( string ) $this->getProperty ( '', GridColumnProperty::NAME, false, GridColumnDefaults::NAME, $column );
 			if ($colType == 'container') {
 				// Add all the columns in this container
 				foreach ( $this->properties as $dynColumn ) {
@@ -930,9 +931,9 @@ class Grid extends Control {
 						$datatoinsert [$current_key] ['value'] = $value;
 					}
 					// Handling rules
-					$colRules = $this->tablecolrules [$index];
+					$colRules = isset($this->tablecolrules [$index]) ? $this->tablecolrules [$index] : array();
 					// initialize with the default column attributes that can be changed by the rules
-					$colAttributes = $this->tablecolattributes [$index];
+					$colAttributes = isset($this->tablecolattributes [$index]) ? $this->tablecolattributes [$index] : array();
 					foreach ( $colRules as $attrName => $ruleCondition ) {
 						$condExpr = $ruleCondition ['condition'];
 						$condCapability = $ruleCondition ['capability'];
@@ -997,7 +998,7 @@ class Grid extends Control {
 					// handle infered columns formatters
 					$tableColFormatter = null;
 					if (! in_array ( $column, $this->tableinfercolumns ) && (strpos ( $column, '__infer' ) === false)) {
-						$tableColFormatter = $this->tablecolformatter [$index];
+						$tableColFormatter = isset($this->tablecolformatter [$index]) ? $this->tablecolformatter [$index] : null;
 					} else {
 						if (count ( $originalValuesArray ) > 0) {
 							$arrayKeys = array_keys ( $originalValuesArray );
@@ -1189,7 +1190,7 @@ class Grid extends Control {
 									$location = $location . '&previousidcontext=' . $currentIdContext;
 									$target = '_blank';
 								}
-								
+								$confirm_text = '';
 								if ($confirm_label != 'false') {
 									
 									$confirm_text = ($confirm_label == 'true') ? Core\Language::getString ( 'ask_proceed', 'framework' ) : Core\Language::getString ( $confirm_label, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
@@ -1621,7 +1622,7 @@ class Grid extends Control {
 		$params ['isPageable'] = $this->pageable;
 		$params ['pageSize'] = $this->pagesize;
 		$params ['pageCurrent'] = $this->page;
-		$params ['pageTotal'] = ( int ) ($this->total / $this->pagesize) + 1;
+		$params ['pageTotal'] = ($this->pagesize != 0) ? ( int ) ($this->total / $this->pagesize) + 1 : 1;
 		$params ['recordsTotal'] = ( int ) ($this->total);
 		$params ['globalActions'] = $globalActions;
 		$params ['exportable'] = $this->exportable;
@@ -1654,7 +1655,7 @@ class Grid extends Control {
 		
 		$dateTimeLib = new \DateTimeLib ( $this->nodeconfiguration, null );
 		$personTimeZoneOffset = $dateTimeLib->getTzOffset ( array (
-				0 => $neon_user ['timezone'] 
+				0 => $kuink_user ['timezone']
 		) );
 		$params ['personTimeZoneOffset'] = $personTimeZoneOffset;
 		$params ['personTimeZone'] = $kuink_user ['timezone'];
