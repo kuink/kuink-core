@@ -102,8 +102,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		}
 		
 		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $sql;
-		$KUINK_TRACE [] = $params;
+		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
 		
 		$this->executeSql ( $sql, $params );
 		
@@ -237,7 +236,6 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
 		$acl = ($aclPermissions == 'false') ? 'false' : 'true';
 		$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::delete.all' : $aclPermissions;
-		
 		if (isset ( $params ['_sql'] )) {
 			$sql = $this->prepareStatementToExecute ( $params );
 		} else {
@@ -245,7 +243,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		}
 		
 		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $sql;
+		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
 		
 		$canDelete = true;
 		if ($acl == 'true') {
@@ -257,7 +255,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			//Try to load the record with the permissions
 			$record = $this->load($params);
 			$canDelete = (count($record) > 0);
-		
+			//var_dump($canDelete);
+			//var_dump($params);
 		}
   	 
 		if ($canDelete)
@@ -447,7 +446,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			$sql .= ' FOR UPDATE';
 		
 		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $sql;
+		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
 		
 		$records = $this->executeSql ( $sql, $params, true, false );
 		
@@ -702,9 +701,23 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			$attributes = implode ( ',', $newAttrs );
 		}
 		
-		$sql = "SELECT $attributes FROM `$entity` e $multilang $where $sort $limit";
-		
-		return $sql;
+  	if ($acl == 'true')
+  		$sql = "SELECT $attributes FROM `$entity` e $multilang $where $sort"; //put the limit in the outer query not in inner query
+  	else
+  		$sql = "SELECT $attributes FROM `$entity` e $multilang $where $sort $limit";
+  	
+  	if ($acl == 'true') {
+  		$aclPermissions = str_replace(',', "','", $aclPermissions);
+  		$aclPermissions = str_replace(' ', "", $aclPermissions);
+  		$aclPermissions = "'".$aclPermissions."'";
+  		
+  		$sql = "SELECT _aclBase.* FROM (".$sql.") _aclBase 
+  				WHERE _aclBase.id_acl IN 
+  					(SELECT _aclc.id_acl FROM _fw_access_control_list_capability _aclc
+  					 WHERE _aclc.id_acl = _aclBase.id_acl AND _aclc.code IN (".$aclPermissions.") AND _aclc.id_person='".$this->user['id']."') ".$limit;
+  	}
+
+  	return $sql;
 	}
 	private function getPreparedStatementInsert($params) {
 		$entity = $this->getParam ( $params, '_entity', true );
@@ -836,7 +849,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	private function xsql($instruction, $params, $count = false) {
   	$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
   	$acl = ($aclPermissions == 'false') ? 'false' : 'true';
-  	$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::view.all' : $aclPermissions;
+		$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::view.all' : $aclPermissions;
+		$tablePrefix = $this->dataSource->getParam ( 'prefix', false, '' );
 		
 		// global $CFG;
 		// global $KUINK_TRACE;
@@ -902,8 +916,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   		$param_value = $value;
   		$sql = str_replace('{param->'.$key.'}', $param_value , $sql);
 		}
-		if (isset($this->curr_db_prefix))
-  		$sql = str_replace('{table_prefix}', "{$this->curr_db_prefix}" , $sql);
+			$sql = str_replace('{table_prefix}', $tablePrefix , $sql);
 
   	if ($hasGroupBy && $count)
   		$sql = 'SELECT COUNT(*) as _total FROM ('.$sql.') __total';
@@ -1858,18 +1871,19 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	 */
 	public static function interpolateQuery($query, $params) {
 		$keys = array();
+		$paramsTransformed = $params;
 
-		# build a regular expression for each parameter
 		foreach ($params as $key => $value) {
-				if (is_string($key)) {
-						$keys[] = '/:'.$key.'/';
-				} else {
-						$keys[] = '/[?]/';
-				}
+			if (is_string($key))
+				$keys[] = '/:'.$key.'/';
+			else
+				$keys[] = '/[?]/';
+			if (is_string($value))
+				$paramsTransformed[$key] = '\''.$value.'\'';
 		}
 
-		$query = preg_replace($keys, $params, $query, 1, $count);
-
+		$query = preg_replace($keys, $paramsTransformed, $query, 1, $count);
+	
 		#trigger_error('replaced '.$count.' keys');
 
 		return $query;
