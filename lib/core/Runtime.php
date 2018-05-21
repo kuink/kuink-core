@@ -1692,6 +1692,9 @@ class Runtime {
 			case 'Commit' :
 			case 'RollBack' :
 			case 'Dummy' :
+            case 'Auth.setLoggedUser' :
+                $result = $this->genericInstExecute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
+                break;
 			case 'Uuid' :
 				// case 'Var':
 				$result = $this->genericInstExecute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
