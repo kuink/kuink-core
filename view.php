@@ -33,7 +33,7 @@ require_once ('locallib.php');
 date_default_timezone_set ( 'UTC' );
 
 $kuink_session_active = isset ( $_SESSION ['KUINK_CONTEXT'] ['KUINK_SESSION_ACTIVE'] ) ? $_SESSION ['KUINK_CONTEXT'] ['KUINK_SESSION_ACTIVE'] : 0;
-if ($kuink_session_active != 1 && $_GET ['startnode'] != '')
+if ($kuink_session_active != 1 && isset($_GET ['startnode']) && $_GET ['startnode'] != '')
 	redirect ( $KUINK_BRIDGE_CFG->wwwroot, 0 );
 	
 	// Set up SINGLETON OBJECTS
@@ -83,6 +83,10 @@ if (isset ( $_GET ['idWidget'] )) {
 	$widgetData = $wsResult ['RETURN'];
 	
 	$application = $widgetData ['init_flow'];
+	//If the init flow is composed by application,process,event
+	//var_dump($application);
+	//var_dump($_GET['idWidget']);
+
 	$configuration = $widgetData ['configuration'];
 	
 	unset ( $_GET ['idWidget'] );
@@ -91,7 +95,7 @@ if (isset ( $_GET ['idWidget'] )) {
 	$KUINK_TRANSLATION = null; // Holds pointers to xml language files
 	$KUINK_APPLICATION = null; // The Application object to run
 }
-
+//print_object($application);
 // Creating the application
 $KUINK_APPLICATION = new Kuink\Core\Application ( $application, $KUINK_BRIDGE_CFG->auth->user->lang, $configuration );
 // Adding roles to the application

@@ -82,8 +82,19 @@ class Flow {
 	}
 }
 class ProcessOrchestrator {
+
+	static function generateNewContextId() {
+		$n = (string)uniqid();
+		
+		return 'k'.$n;
+	}
+
 	static function getContextId() {
-		$contextId = (isset ( $_GET [QueryStringParam::ID_CONTEXT] ) && ($_GET [QueryStringParam::ID_CONTEXT] != '')) ? $_GET [QueryStringParam::ID_CONTEXT] : uniqid (); // The stack context, generate one if not in url
+		$contextId = (isset ( $_GET [QueryStringParam::ID_CONTEXT] ) && ($_GET [QueryStringParam::ID_CONTEXT] != '')) ? $_GET [QueryStringParam::ID_CONTEXT] : self::generateNewContextId(); // The stack context, generate one if not in url
+		//if (!isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId] ))
+		//	self::addContext($contextId);
+		//var_dump($_GET);
+		//var_dump($_GET [QueryStringParam::ID_CONTEXT]);
 		/*
 		 * if (isset($_GET[QueryStringParam::ID_CONTEXT]))
 		 * $contextId = $_GET[QueryStringParam::ID_CONTEXT];
@@ -98,7 +109,7 @@ class ProcessOrchestrator {
 	
 	// Copy the current context to a new one
 	static function duplicateContext($previousContextId) {
-		$newContextId = uniqid ();
+		$newContextId = self::generateNewContextId();
 		$oldContext = self::getContext ( $previousContextId );
 		$currentNode = self::getCurrentNode ( $previousContextId );
 		$newContext = self::addContext ( $oldContext->baseApplication, $newContextId );
@@ -145,7 +156,7 @@ class ProcessOrchestrator {
 				self::clearContexts ();
 		}
 		
-		$numContexts = count ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] );
+		$numContexts = isset($_SESSION ['KUINK_CONTEXT']) ? count ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] ) : 0;
 		if ($numContexts < $KUINK_CFG->maxProcessOrchestratorContexts) {
 			$context = new \stdClass ();
 			$context->id = $contextId;
@@ -249,7 +260,8 @@ class ProcessOrchestrator {
 		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();
 		$context = self::getContext ( $contextId ); // end($_SESSION['KUINK_CONTEXT']['KUINK_PROCESS_STACK'][$contextId]);
 		$currentNode = isset($context->stack) ? end($context->stack) : null;
-		
+		//$c = self::getContextId();
+		//var_dump($c);
 		return $currentNode;
 	}
 	static function updateCurrentNodeAction($action, $actionvalue) {
@@ -595,7 +607,7 @@ class ProcessOrchestrator {
 		}
 		
 		$currentFlow = (isset ( $forceFlow )) ? $forceFlow : self::getCurrentFlow ( $setEvent );
-		// var_dump($currentFlow);
+		//var_dump($currentFlow);
 		
 		// The process is set is flow? else get the default flow
 		
@@ -607,7 +619,8 @@ class ProcessOrchestrator {
 		self::setEventParamsByUrl ();
 		
 		// var_dump($defaultFlow);
-		// var_dump($currentFlow);
+		//print('<br/>');
+		//var_dump($currentFlow);
 		
 		// if an event is set in url or by parameter than the node to execute could be different from the current one
 		$nodeToExecute = self::getCurrentNode ();
@@ -707,7 +720,6 @@ class ProcessOrchestrator {
 		
 		$context = self::getContext ();
 		$currentStackNode = self::getCurrentNode ();
-		
     // Initialize data with the current node values in stack
 		$application = isset ( $currentStackNode->application ) ? $currentStackNode->application : $context->baseApplication;
 		$process = isset ( $currentStackNode->process ) ? $currentStackNode->process : (isset($_GET[QueryStringParam::PROCESS]) ? $_GET[QueryStringParam::PROCESS] : null);

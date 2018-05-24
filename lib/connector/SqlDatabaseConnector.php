@@ -571,7 +571,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		//print($sql.'<br/>');
 		
 		$query->execute ( $params );
-		
+		//var_dump($sql);
+		//var_dump(count($params));
 		
 		
 		// Handle the errors

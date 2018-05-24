@@ -577,8 +577,9 @@ class Application {
 		$get_modal = isset ( $_GET [QueryStringParam::MODAL] ) ? ( string ) $_GET [QueryStringParam::MODAL] : 'false';
 		$baseUrl = $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $qstrId;
 		$baseUrlParams = array (
+				QueryStringParam::ID => isset($_GET [QueryStringParam::ID]) ? $_GET [QueryStringParam::ID] : '',			
 				QueryStringParam::ID_CONTEXT => $_GET [QueryStringParam::ID_CONTEXT],
-				QueryStringParam::TRACE => isset ( $_GET [QueryStringParam::TRACE] ) ? ( string ) $_GET [QueryStringParam::TRACE] : '',
+				//QueryStringParam::TRACE => isset ( $_GET [QueryStringParam::TRACE] ) ? ( string ) $_GET [QueryStringParam::TRACE] : '',
 				QueryStringParam::ACTION_VALUE => isset($currentNode->action_value) ? $currentNode->action_value : '',
 				QueryStringParam::TRACE => $get_trace 
 		);
@@ -586,12 +587,11 @@ class Application {
 			$baseUrlParams [QueryStringParam::MODAL] = $get_modal;
 		
 		$baseUrl = \Kuink\Core\Tools::setUrlParams ( $baseUrl, $baseUrlParams );
-		
 		$nodeconfiguration [NodeConfKey::APPLICATION] = $node->application;
 		$nodeconfiguration [NodeConfKey::NODE] = $node->node;
 		$nodeconfiguration [NodeConfKey::PROCESS] = $node->process;
 		$nodeconfiguration [NodeConfKey::EVENT] = isset($currentNode->event) ? $currentNode->event : null;
-		$nodeconfiguration [NodeConfKey::ACTION] = isset($currentNode->action) ? $currentNode->action : null;;
+		$nodeconfiguration [NodeConfKey::ACTION] = isset($currentNode->action) ? $currentNode->action : null;
 		$nodeconfiguration [NodeConfKey::ACTION_VALUE] = isset($currentNode->actionValue) ? $currentNode->actionValue : null;
 		$nodeconfiguration [NodeConfKey::BASEURL] = $baseUrl;
 		$nodeconfiguration [NodeConfKey::CONFIG] = $fwConfig;

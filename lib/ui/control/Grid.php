@@ -885,6 +885,7 @@ class Grid extends Control {
 			}
 		}
 		$this->total = 0;
+		if (is_array($this->bind_data) || is_object($this->bind_data))
 		foreach ( $this->bind_data as $data ) {
 			$data = ( array ) $data;
 			// var_dump($data);

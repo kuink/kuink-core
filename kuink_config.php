@@ -39,7 +39,7 @@ $KUINK_CFG->wwwRoot = $wwwroot;
 $KUINK_CFG->dirRoot = $KUINK_BRIDGE_CFG->dirroot;
 $KUINK_CFG->kuinkRoot = $KUINK_BRIDGE_CFG->kuinkroot; // 'mod/kuink/';
 $KUINK_CFG->themeRoot = 'kuink-core/';
-$KUINK_CFG->apiUrl = 'api.php?idcontext=' . $contextId;
+$KUINK_CFG->apiUrl = $KUINK_CFG->kuinkRoot.'api.php?idcontext=' . $contextId;
 $KUINK_CFG->streamUrl = $KUINK_CFG->wwwRoot.'stream.php';
 $KUINK_CFG->streamFileUrl = $KUINK_CFG->streamUrl.'?type=file&guid=';
 $KUINK_CFG->apiCompleteUrl = $wwwroot . '/' . $KUINK_CFG->apiUrl . '&neonfunction=';
@@ -67,7 +67,7 @@ switch ($KUINK_CFG->environment) {
 		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';		
 		$KUINK_CFG->enableEmailSending = false;
 		$KUINK_CFG->useGlobalACL = false;
-		$KUINK_CFG->displayNativeErrors = false;		
+		$KUINK_CFG->displayNativeErrors = true;		
 		break;
 	case 'test' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme

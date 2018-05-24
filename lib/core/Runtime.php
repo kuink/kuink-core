@@ -36,7 +36,7 @@ class ActionType {
 class User {
 	function getUser() {
 		global $KUINK_BRIDGE_CFG, $KUINK_CFG;
-		
+		//var_dump($KUINK_BRIDGE_CFG->auth->user);
 		if (isset($_SESSION['kuink.logged.user']))
 			$kuinkUser = $_SESSION['kuink.logged.user'];
 		else
@@ -179,8 +179,9 @@ class Runtime {
 		$server_info ['apiUrl'] = $KUINK_CFG->apiUrl;
 		$server_info ['streamUrl'] = $KUINK_CFG->streamUrl;
 		$server_info ['guestUrl'] = $KUINK_CFG->guestUrl;
-		$server_info ['baseUploadDir'] = $this->nodeconfiguration [NodeConfKey::CONFIG] ['neonUploadFolderBase'];
-		$server_info ['fullUploadDir'] = $KUINK_CFG->dataRoot . '/' . $this->nodeconfiguration [NodeConfKey::CONFIG] ['neonUploadFolderBase'];
+		$server_info ['baseUploadDir'] = (isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)$this->nodeconfiguration [NodeConfKey::CONFIG] ['neonUploadFolderBase'] : '';
+		$config = (isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)($this->nodeconfiguration [NodeConfKey::CONFIG] ['neonUploadFolderBase']) : '';
+		$server_info ['fullUploadDir'] = $KUINK_CFG->dataRoot . '/' . $config;
 		$server_info ['environment'] = $KUINK_CFG->environment;
 		
 		$this->variables ['SYSTEM'] = $server_info;
@@ -198,7 +199,7 @@ class Runtime {
 		
 		// kuink_mydebug('NODE', $node_name);
 		
-		$roles = $this->nodeconfiguration [NodeConfKey::ROLES];
+		$roles = isset($this->nodeconfiguration [NodeConfKey::ROLES]) ? $this->nodeconfiguration [NodeConfKey::ROLES] : null;
 		$this->is_fw_admin = isset ( $roles ['framework.admin'] );
 		
 		return;
@@ -213,8 +214,8 @@ class Runtime {
 	public function buildAllCapabilities($idAcl=null, $aclCode=null, $force=false){
 		Global $KUINK_CFG;
 		
-			$roles = $this->nodeconfiguration[NodeConfKey::ROLES];
-			$capabilities = $this->nodeconfiguration[NodeConfKey::CAPABILITIES];
+			$roles = isset($this->nodeconfiguration[NodeConfKey::ROLES]) ? $this->nodeconfiguration[NodeConfKey::ROLES] : null;
+			$capabilities = isset($this->nodeconfiguration[NodeConfKey::CAPABILITIES]) ? $this->nodeconfiguration[NodeConfKey::CAPABILITIES] : null;
 			
 			//Only rebuild if the capabilites are not set
 			if (count($capabilities) == 0 || $force) {
@@ -369,8 +370,8 @@ class Runtime {
 		$this->event_raised_process = $this->process_name;
 		
 		// Getting current action settings
-		$actionname = $this->nodeconfiguration [NodeConfKey::ACTION];
-		$actionvalue = $this->nodeconfiguration [NodeConfKey::ACTION_VALUE];
+		$actionname = isset($this->nodeconfiguration [NodeConfKey::ACTION]) ? $this->nodeconfiguration [NodeConfKey::ACTION] : null;
+		$actionvalue = isset($this->nodeconfiguration [NodeConfKey::ACTION_VALUE]) ? $this->nodeconfiguration [NodeConfKey::ACTION_VALUE] : null;
 		
 		// kuink_mydebug('$actionname', $actionname);
 		// kuink_mydebug('$actionvalue', $actionvalue);
@@ -382,7 +383,7 @@ class Runtime {
 		$get_role = isset ( $_GET [UrlParam::ROLE] ) ? ( string ) $_GET [UrlParam::ROLE] : '';
 		$get_doc = isset ( $_GET [UrlParam::DOC] ) ? ( string ) $_GET [UrlParam::DOC] : '';
 		
-		$roles = $this->nodeconfiguration [NodeConfKey::ROLES];
+		$roles = isset($this->nodeconfiguration [NodeConfKey::ROLES]) ?  $this->nodeconfiguration [NodeConfKey::ROLES] : null;
 		// var_dump($roles);
 		
 		$showtrace = $get_trace;
@@ -529,7 +530,7 @@ class Runtime {
 			}
 			
 			// load node and instance configuration
-			$config = $this->nodeconfiguration [NodeConfKey::CONFIG];
+			$config = isset($this->nodeconfiguration [NodeConfKey::CONFIG]) ? $this->nodeconfiguration [NodeConfKey::CONFIG] : null;
 			$node_configs = $nodexml->xpath ( '/Node/Configuration//Config' );
 			foreach ( $node_configs as $node_config ) {
 				$key = ( string ) $node_config ['key'];
@@ -546,10 +547,9 @@ class Runtime {
 			
 			// Add global config
 			$config ['APPLICATION'] = ( string ) $this->nodeconfiguration [NodeConfKey::APPLICATION];
-			$config ['PROCESS'] = ( string ) $this->nodeconfiguration [NodeConfKey::PROCESS];
-			$config ['NODE'] = ( string ) $this->nodeconfiguration [NodeConfKey::NODE];
-			$config ['ACTION'] = ( string ) $this->nodeconfiguration [NodeConfKey::ACTION];
-			
+			$config ['PROCESS'] = isset($this->nodeconfiguration [NodeConfKey::PROCESS]) ?  ( string ) $this->nodeconfiguration [NodeConfKey::PROCESS] : null;
+			$config ['NODE'] = isset($this->nodeconfiguration [NodeConfKey::NODE]) ? ( string ) $this->nodeconfiguration [NodeConfKey::NODE] : null;
+			$config ['ACTION'] = isset($this->nodeconfiguration [NodeConfKey::ACTION]) ? ( string ) $this->nodeconfiguration [NodeConfKey::ACTION] : null;
 			$this->nodeconfiguration [NodeConfKey::CONFIG] = $config;
 			
 			// Set parameters if they exist
@@ -603,10 +603,10 @@ class Runtime {
 			// global $SESSION, $OUTPUT, $USER, $DB;
 			$custumapp_name = ( string ) $this->nodeconfiguration [NodeConfKey::APPLICATION];
 			$process_name = ( string ) $this->nodeconfiguration [NodeConfKey::PROCESS];
-			$node = ( string ) $this->nodeconfiguration [NodeConfKey::NODE];
+			$node = isset($this->nodeconfiguration [NodeConfKey::NODE]) ? ( string ) $this->nodeconfiguration [NodeConfKey::NODE] : null;
 			
 			// Add the roles stored in session:
-			$new_roles = $this->nodeconfiguration [NodeConfKey::ROLES];
+			$new_roles = isset($this->nodeconfiguration [NodeConfKey::ROLES]) ? $this->nodeconfiguration [NodeConfKey::ROLES] : null;
 			global $SESSION, $KUINK_CFG;
 			
 			$currentStackRoles = ProcessOrchestrator::getNodeRoles ();
@@ -624,11 +624,11 @@ class Runtime {
 			else
 				$this->buildAllCapabilities();
 
-			$this->variables['ROLES'] = $this->nodeconfiguration[NodeConfKey::ROLES];
-			$this->variables['CAPABILITIES'] = $this->nodeconfiguration[NodeConfKey::CAPABILITIES];			
+			$this->variables['ROLES'] = isset($this->nodeconfiguration[NodeConfKey::ROLES]) ? $this->nodeconfiguration[NodeConfKey::ROLES] : null;
+			$this->variables['CAPABILITIES'] = isset($this->nodeconfiguration[NodeConfKey::CAPABILITIES]) ? $this->nodeconfiguration[NodeConfKey::CAPABILITIES] : null;			
 			$action_permissions = $this->getActionPermissions ( $nodexml );
 			$this->nodeconfiguration [NodeConfKey::ACTION_PERMISSIONS] = $action_permissions;
-			$actionname = $this->nodeconfiguration [NodeConfKey::ACTION];
+			$actionname = isset($this->nodeconfiguration [NodeConfKey::ACTION]) ? $this->nodeconfiguration [NodeConfKey::ACTION] : null;
 			// Execute the current action, if there's no current action execute the default action init
 			$actionname = ($actionname != '') ? $actionname : 'init';
 			// kuink_mydebug('$actionname', $actionname);
@@ -943,6 +943,7 @@ class Runtime {
 	function getNodeRoles($roles, $nodexml) {
 		$perms = $nodexml->xpath ( '/Node/Permissions//Role' );
 		$noderoles = array ();
+		if (is_array($roles) || is_object($roles))
 		foreach ( $roles as $role ) {
 			$noderoles [( string ) $role] = 'true';
 		}
@@ -1989,22 +1990,22 @@ class Runtime {
 		
 		$set = isset($variables [$var_name]) ? $variables [$var_name] : array();
 		$value = '';
-		//var_dump($set);
-		foreach ( $set as $key => $item ) {
-			// var_dump($key.'=>'.$item);
-			// $variables[$item_name] = (array)$item;
-			if (is_object ( $item ))
-				$item = ( array ) $item;
-			$variables [$item_name] = $item;
-			$variables [$key_name] = $key;
-			if ($instruction_xmlnode->count () > 0) {
-				$instructions = $instruction_xmlnode->children ();
-				foreach ( $instructions as $new_instruction ) {
-					$value = $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction, $actionname, $variables, $exit );
-				}
-			} else
-				$value = $instruction_xmlnode [0];
-		}
+		if (is_array($set) || is_object($set))
+			foreach ( $set as $key => $item ) {
+				// var_dump($key.'=>'.$item);
+				// $variables[$item_name] = (array)$item;
+				if (is_object ( $item ))
+					$item = ( array ) $item;
+				$variables [$item_name] = $item;
+				$variables [$key_name] = $key;
+				if ($instruction_xmlnode->count () > 0) {
+					$instructions = $instruction_xmlnode->children ();
+					foreach ( $instructions as $new_instruction ) {
+						$value = $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction, $actionname, $variables, $exit );
+					}
+				} else
+					$value = $instruction_xmlnode [0];
+			}
 		
 		return $value;
 	}

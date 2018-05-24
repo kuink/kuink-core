@@ -632,7 +632,8 @@ class Form extends Control {
 				}
 			} else {
 				// Get from POST
-				$elem = $_POST [$fieldname];
+				$fieldname='';
+				$elem = isset($_POST [$fieldname]) ? $_POST [$fieldname] : null;
 				if ($elem)
 					$fieldOptions [$id] = '';
 			}

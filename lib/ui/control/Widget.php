@@ -16,6 +16,7 @@
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Control;
 
+
 class Widget extends Control {
 	var $params;
 	function __construct($nodeconfiguration, $xml_definition) {
@@ -30,6 +31,20 @@ class Widget extends Control {
 			$this->params [$pkey] = ( string ) $pvalue;
 	}
 	function display() {
+		//Create the new context where this widget will remain
+		$newIdContext = \Kuink\Core\ProcessOrchestrator::generateNewContextId();
+		$baseApplication = isset($this->params['widgetInitFlow']) ? $this->params['widgetInitFlow'] : '';
+		\Kuink\Core\ProcessOrchestrator::prepareContext($baseApplication, $newIdContext);
+		$baseUrl = $this->nodeconfiguration [\Kuink\Core\NodeConfKey::BASEURL];
+		$urlParams = array();
+		$urlParams['modal'] = 'embed';//isset($this->params['widgetModal']) ? (string)$this->params['widgetModal'] : '';
+		$urlParams['idWidget'] = isset($this->params['widgetUuid']) ? (string)$this->params['widgetUuid'] : '';
+		$urlParams['idPage'] = '';
+		$urlParams['idcontext'] = $newIdContext;
+
+		$this->params['baseUrl'] = \Kuink\Core\Tools::setUrlParams($baseUrl, $urlParams);
+		$this->params['newIdContext'] = $newIdContext;
+
 		$this->render ( $this->params );
 	}
 	function getHtml() {
