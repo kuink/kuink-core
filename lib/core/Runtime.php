@@ -662,6 +662,7 @@ class Runtime {
 				$msg_manager->add(MessageType::EXCEPTION,'Exception:: '. $e->getMessage());
 			}
 			//Rollback transactions
+			//print_object($e->getMessage());
 			\Kuink\Core\DataSourceManager::rollbackTransaction();
 				
 		}
@@ -676,10 +677,10 @@ class Runtime {
 		      	$msg_manager = \Kuink\Core\MessageManager::getInstance();
 		        $msg_manager->add(MessageType::EXCEPTION,'Exception:: '. $e->getMessage());
 		      }
-		      //Rollback transactions
+					//Rollback transactions
+					//print_object($e->getMessage());
 		      \Kuink\Core\DataSourceManager::rollbackTransaction();
 		}
-
 		
 		if ($this->event_raised) {
 			// kuink_mydebug(__METHOD__,'Event Raised: '.$this->event_raised_name);

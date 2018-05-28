@@ -569,8 +569,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		// Here we have some parameters
 		$query = $this->db->prepare ( $sql );
 		//print($sql.'<br/>');
-		
+
 		$query->execute ( $params );
+		
 		//var_dump($sql);
 		//var_dump(count($params));
 		

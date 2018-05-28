@@ -626,8 +626,15 @@ class Form extends Control {
 			if ($this->datasources [$datasourcename] != null) {
 				$selectoptions = $this->datasources [$datasourcename];
 				foreach ( $selectoptions as $selectoption ) {
-					$id = (gettype ( $selectoption ) == 'array') ? $selectoption [$bindid] : $selectoption->$bindid;
-					$name = (gettype ( $selectoption ) == 'array') ? $selectoption [$bindvalue] : $selectoption->$bindvalue;
+					if ((gettype ( $selectoption ) == 'array'))
+						$id = isset($selectoption [$bindid]) ? $selectoption [$bindid] : null;	
+					else
+						$id = isset($selectoption->$bindid) ? $selectoption->$bindid : null;
+					if ((gettype ( $selectoption ) == 'array'))
+						$name = isset($selectoption [$bindid]) ? $selectoption [$bindvalue] : null;	
+					else
+						$name = isset($selectoption->$bindid) ? $selectoption->$bindvalue : null;
+						
 					$fieldOptions [$id] = $name;
 				}
 			} else {
@@ -1160,9 +1167,10 @@ class Form extends Control {
 			$fields = array ();
 			
 			foreach ( $this->bind_data as $data ) {
-				foreach ( $data as $key => $value ) {
-					$fields [] = $key;
-				}
+				if (is_array($data) || is_object($data))
+					foreach ( $data as $key => $value ) {
+						$fields [] = $key;
+					}
 			}
 			foreach ( $fields as $key => $value ) {
 				$this->addField ( array (

@@ -83,6 +83,9 @@ if (isset ( $_GET ['idWidget'] )) {
 	$widgetData = $wsResult ['RETURN'];
 	
 	$application = $widgetData ['init_flow'];
+	//$application = $appParts[0];
+
+	//var_dump($application);
 	//If the init flow is composed by application,process,event
 	//var_dump($application);
 	//var_dump($_GET['idWidget']);

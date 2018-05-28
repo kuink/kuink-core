@@ -209,9 +209,9 @@ class DataSourceManager {
 	}
 	static public function rollbackTransaction() {
 		global $KUINK_DATASOURCES;
-		
-		foreach ( $KUINK_DATASOURCES as $ds )
+		foreach ( $KUINK_DATASOURCES as $ds ) {
 			$ds->rollbackTransaction ();
+		}
 	}
 }
 

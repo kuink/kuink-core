@@ -266,20 +266,16 @@ abstract class Control {
 				// Get the options from the table only one time
 				$table = str_replace ( 'table:', '', $datasourcename );
 				$appName = ( string ) $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION];
-				$databaseName = \Kuink\Core\DatabaseManager::applicationDefaultDB ( $appName );
-				$datasource = new \Kuink\Core\DataSource ( null, 'framework,generic,getAll', 'framework', 'generic', $databaseName, $appName );
 				$fields = $bindid . ',' . $bindvalue;
-				$pars = array (
-						'table' => $table,
-						'fields' => $fields 
-				);
-				$selectoptions = $datasource->execute ( $pars );
-				
+				$dataAccess = new \Kuink\Core\DataAccess ( 'getAll', 'framework', 'config' );
+				$params ['_entity'] = $table;
+				$params ['_attributes'] = $fields;
+				$selectoptions = $dataAccess->execute ( $params );				
 				// Add this datasource to be filled in the next if
 				$this->datasources [$datasourcename] = $selectoptions;
 			}
 			$pos = strpos ( $datasourcename, 'call:' );
-			if ($pos === 0 && ! $this->datasources [$datasourcename]) {
+			if ($pos === 0 && !isset($this->datasources [$datasourcename])) {
 				// Get the options from the table only one time
 				
 				$library = str_replace ( 'call:', '', $datasourcename );

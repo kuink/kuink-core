@@ -325,15 +325,15 @@ class Grid extends Control {
 			if (isset ( $_GET [$this->name . '_pagesize'] ))
 				$pagesize = $_GET [$this->name . '_pagesize'];
 			else
-				$pagesize = isset ( $currentStoredPageSize ) ? $currentStoredPageSize : $defaultPageSize;
+				$pagesize = (isset($currentStoredPageSize) && ($currentStoredPageSize != '') ) ? $currentStoredPageSize : $defaultPageSize;
 		}
-		
 		// \Kuink\Core\ProcessOrchestrator::setProcessVariable('__grid_'.$this->name, 'pagesize', $pagesize);
 		if ($pageable == 'true') {
 			// persist context variables
 			$this->setContextVariable ( GridContextVariables::PAGE, $this->page );
 			$this->setContextVariable ( GridContextVariables::PAGE_SIZE, $pagesize );
 		}
+
 		$this->pagesize = $pagesize;
 	}
 	function getPageSize($params) {
@@ -697,7 +697,9 @@ class Grid extends Control {
 		$table_colinline = array ();
 		$index = 0;
 		$newColumns = array (); // Columns with dynamically added
-		                       
+
+		$table_collookup = array();
+		$table_colattributes = array();		
 		// Expand dynamic added columns
 		foreach ( $columns as $column ) {
 			$colname = ( string ) $this->getProperty ( '', GridColumnProperty::NAME, false, GridColumnDefaults::NAME, $column );			
@@ -873,16 +875,17 @@ class Grid extends Control {
 		if ($this->infer == 'true') {
 			// Build the grid columns
 			// var_dump($this->tablecolumns);
-			foreach ( $this->bind_data as $data ) {
-				$record = ( array ) reset ( $data );
-				foreach ( $record as $key => $value ) {
-					if (!in_array($key, $this->tablecolumns) && !in_array($key, $this->tablecolnotvisible)) { // && (strpos($key, '__infer_') > 0)					
-						$this->tableinfercolumns [] = $key;
-						$this->tablecolumns [] = $key;
-						$this->tableheaders [] = $key;
+			if (is_array($this->bind_data) || is_object($this->bind_data))
+				foreach ( $this->bind_data as $data ) {
+					$record = ( array ) reset ( $data );
+					foreach ( $record as $key => $value ) {
+						if (!in_array($key, $this->tablecolumns) && !in_array($key, $this->tablecolnotvisible)) { // && (strpos($key, '__infer_') > 0)					
+							$this->tableinfercolumns [] = $key;
+							$this->tablecolumns [] = $key;
+							$this->tableheaders [] = $key;
+						}
 					}
 				}
-			}
 		}
 		$this->total = 0;
 		if (is_array($this->bind_data) || is_object($this->bind_data))

@@ -211,11 +211,15 @@ class Smarty extends \Smarty {
 	}
 	static function getTemplate($templateName, $data) {
 		$smarty = new \Smarty ();
-		$smarty->setTemplateDir ( dirname ( __FILE__ ) . '/../../../theme/default/template/' );
+		$smarty->setTemplateDir ( dirname ( __FILE__ ) . '/../../../theme/adminlte/template/' );
 		$smarty->setCompileDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache_compiled/' );
 		$smarty->setCacheDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache/' );
 		$smarty->assign ( $data );
-		return $smarty->fetch ( $templateName . '.tpl' );
+		
+		$result = $smarty->fetch ( $templateName . '.tpl' ); 
+		//print_object(dirname ( __FILE__ ) . '/../../../theme/default/template/'.$templateName );
+		//print_object($result);
+		return $result;
 	}
 	static function getApplicationTemplate($application, $process, $templateName, $data) {
 		global $KUINK_CFG, $KUINK_APPLICATION;
