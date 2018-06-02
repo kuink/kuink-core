@@ -148,8 +148,8 @@ class Runtime {
 		// die();
 		//print_r($currentNode->params);
 		$this->params = isset($currentNode->params) ? $currentNode->params : null;
-		//foreach ( $params as $key => $value )
-		//	$this->params [$key] = $value;
+		foreach ( $params as $key => $value )
+			$this->params [$key] = $value;
 			
 			// $this->params = empty( $params ) ? $currentNode->params : $params ;
 		$this->variables [] = null;
@@ -179,8 +179,8 @@ class Runtime {
 		$server_info ['apiUrl'] = $KUINK_CFG->apiUrl;
 		$server_info ['streamUrl'] = $KUINK_CFG->streamUrl;
 		$server_info ['guestUrl'] = $KUINK_CFG->guestUrl;
-		$server_info ['baseUploadDir'] = (isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)$this->nodeconfiguration [NodeConfKey::CONFIG] ['neonUploadFolderBase'] : '';
-		$config = (isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)($this->nodeconfiguration [NodeConfKey::CONFIG] ['neonUploadFolderBase']) : '';
+		$server_info ['baseUploadDir'] = (isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)$this->nodeconfiguration [NodeConfKey::CONFIG] ['uploadFolderBase'] : '';
+		$config = (isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)($this->nodeconfiguration [NodeConfKey::CONFIG] ['uploadFolderBase']) : '';
 		$server_info ['fullUploadDir'] = $KUINK_CFG->dataRoot . '/' . $config;
 		$server_info ['environment'] = $KUINK_CFG->environment;
 		
@@ -3675,7 +3675,7 @@ class Runtime {
 		$dump = $this->get_inst_attr ( $instruction_xmlnode, 'dump', $variables, false, 'false' );
 		$key = $this->get_inst_attr ( $instruction_xmlnode, 'key', $variables, false );
 		$keyIsSet = isset ( $instruction_xmlnode ['key'] ); // We must know if the key is set or not besides its value
-		$setValue = isset ( $instruction_xmlnode ['value'] ) ? $instruction_xmlnode ['value'] : '';
+		$setValue = isset ( $instruction_xmlnode ['value'] ) ? (string)$instruction_xmlnode ['value'] : null;
 		$set = (($instruction_xmlnode->count () > 0) || ($instruction_xmlnode [0] != ''));
 		
 		$session = $this->get_inst_attr ( $instruction_xmlnode, 'session', $variables, false, 'false' ); // Session variable
@@ -4059,7 +4059,7 @@ class Runtime {
 		
 		$config = $nodeconfiguration [NodeConfKey::CONFIG];
 		
-		$base_upload = $config ['neonUploadFolderBase'];
+		$base_upload = $KUINK_CFG->uploadRoot . $config ['uploadFolderBase'];
 		$upload_dir = $base_upload . '/' . $path;
 		
 		// Handle dupplication of slashes in configurations
@@ -4147,6 +4147,7 @@ class Runtime {
 		
 		// if no path is supplied go to tmp file
 		$path = $this->get_inst_attr ( $instruction_xmlnode, 'path', $variables, false, 'tmp/' );
+
 		// handle dupplication of /
 		$path .= '/';
 		
@@ -4272,22 +4273,22 @@ class Runtime {
 		
 		$config = $nodeconfiguration [NodeConfKey::CONFIG];
 		
-		$base_upload = $config ['neonUploadFolderBase'];
+		$base_upload = $KUINK_CFG->uploadRoot . $config ['uploadFolderBase'];
 		$upload_dir = $base_upload . '/' . $path;
 		
 		// Handle dupplication of slashes in configurations
 		$upload_dir = str_replace ( '//', '/', $upload_dir );
 		
-		$myFile = $KUINK_CFG->dataroot . '/' . $upload_dir . $filename;
+		$myFile = $upload_dir . $filename;
 		
 		// Create the path if the directory doesn't exist
-		if (! is_dir ( $KUINK_CFG->dataroot . '/' . $upload_dir )) {
+		if (! is_dir ( $upload_dir )) {
 			$dir_parts = explode ( '/', $upload_dir );
 			$sub_dirs = '/';
 			foreach ( $dir_parts as $dir ) {
 				
-				if (! is_dir ( $KUINK_CFG->dataroot . $sub_dirs . $dir ))
-					mkdir ( $KUINK_CFG->dataroot . $sub_dirs . $dir );
+				if (! is_dir ( $sub_dirs . $dir ))
+					mkdir ( $sub_dirs . $dir );
 				$sub_dirs .= $dir . '/';
 			}
 		}
@@ -4303,13 +4304,11 @@ class Runtime {
 		
 		$utils = new \UtilsLib ( $this->nodeconfiguration, \Kuink\Core\MessageManager::getInstance () );
 		$file_guid = $utils->GuidClean ( null );
-		
+		$filelib = new \FileLib ( $this->nodeconfiguration, \Kuink\Core\MessageManager::getInstance () );
 		if ($register == 'true') {
 			// register the file in the database
-			global $USER;
-			
 			$original_name = $filename;
-			$path = $upload_dir;
+			//$path = $upload_dir;
 			$name = $filename;
 			$size = filesize ( $myFile );
 			$ext = 'pdf';
@@ -4317,7 +4316,6 @@ class Runtime {
 			$id_user = ( string ) $variables ['USER'] ['id'];
 			$desc = '';
 			
-			$filelib = new \FileLib ( $this->nodeconfiguration, \Kuink\Core\MessageManager::getInstance () );
 			$id_file = $filelib->register ( $original_name, $path, $name, $size, $ext, $mime, $id_user, $desc, $file_guid );
 		}
 		

@@ -1681,12 +1681,12 @@ class Grid extends Control {
 		
 		$config = $this->nodeconfiguration ['config'];
 		
-		$base_upload = $config ['neonUploadFolderBase'];
+		$base_upload = $KUINK_CFG->uploadRoot . $config ['uploadFolderBase'];
 		$upload_dir = $base_upload . '/tmp/';
 		
 		// Handle dupplication of slashes in configurations
 		$upload_dir = str_replace ( '//', '/', $upload_dir );
-		$filePath = $KUINK_CFG->dataroot . '/' . $upload_dir;
+		$filePath = $upload_dir;
 		$fileName = $file_guid . '.' . $type;
 		$myFile = $filePath . $fileName;
 		

@@ -46,6 +46,7 @@ $KUINK_CFG->apiCompleteUrl = $wwwroot . '/' . $KUINK_CFG->apiUrl . '&neonfunctio
 $KUINK_CFG->guestUrl = $wwwroot . '/mod/kuink/auth_guest.php';
 $KUINK_CFG->dataRoot = $KUINK_BRIDGE_CFG->dataroot;
 $KUINK_CFG->appRoot = $KUINK_CFG->dataRoot . '/kuink/';
+$KUINK_CFG->uploadRoot = $KUINK_CFG->appRoot . 'files/';
 $KUINK_CFG->layoutCache = false;
 $KUINK_CFG->externalServiceRoot = $KUINK_CFG->appRoot . 'apps/_externalServices/';
 $KUINK_CFG->defaultTimezone = 'Europe/Lisbon';

@@ -58,7 +58,9 @@ switch ($type) {
 			$file = (string) $fileRecord['name'];
 			$path = (string) $fileRecord['path'];
 			
-			$pathName = $KUINK_CFG->dataRoot.$path .'/'. $file;		
+			$pathName = $KUINK_CFG->uploadRoot.$path .'/'. $file;		
+			//var_dump($pathName);
+			//die();
 		} else {
 			// Without guid
 			header ( 'HTTP/1.0 404 not found' );

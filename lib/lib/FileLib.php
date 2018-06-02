@@ -32,7 +32,7 @@ class FileLib {
 	// Param: fileContents - the actual file binary
 	// Param: unzip - true (1) if to retrieve the file uncompressed, false (0) if compressed
 	function uploadFromCompressedDownload($params) {
-		global $KUINK_BRIDGE_CFG;
+		global $KUINK_BRIDGE_CFG, $KUINK_CFG;
 		
 		$compressedFileName = $params ['compressedFileName'];
 		$compressedFileExtension = $params ['compressedFileExtension'];
@@ -43,9 +43,9 @@ class FileLib {
 		$result = array ();
 		
 		$config = $this->nodeconfiguration ['config'];
-		$base_upload = $config ['neonUploadFolderBase'];
+		$base_upload = $KUINK_CFG->uploadRoot . $config ['uploadFolderBase'];
 		$upload_dir = $base_upload . $upload_folder;
-		$path = $KUINK_BRIDGE_CFG->dataroot . '/' . $upload_dir . 'tmp/';
+		$path = $upload_dir . 'tmp/';
 		$compressedFilePath = $path . $compressedFileName . '.' . $compressedFileExtension;
 		
 		$file = fopen ( $compressedFilePath, 'wb' ) or $this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Couldn\'t open file' );
@@ -82,7 +82,7 @@ class FileLib {
 	// Param: ValidExtensions - comma separated list of valid extensions
 	function upload($params) {
 		// global $msg_manager;
-		global $KUINK_BRIDGE_CFG;
+		global $KUINK_BRIDGE_CFG, $KUINK_CFG;
 		global $KUINK_TRACE;
 		// global $_Files;
 		
@@ -104,9 +104,9 @@ class FileLib {
 		// print('UPLOAD FOLDER:'.$upload_folder );
 		$config = $this->nodeconfiguration ['config'];
 		
-		$base_upload = $config['neonUploadFolderBase'];
+		$base_upload = $KUINK_CFG->uploadRoot . $config ['uploadFolderBase'];
 		$upload_dir = $base_upload . $upload_folder;
-		// kuink_mydebug('uploaddir', $upload_dir);
+		//kuink_mydebug('uploaddir', $upload_dir);
 		
 		// normalizar os ficheiros
 		foreach ( $_FILES as $tipo => $file ) {
@@ -134,7 +134,7 @@ class FileLib {
 				$file_ext = strtolower ( $file_ext [count ( $file_ext ) - 1] );
 				
 				// nome normalizado para guardar na base de dados {tipo}_{num_aluno}_{increment}.{ext}
-				$full_path_original = $KUINK_BRIDGE_CFG->dataroot . '/' . $upload_dir . '/' . $filename;
+				$full_path_original = $upload_dir . '/' . $filename;
 				
 				$i = 0; // incremento. O primeiro ficheiro é 0
 				      
@@ -142,7 +142,7 @@ class FileLib {
 				$db_filename = $param_filename . '.' . $file_ext;
 				
 				// caminho completo do ficheiro com o nome normalizado
-				$full_path_normalizado = $KUINK_BRIDGE_CFG->dataroot . "/" . $upload_dir . "/" . $db_filename;
+				$full_path_normalizado = $upload_dir . "/" . $db_filename;
 				
 				if (! in_array ( $file_ext, $valid_extensions_arr ) && ($valid_extensions != '')) {
 					unlink ( $full_path_original );
@@ -170,11 +170,11 @@ class FileLib {
 
 				
 				if (! $error) {
-					//kuink_mydebug('dest filename', $KUINK_BRIDGE_CFG->dataroot . '/' . $upload_dir);
+					//kuink_mydebug('dest filename', $upload_dir);
 
 					//create the directory if not exists
-					if (!file_exists($KUINK_BRIDGE_CFG->dataroot . '/' . $upload_dir))
-						mkdir($KUINK_BRIDGE_CFG->dataroot . '/' . $upload_dir, 0777, true);
+					if (!file_exists( $upload_dir))
+						mkdir( $upload_dir, 0777, true);
 					
 					//move the file
 					move_uploaded_file($file['tmp_name'], $full_path_normalizado);
@@ -195,7 +195,8 @@ class FileLib {
 					$ext = $file_ext;
 					$mime = ( string ) $file ['type'];
 					$id_user = $iduser;
-					$record = $this->register ( $original_name, $path, $name, $size, $ext, $mime, $id_user, $desc );
+					//$record = $this->register ( $original_name, $path, $name, $size, $ext, $mime, $id_user, $desc );
+					$record = $this->register ( $original_name, $upload_folder, $name, $size, $ext, $mime, $id_user, $desc );
 				}
 			}
 		}
@@ -240,7 +241,7 @@ class FileLib {
 	 * @throws Exception
 	 */
 	function unlink($params) {
-		global $KUINK_BRIDGE_CFG;
+		global $KUINK_BRIDGE_CFG, $KUINK_CFG;
 		if (! isset ( $params [0] ))
 			throw new Exception ( 'unlink needs the id of the file.' );
 		$id = ( string ) $params [0];
@@ -251,7 +252,7 @@ class FileLib {
 		) );
 		// var_dump($file);
 		// print($CFG->dataroot.'/'.$file->path.'/'.$file->name);
-		$filename = $KUINK_BRIDGE_CFG->dataroot . '/' . $file ['path'] . '/' . $file ['name'];
+		$filename = $KUINK_CFG->uploadRoot . '/' . $file ['path'] . '/' . $file ['name'];
 		// kuink_mydebug('file',$filename);
 		unlink ( $filename );
 		
@@ -289,14 +290,15 @@ class FileLib {
 		// ========================================
 		// send the file
 		// ========================================
-		$pathName = $KUINK_CFG->dataRoot . '/' . $path . '/' . $file;
+		$pathName = $KUINK_CFG->uploadRoot . '/' . $path . '/' . $file;
+
 		// print('pathname:'.$pathname);
 		if (file_exists ( $pathName ) and ! is_dir ( $pathName )) {
 			ob_clean ();
 			header('Accept-Ranges: bytes');
-			header('Content-Disposition: attachment; filename=' . $file);
+			header('Content-Disposition: attachment; filename=' . $file);			
 			header('Content-Type: application/octet-stream');
-			readfile($pathname);
+			readfile($pathName);
 			die();
 		} else {
 			header ( 'HTTP/1.0 404 not found' );
@@ -332,8 +334,8 @@ class FileLib {
 
 	/**
 	* Copy a folder to another destination
-	* @param source : path to original folder under neon/files/
-	* @param destination : path to destination under neon/files/ where to copy the folder to
+	* @param source : path to original folder under uploadBase/files/
+	* @param destination : path to destination under uploadBase/files/ where to copy the folder to
 	* @return 1 if successfuly copied, 0 otherwise
 	* @author André Bittencourt
 	* @since 2016-02-04
@@ -343,7 +345,7 @@ class FileLib {
 
 			$config = $this->nodeconfiguration['config'];
 
-			$baseUploadDir = $config['neonUploadFolderBase']; // /neon/ folder
+			$baseUploadDir = $KUINK_CFG->uploadRoot . $config ['uploadFolderBase'];
 
 			$source = isset($params['source']) ? $params['source'] : false;
 			$source = $KUINK_CFG->dataroot.'/'.$baseUploadDir.$source;
@@ -356,7 +358,7 @@ class FileLib {
 				if($destination != false) {
 					if(!is_dir($destination)){
 						$oldumask = umask(0);
-						mkdir($destination, 0755);
+						mkdir($destination, 0777);
 						umask($oldumask);
 					}
 
@@ -392,11 +394,11 @@ class FileLib {
 	 *       
 	 */
 	function copyFile($params) {
-		global $KUINK_BRIDGE_CFG;
+		global $KUINK_BRIDGE_CFG, $KUINK_CFG;
 		
 		$config = $this->nodeconfiguration ['config'];
 		
-		$baseUploadDir = $config ['neonUploadFolderBase']; // /kuink/ folder
+		$baseUploadDir = $KUINK_CFG->uploadRoot . $config ['uploadFolderBase'];
 		                                                  
 		// === params ===
 		                                                  
@@ -405,6 +407,7 @@ class FileLib {
 		
 		// Copyy to this directory
 		$copyTo = ( string ) $params ['path'];
+		//print_object($copyTo);
 		
 		// With this new filename
 		
@@ -418,25 +421,31 @@ class FileLib {
 		) );
 		
 		// full origin path
-		$originalFile = $KUINK_BRIDGE_CFG->dataroot . '/' . $file ['path'] . '/' . $file ['name'];
+		$originalFile = $KUINK_CFG->uploadRoot . '/' . $file ['path'] . '/' . $file ['name'];
 		$originalFile = str_replace ( '//', '/', $originalFile );
 		
 		// full destination path
 		$newName = (! $newName) ? $file ['name'] : $newName . '.' . $file ['ext'];
-		$destinationPath = $baseUploadDir . '/' . $copyTo;
+		if (strpos($copyTo, $baseUploadDir) === false)
+			$destinationPath = $baseUploadDir.'/'.$copyTo;
+		else
+			$destinationPath = $copyTo;
 		$destinationPath = str_replace ( '//', '/', $destinationPath );
-		$destinationFile = $KUINK_BRIDGE_CFG->dataroot . '/' . $destinationPath . $newName;
+		$destinationFile = $destinationPath . $newName;
 		$destinationFile = str_replace ( '//', '/', $destinationFile );
 		
 		//var_dump($copyTo);
 		//var_dump($baseUploadDir . '/' . $copyTo);
 		//var_dump(dirname ( $destinationFile ));
-		
+		$registerPath = str_replace($baseUploadDir, '', $destinationPath);
+		//print_object($destinationFile);
+		//print_object($registerPath);
+
 		mkdir ( dirname ( $destinationFile ), 0777, true );
 		copy ( $originalFile, $destinationFile );
 		
 		// register new file into fw_file
-		$newFile = $this->register ( $file ['name'], $destinationPath, $newName, $file ['size'], $file ['ext'], $file ['mimetype'], $KUINK_BRIDGE_CFG->auth->user->id, '' );
+		$newFile = $this->register ( $file ['name'], $registerPath, $newName, $file ['size'], $file ['ext'], $file ['mimetype'], $KUINK_BRIDGE_CFG->auth->user->id, '' );
 		
 		// return new id
 		return $newFile;
@@ -455,17 +464,17 @@ class FileLib {
 		global $KUINK_CFG;
 		
 		$config = $this->nodeconfiguration ['config'];
-		$baseUploadDir = $config ['neonUploadFolderBase']; // /kuink/ folder
+		$baseUploadDir = $KUINK_CFG->uploadRoot . $config ['uploadFolderBase'];
 		                                                  
 		// folder's path
 		$folderPath = ( string ) $params ['path'];
 		
 		// full path to the folder
-		$finalPath = $KUINK_CFG->dataRoot . '/' . $baseUploadDir . '/' . $folderPath;
+		$finalPath =  $baseUploadDir . '/' . $folderPath;
 		$finalPath = str_replace ( '//', '/', $finalPath );
 		
 		// create folder
-		mkdir ( $finalPath, 0755, true );
+		mkdir ( $finalPath, 0777, true );
 		
 		// return final path
 		return $finalPath;
@@ -486,35 +495,35 @@ class FileLib {
 		global $KUINK_CFG;
 		
 		$config = $this->nodeconfiguration ['config'];
-		$baseUploadDir = $config ['neonUploadFolderBase']; // /kuink/ folder
+		$baseUploadDir = $KUINK_CFG->uploadRoot . $config ['uploadFolderBase'];
 		                                                  
 		// path to the original folder
 		$originalPath = ( string ) $params ['originalPath'];
 		$pos = strpos ( $originalPath . '/', $baseUploadDir );
 		if ($pos === FALSE)
-			$originalFullPath = $KUINK_CFG->dataRoot . '/' . $baseUploadDir . '/' . $originalPath;
+			$originalFullPath =  $baseUploadDir . '/' . $originalPath;
 		else
-			$originalFullPath = $KUINK_CFG->dataRoot . '/' . $originalPath;
+			$originalFullPath = $KUINK_CFG->uploadRoot . '/' . $originalPath;
 		
 		$originalFullPath = str_replace ( '//', '/', $originalFullPath ); // full original path
 		                                                               
 		// destination path
 		$destinationPath = ( string ) $params ['destinationPath'];
 		$pos = strpos ( $destinationPath . '/', $baseUploadDir );
+
+		$destinationFullPath = $baseUploadDir . $destinationPath;
+		/*
 		if ($pos === FALSE)
 			$destinationFullPath = $KUINK_CFG->dataRoot . '/' . $baseUploadDir . '/' . $destinationPath;
 		else
 			$destinationFullPath = $KUINK_CFG->dataRoot . '/' . $destinationPath;
-		
+		*/
 		$destinationFullPath = str_replace ( '//', '/', $destinationFullPath ); // full destination path
 		                                                                     
-		// var_dump($originalFullPath);
-		                                                                     // var_dump($destinationFullPath);
-		
 		$pos = strpos ( $originalFullPath . '/', $baseUploadDir );
 		if ($pos === FALSE)
 			throw new \Exception ( 'No permission to access ' . $originalFullPath );
-			
+
 			// move folder to final destination
 		return rename ( $originalFullPath, $destinationFullPath );
 	}
@@ -543,8 +552,8 @@ class FileLib {
 		global  $KUINK_BRIDGE_CFG, $KUINK_CFG;
 		
 		$config = $this->nodeconfiguration ['config'];
-		$baseUploadDir = $config ['neonUploadFolderBase']; // /kuink/ folder
-		                                                  
+		$baseUploadDir = $KUINK_CFG->uploadRoot . $config ['uploadFolderBase'];
+		$register = isset($params ['register']) ? (int) $params ['register'] : 1; //This file is to register or not? Defaults to register.
 		// content
 		$content = ( string ) $params ['content'];
 		
@@ -556,6 +565,7 @@ class FileLib {
 		
 		// path
 		$path = ( string ) $params ['path'];
+		$pathToRegister = $path;
 		
 		// description
 		$description = (isset ( $params ['desc'] )) ? $params ['desc'] : '';
@@ -563,7 +573,7 @@ class FileLib {
 		$destinationPath = $baseUploadDir . '/' . $path;
 		$destinationPath = str_replace ( '//', '/', $destinationPath );
 		
-		$destination = $KUINK_CFG->dataRoot . '/' . $destinationPath . '/' . $filename . '.' . $extension;
+		$destination = $destinationPath . '/' . $filename . '.' . $extension;
 		$destination = str_replace ( '//', '/', $destination );
 		
 		//var_dump($destination);
@@ -589,7 +599,10 @@ class FileLib {
 		$utils = new UtilsLib ( $this->nodeconfiguration, $this->msg_manager );
 		$guid = ($guid == '') ? $utils->GuidClean () : $guid;
 		
-		$record = $this->register ( $original_name, $path, $name, $size, $ext, $mime, $id_user, $desc, $guid = '' );
+		if ($register == 1)
+			$record = $this->register ( $original_name, $pathToRegister, $name, $size, $ext, $mime, $id_user, $desc, $guid = '' );
+		else
+			$record = null;
 		
 		return $record;
 	}
@@ -661,7 +674,7 @@ class FileLib {
 		
 		$pathName = $pathName . '/' . $name;
 		$pos = strpos ( $name, '.' );
-		$mode = 0755;
+		$mode = 0777;
 		if ($pos === FALSE) {
 			// Create the directory
 			return is_dir ( $pathName ) || mkdir ( $pathName, $mode, true );

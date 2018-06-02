@@ -434,9 +434,9 @@ class ProcessOrchestrator {
 		$currentProcessGuid = $currentNode->processGuid;
 		//var_dump($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]);
 		if ($key == '')
-			$value = isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable]) ? $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] : '';
+			$value = isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable]) ? $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] : null;
 		else
-			$value = isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] [$key]) ? $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] [$key] : '';
+			$value = isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] [$key]) ? $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] [$key] : null;
 		
 		/**
 		 * Ugly workaround for unset process variables with arrays

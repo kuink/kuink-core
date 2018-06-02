@@ -217,6 +217,7 @@ class EvalExpr {
 			// Math Expression
 			// $functionRef = create_function('', "return (".$expr.");");
 			// safely evaluate expressions. To avoid php injection
+			
 			$parser = new \Kuink\Core\EvalMath ();
 			$parser->evaluate ( 'y(x) = ' . $expr );
 			$result = $parser->e ( 'y(0)' );

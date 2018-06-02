@@ -42,7 +42,8 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 				
 				if (count ( $fileRecord ) == 0)
 					throw new \Exception ( 'Invalid file ' . $this->idFile );
-				$template = $KUINK_CFG->dataRoot . '/' . $fileRecord ['path'] . '/' . $fileRecord ['name'];
+				$template = $KUINK_CFG->uploadRoot . '/' . $fileRecord ['path'] . '/' . $fileRecord ['name'];
+				//print_object($template);
 			}
 			
 			TraceManager::add ( 'Loading template:' . $template, TraceCategory::CONNECTOR, __CLASS__ );
@@ -127,8 +128,8 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 			if (count ( $fileRecord ) == 0)
 				throw new \Exception ( 'Invalid file ' . $this->idFile );
 			$newName = str_replace ( '.', date ( 'Y-m-d-h-i' ), $fileRecord ['name'] );
-			$outputFileName = $KUINK_CFG->dataRoot . '/' . $fileRecord ['path'] . '/' . $newName;
-			$originalFileName = $KUINK_CFG->dataRoot . '/' . $fileRecord ['path'] . '/' . $fileRecord ['name'];
+			$outputFileName = $KUINK_CFG->uploadRoot . '/' . $fileRecord ['path'] . '/' . $newName;
+			$originalFileName = $KUINK_CFG->uploadRoot . '/' . $fileRecord ['path'] . '/' . $fileRecord ['name'];
 			
 			// save the file with a different name, delete the previous file, replace the file with the updated one
 			$this->conn->Show ( OPENTBS_FILE, $outputFileName ); // Also merges all [onshow] automatic fields.
