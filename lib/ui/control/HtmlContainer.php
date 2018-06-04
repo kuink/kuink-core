@@ -51,6 +51,7 @@ class HtmlContainer extends Control {
 		$this->value = '';
 	}
 	function display() {
+		$id=null;
 		$visible = $this->getProperty ( $id, HtmlContainerProperty::VISIBLE, false, HtmlContainerPropertyDefaults::VISIBLE );
 		$label = $this->getProperty ( $id, HtmlContainerProperty::LABEL, false, HtmlContainerPropertyDefaults::LABEL );
 		$label = \Kuink\Core\Language::getString ( $label, $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] );

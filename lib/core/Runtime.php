@@ -148,10 +148,11 @@ class Runtime {
 		// die();
 		//print_r($currentNode->params);
 		$this->params = isset($currentNode->params) ? $currentNode->params : null;
-		foreach ( $params as $key => $value )
-			$this->params [$key] = $value;
-			
-			// $this->params = empty( $params ) ? $currentNode->params : $params ;
+		if (isset($params))
+			foreach ( $params as $key => $value )
+				$this->params [$key] = $value;
+				
+		// $this->params = empty( $params ) ? $currentNode->params : $params ;
 		$this->variables [] = null;
 		$this->libraries [] = null;
 		
@@ -468,8 +469,10 @@ class Runtime {
 					throw new \Exception ( 'ERROR: node source name must be appname,processname,nodename or appname,processname if event is set' );
 					
 					// Getting the reference application, process and node
-				$refnodeappname = ($refnodeappname == 'this') ? $this->app_name : trim ( $node_parts [0] );
-				$refnodeprocessname = ($refnodeprocessname == 'this') ? $this->process_name : trim ( $node_parts [1] );
+				$refnodeappname = trim ( $node_parts [0] );
+				$refnodeappname = ($refnodeappname == 'this') ? $this->app_name : $refnodeappname;
+				$refnodeprocessname = trim ( $node_parts [1] );
+				$refnodeprocessname = ($refnodeprocessname == 'this') ? $this->process_name : $refnodeprocessname;
 				$refnodename = isset ( $node_parts [2] ) ? trim ( $node_parts [2] ) : '';
 				
 				// kuink_mydebug($refnodeappname, $refnodeprocessname.'->'.$node_event);
@@ -985,7 +988,7 @@ class Runtime {
 		global $KUINK_TRACE;
 		global $KUINK_MANUAL_TRACE;
 		global $KUINK_BRIDGE_CFG;
-		// kuink_mydebug('Executing action', $actionname);
+		//kuink_mydebug('Executing action', $actionname);
 		
 		$context = ProcessOrchestrator::getContext ();
 		
@@ -1026,7 +1029,9 @@ class Runtime {
 		if ($log_level != 'action' && $log_level != 'post' && $log_level != 'full' && $log_level != '')
 			throw new \Exception ( 'Invalid log type: ' . $log_level );
 		
-		$key = (( string ) $nodeconfiguration [NodeConfKey::ACTION_VALUE] == '') ? '-' : ( string ) $nodeconfiguration [NodeConfKey::ACTION_VALUE];
+		//var_dump((string)$nodeconfiguration [NodeConfKey::ACTION_VALUE]);
+		$actionValue = is_array($nodeconfiguration [NodeConfKey::ACTION_VALUE]) ? '' : (string)$nodeconfiguration [NodeConfKey::ACTION_VALUE];
+		$key = ($actionValue == '') ? '-' : $actionValue;
 		
 		$html = ''; // return the html if this is a ui node
 		            
@@ -2985,7 +2990,8 @@ class Runtime {
 		 * $url = new \moodle_url($baseurl);
 		 * redirect($url->__toString() . '&'.UrlParam::EVENT.'='.$eventname, '', 0);
 		 */
-		return $null;
+		//kuink_mydebug('Raise Event', $eventname);
+		return null;
 	}
 	function inst_print($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
 		$newLine = ( string ) $this->get_inst_attr ( $instruction_xmlnode, 'newline', $variables, false, 'false' );

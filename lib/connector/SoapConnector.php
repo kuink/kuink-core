@@ -121,7 +121,7 @@ class NTLMSoapClient extends \SoapClient
     	$this->ch = curl_init($location);
     
     	curl_setopt($this->ch, CURLOPT_SSL_VERIFYPEER, true);
-    	curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, true);
+    	curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, 2);
     	curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, true);
     	curl_setopt($this->ch, CURLOPT_HTTPHEADER, $headers);
     	curl_setopt($this->ch, CURLOPT_POST, true );
@@ -342,7 +342,7 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
   	$passwd=$this->dataSource->getParam('passwd', true);;
   	$oneWay=0;
   	
-  	$KUINK_TRACE[]='Calling webservice: '.$this->dataSource->name.' : '.$params[_entity];
+  	$KUINK_TRACE[]='Calling webservice: '.$this->dataSource->name.' : '.$params['_entity'];
 	$rawXMLresponse = $this->soapClient->__doRequestLegacy($request, $location, $action, $version, $oneWay, $user, $passwd);
 	
     return $rawXMLresponse; 

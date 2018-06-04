@@ -602,13 +602,11 @@ class ProcessOrchestrator {
 		if (isset ( $_GET [QueryStringParam::NODE_GUID] )) {
 			$nodeGuid = $_GET [QueryStringParam::NODE_GUID];
 			$nodeToExecute = self::setCurrentNode ( $nodeGuid );
-			
 			return $nodeToExecute;
 		}
 		
 		$currentFlow = (isset ( $forceFlow )) ? $forceFlow : self::getCurrentFlow ( $setEvent );
-		//var_dump($currentFlow);
-		
+		//print_object($currentFlow);		
 		// The process is set is flow? else get the default flow
 		
 		if (! isset ( $currentFlow->process )) {
@@ -650,13 +648,13 @@ class ProcessOrchestrator {
 		// var_dump($currentFlow);
 		$addFlow = new Flow ( $nodeToExecute->application, $nodeToExecute->process, $nodeToExecute->node, $currentFlow->event, $currentFlow->action, $currentFlow->action_value );
 		self::addNode ( $addFlow );
-		
+		//print_object($nodeToExecute);
 		return $nodeToExecute;
 	}
 	static function processEvent($roles, $flow) {
 		global $KUINK_CFG;
 		global $KUINK_APPLICATION;
-		
+
 		$appBase = $KUINK_APPLICATION->appManager->getApplicationBase ( $flow->application );
 		
 		// var_dump($flow); //DEBUG
@@ -675,7 +673,7 @@ class ProcessOrchestrator {
 		if ($processXml == null)
 			throw new \Exception ( 'Cannot open flow file: ' . $flowFile );
 			
-			// Get the correct flow
+			// Get the correct flow	
 		$flows = array ();
 		foreach ( $roles as $role => $value ) {
 			$xpath = '//Process/Transitions/Flow[contains(@role, \'' . $role . '\') and @startnode="' . $flow->node . '" and @event="' . $flow->event . '"]';
@@ -683,10 +681,11 @@ class ProcessOrchestrator {
 			if (! empty ( $roleFlow ))
 				$flows [] = $roleFlow;
 		}
-		
-		if (! isset ( $flows [0] [0] ))
-			throw new \Exception ( 'Kuink::ProcessOrchestrator::Invalid Transition.' );
-		$processFlow = $flows [0] [0];
+
+		//if (! isset ( $flows [0] [0] ))
+		//	throw new \Exception ( 'Kuink::ProcessOrchestrator::Invalid Transition.' );
+	
+		$processFlow = isset($flows [0]) && isset($flows [0] [0]) ? $flows [0] [0] : null;
 		$nodeToExecute = new Node ( $flow->application, $flow->process, ( string ) $processFlow ['endnode'] );
 		
 		// Check to see if we are exiting a process

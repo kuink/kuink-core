@@ -259,10 +259,11 @@ abstract class Control {
 		// kuink_mydebug('Datasource', $datasourcename);
 		// kuink_mydebug('BindId', $bindid);
 		// kuink_mydebug('BindValue', $bindvalue);
+		$datasourcename = trim($datasourcename);
 		if (! isset ( $this->datasources [$datasourcename] )) {
-			// kuink_mydebug('Loading...', $datasourcename);
+			//kuink_mydebug('Loading...', $datasourcename);
 			$pos = strpos ( $datasourcename, 'table:' );
-			if ($pos === 0 && ! $this->datasources [$datasourcename]) {
+			if ($pos === 0) {
 				// Get the options from the table only one time
 				$table = str_replace ( 'table:', '', $datasourcename );
 				$appName = ( string ) $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION];

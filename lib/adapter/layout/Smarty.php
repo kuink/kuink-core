@@ -170,9 +170,10 @@ class Smarty extends \Smarty {
 		$this->assign ( "sessKey", $sessKey );
 	}
 	public function setAppMenu($appMenuEntries) {
-		foreach ( $appMenuEntries as $item ) {
-			$this->menuItems [] = $item;
-		}
+		if (isset($appMenuEntries) && is_array($appMenuEntries))
+			foreach ( $appMenuEntries as $item ) {
+				$this->menuItems [] = $item;
+			}
 		// $this->assign("appMenuEntries", $appMenuEntries);
 	}
 	public function setNodeMenu($nodeMenuEntries) {

@@ -457,7 +457,6 @@ class Application {
 			
 			// Get the default flow
 			$this->setDefaultFlow ();
-			
 			$runNode = ($node == null) ? ProcessOrchestrator::getNodeToExecute ( $this->roles, $this->defaultFlow ) : $node;
 			
 			$this->nodeconfiguration = $this->getNodeConfiguration ( $runNode );

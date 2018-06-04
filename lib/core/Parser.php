@@ -147,7 +147,7 @@ class EvalExpr {
 			$return = addslashes ( $return );
 		
 		if (! is_numeric ( $return ) && $stringIsolation && ($return !== null))
-			$return = "'" . $return . "'";
+			$return = "'" . (is_array($return) ? '' : (string)$return) . "'";
 		else if ($return === null)
 			$return = 'null';
 			

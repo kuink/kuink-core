@@ -396,8 +396,8 @@ class Grid extends Control {
 	 * @param unknown_type $field_properties        	
 	 */
 	function addColumn($columnProperties) {
-		// var_dump($columnProperties);
 		$this->dynamicColumns [] = $columnProperties;
+		//print_object($this->dynamicColumns);		
 		return;
 	}
 	
@@ -558,7 +558,7 @@ class Grid extends Control {
 	 * Build the dynamic fields in the Grid
 	 */
 	function buildDynamicFields() {
-		// var_dump($this->dynamicColumns);
+		// print_object($this->dynamicColumns);
 		// iterate through dynamic fields
 		foreach ( $this->dynamicColumns as $dynamicColumn ) {
 			$name = $dynamicColumn ['name'];
@@ -599,10 +599,11 @@ class Grid extends Control {
 	 */
 	private function build() {
 		global $SESSION;
-		// kuink_mydebug('Building...',$this->name);
+
 		if ($this->built)
 			return;
 		
+		//kuink_mydebug('Building...',$this->name);
 		$this->buildDynamicFields (); // Add all the dynamic fields in the properties array
 		
 		$form = isset ( $_GET ['form'] ) ? '&form=' . $_GET ['form'] : '';
@@ -708,8 +709,10 @@ class Grid extends Control {
 				// Add all the columns in this container
 				foreach ( $this->properties as $dynColumn ) {
 					$currentContainer = ( string ) $dynColumn ['container'];
-					if ($currentContainer == $colName) {
+					if ($currentContainer == $colname) {
 						// Create a new element with the dynamic fields
+						//kuink_mydebug('Dynamic:', $colname);
+						//kuink_mydebug('Dynamic:', $currentContainer);
 						$attrs = '';
 						$rules = '';
 						$formatters = '';
@@ -840,7 +843,7 @@ class Grid extends Control {
 		$this->tablecolattributes = $table_colattributes;
 		$this->static_bind = $table_collookup;
 		$this->tablecolinline = $table_colinline;
-		// var_dump( $this->tablecolformatter );
+		// print_object( $this->tablecolumns );
 		// bind the data
 		$this->bindData ();
 		
@@ -1560,6 +1563,7 @@ class Grid extends Control {
 		}
 		$params ['data'] = $series;
 		$this->skeleton = '_chart_v2';
+		print_object($params);
 		$uiParams ['jsonData'] = $params;
 		$uiParams ['name'] = $this->name;
 		$uiParams ['width'] = $width;

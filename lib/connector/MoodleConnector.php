@@ -133,6 +133,11 @@ class MoodleConnector extends \Kuink\Core\DataSourceConnector {
 		// kuink_mydebug(__CLASS__, __METHOD__);
 		global $KUINK_TRACE;
 	}
+
+	public function getSchemaName($params) {
+		return null;
+	}
+	
 }
 
 // Helper classes
@@ -723,9 +728,6 @@ class curl_cache {
 		}
 	}
 
-	public function getSchemaName($params) {
-		return null;
-	}
 }
 
 ?>

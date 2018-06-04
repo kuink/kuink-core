@@ -1148,9 +1148,11 @@ class Form extends Control {
 				// $this->setContextVariable($this->name.'_contextData', $this->bind_data);
 				
 				$newStoredData = array ();
-				foreach ( $this->bind_data as $bind_data )
-					foreach ( $bind_data as $newBindKey => $newBindData )
-						$newStoredData [$newBindKey] = $newBindData;
+				foreach ( $this->bind_data as $bind_data ) {
+					if (is_array($bind_data))
+						foreach ( $bind_data as $newBindKey => $newBindData )
+							$newStoredData [$newBindKey] = $newBindData;
+				}
 					// print_object($newStoredData);
 				$this->setContextVariable ( $this->name . '_contextData', $newStoredData );
 			}
@@ -1239,7 +1241,7 @@ class Form extends Control {
 					
 					// Check if there is a formatter
 					// print_object( $this->fieldFormatter );
-					$formatter_data = $this->fieldFormatter [( string ) $key];
+					$formatter_data = isset($this->fieldFormatter [( string ) $key]) ? $this->fieldFormatter [( string ) $key] : null;
 					if ($formatter_data) {
 						foreach ( $formatter_data as $f_name => $f_attributes ) {
 							$attributes = null;
@@ -1423,7 +1425,7 @@ class Form extends Control {
 				$j = $i+1;
 				//print(' | '.(string)($fields[$i]['attributes']['id']));
 				if ($lastNumberOfInlineFields == 1 && isset($fields[$j]))
-					while (($fields[$j]['attributes']['inline'] != 'false') && ($j < count($fields))) {
+					while (isset($fields[$j]) && ($fields[$j]['attributes']['inline'] != 'false') && ($j < count($fields))) {
 						//print('*');
 						$j++; 
 						$numberOfInlineFields++;

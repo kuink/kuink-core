@@ -34,7 +34,7 @@ class Formatter {
 	 * @param unknown_type $default        	
 	 * @throws Exception
 	 */
-	function getParam($params, $name, $mandatory, $default) {
+	function getParam($params, $name, $mandatory, $default=null) {
 		if (! isset ( $params [$name] ) && $mandatory)
 			throw new \Exception ( get_class () . ':: Required parameter ' . $name . ' not found' );
 		

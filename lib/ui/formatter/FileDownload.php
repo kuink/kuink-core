@@ -30,12 +30,12 @@ class FileDownload extends Formatter {
 			return '-';
 			
 			// Try to get elements from $params this way no need to query database
-		$ext = ( string ) $params ['fileExt'];
-		$filename = ( string ) $params ['fileName'];
-		$guid = ( string ) $params ['fileGuid'];
-		$filesize = ( string ) $params ['fileSize'];
-		$original_name = ( string ) $params ['fileOriginalName'];
-		$unlinked = ( string ) $params ['unlinked'];
+		$ext = isset($params ['fileExt']) ? ( string ) $params ['fileExt'] : '';
+		$filename = isset($params ['fileName']) ? ( string ) $params ['fileName'] : '';
+		$guid = isset($params ['fileGuid']) ? ( string ) $params ['fileGuid'] : '';
+		$filesize = isset($params ['fileSize']) ? ( string ) $params ['fileSize'] : '';
+		$original_name = isset($params ['fileOriginalName']) ? ( string ) $params ['fileOriginalName'] : '';
+		$unlinked = isset($params ['unlinked']) ? ( string ) $params ['unlinked'] : '';
 		
 		if ($ext == '' || $filename == '' || $guid == '' || $filesize == '' || $original_name == '') {
 			// Get the file data from database
