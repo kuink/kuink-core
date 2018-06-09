@@ -63,8 +63,11 @@ class HtmlContainer extends Control {
 		if ($visible != 'true')
 			return;
 		
-		$this->value = implode ( '', $this->bind_data );
-		
+		if (isset($this->bind_data))
+			$this->value = implode ( '', $this->bind_data );
+		else
+		$this->value = '';
+
 		$params ['label'] = $label;
 		$params ['border'] = $border;
 		$params ['style'] = $style;

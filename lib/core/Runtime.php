@@ -35,8 +35,8 @@ class ActionType {
 }
 class User {
 	function getUser() {
-		global $KUINK_BRIDGE_CFG, $KUINK_CFG;
-		//var_dump($KUINK_BRIDGE_CFG->auth->user);
+		global $KUINK_CFG;
+		//var_dump($KUINK_CFG->auth->user);
 		if (isset($_SESSION['kuink.logged.user']))
 			$kuinkUser = $_SESSION['kuink.logged.user'];
 		else
@@ -50,8 +50,8 @@ class User {
 		$kuinkUser ['isImpersonated'] = isset ( $impersonate ) ? 1 : 0;
 		
 		$idNumber = 0; // the guest id_number
-		if ($KUINK_BRIDGE_CFG->auth->user->id != null)
-			$idNumber = $KUINK_BRIDGE_CFG->auth->user->id;
+		if ($KUINK_CFG->auth->user->id != null)
+			$idNumber = $KUINK_CFG->auth->user->id;
 			
 			// Handle impersonated user
 		if ($kuinkUser ['isImpersonated'])
@@ -81,8 +81,8 @@ class User {
 		$kuinkUser ['email'] = $person ['email']; // $USER->email;
 		$kuinkUser ['publicKey'] = $person ['public_key']; // $USER->email;
 		                                                 // $kuink_user['tipo'] = $current_user->tipo;
-		$kuinkUser ['idExternal'] = $KUINK_BRIDGE_CFG->auth->user->id; // $current_user->idexternal;
-		$kuinkUser ['lang'] = $KUINK_BRIDGE_CFG->auth->user->lang;
+		$kuinkUser ['idExternal'] = $KUINK_CFG->auth->user->id; // $current_user->idexternal;
+		$kuinkUser ['lang'] = $KUINK_CFG->auth->user->lang;
 		
 		// @todoSTI: Joao Patricio get this value from person table
 		$kuinkUser ['timezone'] = $KUINK_CFG->defaultTimezone;
@@ -180,9 +180,9 @@ class Runtime {
 		$server_info ['apiUrl'] = $KUINK_CFG->apiUrl;
 		$server_info ['streamUrl'] = $KUINK_CFG->streamUrl;
 		$server_info ['guestUrl'] = $KUINK_CFG->guestUrl;
-		$server_info ['baseUploadDir'] = (isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)$this->nodeconfiguration [NodeConfKey::CONFIG] ['uploadFolderBase'] : '';
-		$config = (isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)($this->nodeconfiguration [NodeConfKey::CONFIG] ['uploadFolderBase']) : '';
-		$server_info ['fullUploadDir'] = $KUINK_CFG->dataRoot . '/' . $config;
+		$server_info ['baseUploadDir'] = $KUINK_CFG->uploadRoot; //(isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)$this->nodeconfiguration [NodeConfKey::CONFIG] ['uploadFolderBase'] : '';
+		//$config = (isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)($this->nodeconfiguration [NodeConfKey::CONFIG] ['uploadFolderBase']) : '';
+		$server_info ['fullUploadDir'] = $KUINK_CFG->uploadRoot; //$KUINK_CFG->dataRoot . '/' . $config;
 		$server_info ['environment'] = $KUINK_CFG->environment;
 		
 		$this->variables ['SYSTEM'] = $server_info;
@@ -362,7 +362,6 @@ class Runtime {
 		// This shouldn't be here
 		\Kuink\Core\ProcessOrchestrator::registerAPI ( 'framework,ticket,api,add' );
 		\Kuink\Core\ProcessOrchestrator::registerAPI ( 'framework,ticket,api,getHandlers' );
-		
 		// Clear event control variables
 		$this->event_raised = false;
 		$this->event_raised_name = '';
@@ -418,7 +417,7 @@ class Runtime {
 			// Get node attributes
 			// Set event params if they exist, in the EVENT_PARAMS general variable
 			$this->variables ['EVENT_PARAMS'] = ProcessOrchestrator::getEventParams (); // isset($_SESSION['KUINK_CONTEXT']['EVENT_PARAMS']) ? $_SESSION['KUINK_CONTEXT']['EVENT_PARAMS'] : null;
-			
+	
 			/**
 			 * ***************************************
 			 */
@@ -444,6 +443,7 @@ class Runtime {
 				else
 					$node_params [$param_name] = $param_value;
 			}
+
 			/**
 			 * ***************************************
 			 */
@@ -458,7 +458,7 @@ class Runtime {
 			// Get the event to start the subprocess - Get it from the EVENT_PARAMS variable if it starts with $
 			$node_event = $this->get_inst_attr ( $nodexml, 'event', $this->variables ['EVENT_PARAMS'], false, '' );
 			
-			// kuink_mydebug('reference', $node_reference);
+			 //kuink_mydebug('reference', $node_reference);
 			
 			// Check if this node is a reference to an existing node or is a subprocess
 			if ($node_reference != '') {
@@ -648,7 +648,8 @@ class Runtime {
 				return $value;
 			} else {
 				// Execute this action
-				// kuink_mydebug('Executing action:',$actionname);
+				//kuink_mydebug('Executing action:',$actionname);
+
 				$action_xmlnode = $this->action_get_xmlnode ( $this->nodeconfiguration, $nodexml, $actionname );
 				$html = $this->action_execute ( $this->nodeconfiguration, $nodexml, $action_xmlnode, $actionname, $this->variables );
 				// var_dump($this->nodeconfiguration);
@@ -665,6 +666,9 @@ class Runtime {
 				$msg_manager->add(MessageType::EXCEPTION,'Exception:: '. $e->getMessage());
 			}
 			//Rollback transactions
+			//global $KUINK_TRACE;
+			//print_object($KUINK_TRACE);
+			//die();			
 			//print_object($e->getMessage());
 			\Kuink\Core\DataSourceManager::rollbackTransaction();
 				
@@ -744,7 +748,6 @@ class Runtime {
 			$html .= '<br/>Node Configuration » ';
 			$html .= '<a href="javascript:;" onmousedown="if(document.getElementById(\'nodeconf\').style.display == \'none\'){ document.getElementById(\'nodeconf\').style.display = \'block\'; }else{ document.getElementById(\'nodeconf\').style.display = \'none\'; }">Show/Hide</a><br/> ';
 			$html .= '<div id="nodeconf" style="display:none">';
-			// var_dump($this->nodeconfiguration);
 			$html .= '<pre class="pre-scrollable"><p>' . var_export ( $this->nodeconfiguration, true ) . '</p></pre>';
 			$html .= '</div>';
 			
@@ -767,12 +770,13 @@ class Runtime {
 			$html .= '</pre>';
 			$html .= '</div>';
 			
+			
 			$html .= "<br/>Variables » ";
 			$html .= '<a href="javascript:;" onmousedown="if(document.getElementById(\'vars\').style.display == \'none\'){ document.getElementById(\'vars\').style.display = \'block\'; }else{ document.getElementById(\'vars\').style.display = \'none\'; }">Show/Hide</a><br/> ';
 			$html .= '<div id="vars" style="display:none">';
-			// var_dump($this->variables);
 			$html .= '<pre class="pre-scrollable"><p>' . var_export ( $this->variables, true ) . '</p></pre>';
 			$html .= '</div>';
+			
 			
 			$html .= '<br/>Session Variables » ';
 			$html .= '<a href="javascript:;" onmousedown="if(document.getElementById(\'sess\').style.display == \'none\'){ document.getElementById(\'sess\').style.display = \'block\'; }else{ document.getElementById(\'sess\').style.display = \'none\'; }">Show/Hide</a><br/> ';
@@ -780,6 +784,7 @@ class Runtime {
 			$html .= '<pre class="pre-scrollable"><p>' . var_export ( $_SESSION ['KUINK_CONTEXT'], true ) . '</p></pre>';
 			$html .= '</div>';
 			
+
 			$html .= '</div></div></div>';
 			
 			$layout = \Kuink\UI\Layout\Layout::getInstance ();
@@ -987,7 +992,7 @@ class Runtime {
 	function action_execute(&$nodeconfiguration, $nodexml, $action_xmlnode, $actionname, &$variables) {
 		global $KUINK_TRACE;
 		global $KUINK_MANUAL_TRACE;
-		global $KUINK_BRIDGE_CFG;
+		global $KUINK_CFG;
 		//kuink_mydebug('Executing action', $actionname);
 		
 		$context = ProcessOrchestrator::getContext ();
@@ -1043,7 +1048,7 @@ class Runtime {
 			// var_dump($nodeconfiguration);
 			$pars = array (
 					'table' => 'log',
-					'id_user' => $KUINK_BRIDGE_CFG->auth->user->id,
+					'id_user' => $KUINK_CFG->auth->user->id,
 					'type' => $log_level,
 					'application' => $nodeconfiguration [NodeConfKey::APPLICATION],
 					'process' => $nodeconfiguration [NodeConfKey::PROCESS],
@@ -1063,7 +1068,6 @@ class Runtime {
 			// Getting the submitted data from POST.
 			$variables ['POSTDATA'] = $this->get_submitted_data ();
 		}
-		
 		// var_dump($variables['POSTDATA']);
 		// var_dump($KUINK_TRACE);
 		// if this is a screen object load all the screen objects, forms, grids, everything
@@ -1146,7 +1150,7 @@ class Runtime {
 				$this->current_controls [] = $uielem;
 			}
 		}
-		
+
 		$instructions = $action_xmlnode [0]->children ();
 		// var_dump( $instructions[0] );
 		// Start executing instructions inside this action
@@ -1157,7 +1161,7 @@ class Runtime {
 			// kuink_mydebug('Calling instruction', $instruction_xmlnode->getName());
 			// var_dump( $instruction_xmlnode );
 			// Execute this instruction
-			$this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
+				$this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
 			// print( $actionname.'::' );
 			// print( (string)$exit );
 			// Check if there is an event raised
@@ -1169,7 +1173,7 @@ class Runtime {
 			if ($exit)
 				break;
 		}
-		
+
 		// Handle export from grids...
 		// Export the grid data and redo the action.
 		$export = isset ( $_GET ['export'] ) ? true : false;
@@ -1204,7 +1208,7 @@ class Runtime {
 				
 				// var_dump( $course );
 				$url = Tools::getWWWRoot ();
-				global $KUINK_BRIDGE_CFG;
+				global $KUINK_CFG;
 
 				$layout = \Kuink\UI\Layout\Layout::getInstance ();
 				$breadcrumbEntries = array ();
@@ -1212,10 +1216,10 @@ class Runtime {
 					'label' => Language::getString ( 'home' ),
 					'href' => $url 
 				);
-				if (isset($KUINK_BRIDGE_CFG->trigger->url))
+				if (isset($KUINK_CFG->trigger->url))
 					$breadcrumbEntries[] = array (
-						'label' => $KUINK_BRIDGE_CFG->trigger->label,
-						'href'  => $KUINK_BRIDGE_CFG->trigger->url,
+						'label' => $KUINK_CFG->trigger->label,
+						'href'  => $KUINK_CFG->trigger->url,
 						'last'  => false 
 					);
 				$breadcrumbEntries[] = array (
@@ -1839,7 +1843,7 @@ class Runtime {
 		return $errors;
 	}
 	function inst_log($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
-		global $KUINK_BRIDGE_CFG;
+		global $KUINK_CFG;
 		
 		$type = $this->get_inst_attr ( $instruction_xmlnode, 'type', $variables, true );
 		$key = $this->get_inst_attr ( $instruction_xmlnode, 'key', $variables, true );
@@ -1871,7 +1875,7 @@ class Runtime {
 		
 		$pars = array (
 				'table' => 'fw_log',
-				'id_user' => $KUINK_BRIDGE_CFG->auth->user->id,
+				'id_user' => $KUINK_CFG->auth->user->id,
 				'type' => $type,
 				'application' => $nodeconfiguration [NodeConfKey::APPLICATION],
 				'process' => $nodeconfiguration [NodeConfKey::PROCESS],
@@ -2085,7 +2089,8 @@ class Runtime {
 		//Legacy behavior
 		//Execute inner instructions
 
-		$message = "No message";
+		$message = 'No message';
+		$code = '';
 		//Execute inner instructions
 
 		$newinstruction_xmlnode = $instruction_xmlnode->children();
@@ -4065,13 +4070,13 @@ class Runtime {
 		
 		$config = $nodeconfiguration [NodeConfKey::CONFIG];
 		
-		$base_upload = $KUINK_CFG->uploadRoot . $config ['uploadFolderBase'];
+		$base_upload = $KUINK_CFG->uploadRoot;
 		$upload_dir = $base_upload . '/' . $path;
 		
 		// Handle dupplication of slashes in configurations
 		$upload_dir = str_replace ( '//', '/', $upload_dir );
 		
-		$myFile = $KUINK_CFG->dataroot . '/' . $upload_dir . $filename;
+		$myFile = $KUINK_CFG->dataRoot . '/' . $upload_dir . $filename;
 		// print($myFile);
 		
 		/*
@@ -4083,13 +4088,13 @@ class Runtime {
 		 */
 		
 		// Create the path if the directory doesn't exist
-		if (! is_dir ( $KUINK_CFG->dataroot . '/' . $upload_dir )) {
+		if (! is_dir ( $KUINK_CFG->dataRoot . '/' . $upload_dir )) {
 			$dir_parts = explode ( '/', $upload_dir );
 			$sub_dirs = '/';
 			foreach ( $dir_parts as $dir ) {
-				// kuink_mydebug('Creating...', $KUINK_CFG->dataroot.$sub_dirs.$dir);
-				if (! is_dir ( $KUINK_CFG->dataroot . $sub_dirs . $dir ))
-					mkdir ( $KUINK_CFG->dataroot . $sub_dirs . $dir );
+				// kuink_mydebug('Creating...', $KUINK_CFG->dataRoot.$sub_dirs.$dir);
+				if (! is_dir ( $KUINK_CFG->dataRoot . $sub_dirs . $dir ))
+					mkdir ( $KUINK_CFG->dataRoot . $sub_dirs . $dir );
 				$sub_dirs .= $dir . '/';
 			}
 		}
@@ -4279,7 +4284,7 @@ class Runtime {
 		
 		$config = $nodeconfiguration [NodeConfKey::CONFIG];
 		
-		$base_upload = $KUINK_CFG->uploadRoot . $config ['uploadFolderBase'];
+		$base_upload = $KUINK_CFG->uploadRoot;
 		$upload_dir = $base_upload . '/' . $path;
 		
 		// Handle dupplication of slashes in configurations

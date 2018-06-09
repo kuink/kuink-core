@@ -76,7 +76,7 @@ class Badge extends Formatter {
 		}
 		
 		$decimals = ( int ) $this->getParam ( $params, 'decimals', false, 0 );
-		$perc = ($value != 0) ? ( float ) (( int ) $value / ($max - $min)) * 100.0 : 0;
+		$perc = (($value != 0) && ($max - $min != 0)) ? ( float ) (( int ) $value / ($max - $min)) * 100.0 : 0;
 		$showValue = ( string ) $this->getParam ( $params, 'showvalue', false, 'true' );
 		
 		$displayValue = '&nbsp;';
@@ -86,7 +86,7 @@ class Badge extends Formatter {
 			$displayValue = number_format ( ( float ) $perc, $decimals, ',', '.' ) . '%';
 			
 			// $displayValue = $value;
-		$formatter = '<span class="label label-' . $palleteName . '">' . $displayValue . '</span>';
+		$formatter = '<span class="badge badge-' . $palleteName . '">' . $displayValue . '</span>';
 		return $formatter;
 	}
 	

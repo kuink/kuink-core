@@ -25,7 +25,7 @@ class Smarty extends \Smarty {
 	private $positionsHtml = array ();
 	private $menuItems = array ();
 	function __construct($themeName = "default") {
-		GLOBAL $KUINK_CFG, $KUINK_BRIDGE_CFG;
+		GLOBAL $KUINK_CFG;
 		parent::__construct ();
 		$this->setTemplateDir ( dirname ( __FILE__ ) . '/../../../theme/' . $themeName . '/template/' );
 		$this->setCompileDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache_compiled/' );
@@ -46,10 +46,10 @@ class Smarty extends \Smarty {
 		$this->assign ( '_imageUrl', $KUINK_CFG->imageRemote );
 		$this->assign ( '_photoUrl', $KUINK_CFG->photoRemote );
 		$this->assign ( '_environment', $KUINK_CFG->environment );
-		$this->assign ( '_lang', $KUINK_BRIDGE_CFG->auth->user->lang );		
+		$this->assign ( '_lang', $KUINK_CFG->auth->user->lang );		
 		$userEmail = '';
-		if (isset($KUINK_BRIDGE_CFG->auth->user->email) && ($KUINK_BRIDGE_CFG->auth->user->email != 'root@localhost'))
-			$userEmail = $KUINK_BRIDGE_CFG->auth->user->email;
+		if (isset($KUINK_CFG->auth->user->email) && ($KUINK_CFG->auth->user->email != 'root@localhost'))
+			$userEmail = $KUINK_CFG->auth->user->email;
 		$this->assign ( '_userEmail',  $userEmail  );		
 		//Get rid of unnecessary reporting
 		$this->error_reporting = E_ALL & ~E_NOTICE;

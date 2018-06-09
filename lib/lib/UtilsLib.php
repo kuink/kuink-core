@@ -17,7 +17,7 @@
 class UtilsLib {
 	var $nodeconfiguration;
 	var $msg_manager;
-	function __construct($nodeconfiguration, $msg_manager) {
+	function __construct($nodeconfiguration=null, $msg_manager=null) {
 		$this->nodeconfiguration = $nodeconfiguration;
 		$this->msg_manager = $msg_manager;
 		return;
@@ -34,7 +34,7 @@ substr ( $charid, 0, 8 ) . $hyphen . substr ( $charid, 8, 4 ) . $hyphen . substr
 			return $uuid;
 		}
 	}
-	function GuidClean($params) {
+	function GuidClean($params=null) {
 		if (function_exists ( 'com_create_guid' )) {
 			return com_create_guid ();
 		} else {
@@ -219,7 +219,7 @@ substr ( $charid, 0, 8 ) . $hyphen . substr ( $charid, 8, 4 ) . $hyphen . substr
 		$out = array ();
 		
 		foreach ( $arr as $key => $value ) {
-			if ($value ['CHANGED'] == 1) {
+			if (isset($value ['CHANGED']) && ($value ['CHANGED'] == 1)) {
 				$out [$key] = $value;
 			}
 		}
@@ -298,8 +298,8 @@ substr ( $charid, 0, 8 ) . $hyphen . substr ( $charid, 8, 4 ) . $hyphen . substr
 			$pivotRow = array ();
 			
 			foreach ( $pivotLines as $line ) {
-				$fullId .= $row [$line];
-				$pivotRow [$line] = $row [$line];
+				$fullId .= isset($row [$line]) ? $row [$line] : '';
+				$pivotRow [$line] = isset($row [$line]) ? $row [$line] : null;
 			}
 			if (! isset ( $fullIdOrder [$fullId] )) {
 				$fullIdOrder [$fullId] = $lineOrder;
@@ -320,9 +320,9 @@ substr ( $charid, 0, 8 ) . $hyphen . substr ( $charid, 8, 4 ) . $hyphen . substr
 			foreach ( $pivotCols as $col ) {
 				if (count ( $pivotData ) > 1)
 					foreach ( $pivotData as $data )
-						$pivotRow [$row [$col]] ['__infer_' . $data] = $row [$data];
+						$pivotRow [$row [$col]] ['__infer_' . $data] = isset($row [$data]) ? $row [$data] : null;
 				else
-					$pivotRow [$row [$col]] = $row [$pivotData [0]];
+					$pivotRow [$row [$col]] = isset($row [$pivotData [0]]) ? $row [$pivotData [0]] : null;
 			}
 			
 			$pivotAux [$fullIdIndex] = array_merge ( ( array ) $pivotAux [$fullIdIndex], ( array ) $pivotRow );

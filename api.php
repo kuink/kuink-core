@@ -25,7 +25,7 @@
 date_default_timezone_set ( 'UTC' );
 
 /* Kuink***************************************** */
-global $KUINK_INCLUDE_PATH, $KUINK_BRIDGE_CFG;
+global $KUINK_INCLUDE_PATH;
 
 require_once ($KUINK_INCLUDE_PATH . "kuink_includes.php");
 /* Kuink***************************************** */

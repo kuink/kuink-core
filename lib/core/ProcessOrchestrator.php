@@ -268,7 +268,7 @@ class ProcessOrchestrator {
 		$lastNode = self::getCurrentNode ( $contextId );
 	}
 	static function addNode($node, $contextId = null) {
-		global $KUINK_CFG, $KUINK_BRIDGE_CFG;
+		global $KUINK_CFG;
 		
 		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();
 		
@@ -316,7 +316,7 @@ class ProcessOrchestrator {
 			$newNode->nodeGuid = uniqid ();
 			$newNode->rwx = 7; // TODO
 			$newNode->idUserImpersonate = null; // TODO
-      $newNode->idUser = ($KUINK_BRIDGE_CFG->auth->user->id) ? $KUINK_BRIDGE_CFG->auth->user->id : 0; // TODO
+      $newNode->idUser = ($KUINK_CFG->auth->user->id) ? $KUINK_CFG->auth->user->id : 0; // TODO
       $qstrId = isset($_GET [QueryStringParam::ID]) ? $_GET [QueryStringParam::ID] : '';
 			$newNode->url = $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $qstrId . '&' . QueryStringParam::ID_CONTEXT . '=' . $_GET [QueryStringParam::ID_CONTEXT] . '&' . QueryStringParam::NODE_GUID . '=' . $newNode->nodeGuid;
 			$newNode->params = self::getEventParams ( $contextId );
@@ -754,7 +754,7 @@ class ProcessOrchestrator {
 	 * sets the company id in session
 	 */
 	static function setCompany() {
-		global $KUINK_CFG, $KUINK_BRIDGE_CFG;
+		global $KUINK_CFG;
 		// unset( $_SESSION['KUINK_CONTEXT']['idCompany'] );
 		
 		$context = self::getContext ();
@@ -775,7 +775,7 @@ class ProcessOrchestrator {
 		} else if (! isset ( $context->idCompany )) {
 			// Load the user companies
 			$datasource = new \Kuink\Core\DataSource ( null, 'framework/framework,user,user.getCompanies', 'framework', 'user' );
-			$idNumber = ($KUINK_BRIDGE_CFG->auth->user->id) ? $KUINK_BRIDGE_CFG->auth->user->id : 0;
+			$idNumber = ($KUINK_CFG->auth->user->id) ? $KUINK_CFG->auth->user->id : 0;
 			$pars = array (
 					'id_person' => $idNumber 
 			);

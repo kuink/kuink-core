@@ -17,7 +17,7 @@
 class SetLib {
 	var $nodeconfiguration;
 	var $msg_manager;
-	function __construct($nodeconfiguration, $msg_manager) {
+	function __construct($nodeconfiguration=null, $msg_manager=null) {
 		$this->nodeconfiguration = $nodeconfiguration;
 		$this->msg_manager = $msg_manager;
 		return;
@@ -212,8 +212,8 @@ class SetLib {
 					".º" => "o" 
 			);
 			foreach ( $keys as $field ) {
-				$arrayA = strtr($a[$field], $encode_chars_array);
-				$arrayB = strtr($b[$field], $encode_chars_array);
+				$arrayA = isset($a[$field]) ? strtr($a[$field], $encode_chars_array) : '';
+				$arrayB = isset($b[$field]) ? strtr($b[$field], $encode_chars_array) : '';
 				$arrayA = is_string($arrayA) ? strtolower($arrayA) : $arrayA;
 				$arrayB = is_string($arrayB) ? strtolower($arrayB) : $arrayB;
 				$diff = strnatcmp($arrayA, $arrayB); //strnatcasecmp($a[$field], $b[$field]);

@@ -429,9 +429,10 @@ class Grid extends Control {
 		$attributes = array ();
 		
 		// var_dump( $this->properties );
-		
+		$id = $this->getProperty ( $name, GridColumnProperty::ID, false, $name, $column );
+
 		$attributes [GridColumnProperty::NAME] = $name;
-		$attributes [GridColumnProperty::ID] = $this->getProperty ( $name, GridColumnProperty::ID, false, $name, $column );
+		$attributes [GridColumnProperty::ID] = $id;
 		
 		$label = $this->getProperty ( $name, GridColumnProperty::LABEL, false, $name, $column );
 		$label = Core\Language::getString ( $label, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
@@ -708,7 +709,7 @@ class Grid extends Control {
 			if ($colType == 'container') {
 				// Add all the columns in this container
 				foreach ( $this->properties as $dynColumn ) {
-					$currentContainer = ( string ) $dynColumn ['container'];
+					$currentContainer = isset($dynColumn ['container']) ? ( string ) $dynColumn ['container'] : null;
 					if ($currentContainer == $colname) {
 						// Create a new element with the dynamic fields
 						//kuink_mydebug('Dynamic:', $colname);
@@ -719,11 +720,13 @@ class Grid extends Control {
 						foreach ( $dynColumn as $key => $value )
 							$attrs .= ' ' . ( string ) $key . '="' . ( string ) $value . '"';
 						$dynRules = $this->dynamicRules [$dynColumn ['name']];
-						foreach ( $dynRules as $dynRule )
-							$rules .= '<Rule attr="' . ( string ) $dynRule ['attr'] . '" condition="' . ( string ) $dynRule ['condition'] . '"  value="' . ( string ) $dynRule ['value'] . '"/>';
+						if (is_array($dynRules))
+							foreach ( $dynRules as $dynRule )
+								$rules .= '<Rule attr="' . ( string ) $dynRule ['attr'] . '" condition="' . ( string ) $dynRule ['condition'] . '"  value="' . ( string ) $dynRule ['value'] . '"/>';
 						$dynFormatters = $this->dynamicFormatters [( string ) $dynColumn ['name']];
-						foreach ( $dynFormatters as $dynFormatter )
-							$formatters .= '<Formatter name="' . ( string ) $dynFormatter ['name'] . '" method="' . ( string ) $dynFormatter ['method'] . '"/>';
+						if (is_array($dynFormatters))
+							foreach ( $dynFormatters as $dynFormatter )
+								$formatters .= '<Formatter name="' . ( string ) $dynFormatter ['name'] . '" method="' . ( string ) $dynFormatter ['method'] . '"/>';
 						$newColumn = new \SimpleXMLElement ( '<Column ' . $attrs . '>' . $rules . $formatters . '</Column>' );
 						// var_dump($dynFormatters);
 						$newColumns [] = $newColumn;
@@ -882,7 +885,7 @@ class Grid extends Control {
 				foreach ( $this->bind_data as $data ) {
 					$record = ( array ) reset ( $data );
 					foreach ( $record as $key => $value ) {
-						if (!in_array($key, $this->tablecolumns) && !in_array($key, $this->tablecolnotvisible)) { // && (strpos($key, '__infer_') > 0)					
+						if (is_array($this->tablecolumns) && !in_array($key, $this->tablecolumns) && is_array($this->tablecolnotvisible) && !in_array($key, $this->tablecolnotvisible)) { // && (strpos($key, '__infer_') > 0)					
 							$this->tableinfercolumns [] = $key;
 							$this->tablecolumns [] = $key;
 							$this->tableheaders [] = $key;
@@ -904,8 +907,7 @@ class Grid extends Control {
 			
 			// var_dump( $this->tablecolumns );
 			$records = (isset ( $data ['records'] )) ? $data ['records'] : $data;
-			$this->_reccords = $records; // TODO STI: Joao Patricio tirar isto daqui
-			                             // var_dump( $records );
+			$originalValuesArray = array ();																	 
 			$new_data = array ();
 			foreach ( $records as $record ) {
 				$record = ( array ) $record;
@@ -945,7 +947,7 @@ class Grid extends Control {
 						$condExpr = $ruleCondition ['condition'];
 						$condCapability = $ruleCondition ['capability'];
 						$condAttrValue = $ruleCondition ['value'];
-						$recordValue = ( string ) $record [$condField];
+						//$recordValue = ( string ) $record [$condField];
 						$capabilityValue = isset ( $this->nodeconfiguration [\Kuink\Core\NodeConfKey::CAPABILITIES] [$condCapability] ) ? 1 : 0;
 						
 						// Parse the conditionExpr
@@ -1063,8 +1065,8 @@ class Grid extends Control {
 					}
 					
 					if ($this->tree == 'true') {
-						$datatoinsert [$current_key] ['attributes'] ['treeid'] = $record [$this->treeid];
-						$datatoinsert [$current_key] ['attributes'] ['treeparentid'] = $record [$this->treeparentid];
+						$datatoinsert [$current_key] ['attributes'] ['treeid'] = isset($record [$this->treeid]) ? $record [$this->treeid] : null;
+						$datatoinsert [$current_key] ['attributes'] ['treeparentid'] = isset($record [$this->treeparentid]) ? $record [$this->treeparentid] : null;
 					}
 					
 					// If this is an action column then create the action link
@@ -1254,9 +1256,9 @@ class Grid extends Control {
 				// $this->tableobj->setup();
 				// var_dump( $datatoinsert );
 				unset ( $datatoinsert ['__infer'] ); // remove __infer data that is allways empty
-				foreach ( $originalValuesArray as $origKey => $origValue ) {
-					unset ( $datatoinsert [$origKey] );
-				}
+				if (is_array($originalValuesArray))
+					foreach ( $originalValuesArray as $origKey => $origValue )
+						unset ( $datatoinsert [$origKey] );
 				$new_data [] = $datatoinsert;
 				// $this->tableobj->add_data( $datatoinsert );
 			}
@@ -1522,7 +1524,7 @@ class Grid extends Control {
 		
 		$series = array ();
 		$data = $this->bind_data;
-		$data = $data [0];
+		$data = isset($data [0]) ? $data [0] : array();
 		
 		// only one serie?
 		$flag_onlyOneSerie = (count ( explode ( ',', $this->pivotdata ) ) == 1) ? true : false;
@@ -1563,7 +1565,7 @@ class Grid extends Control {
 		}
 		$params ['data'] = $series;
 		$this->skeleton = '_chart_v2';
-		print_object($params);
+		//print_object($params);
 		$uiParams ['jsonData'] = $params;
 		$uiParams ['name'] = $this->name;
 		$uiParams ['width'] = $width;
@@ -1685,7 +1687,7 @@ class Grid extends Control {
 		
 		$config = $this->nodeconfiguration ['config'];
 		
-		$base_upload = $KUINK_CFG->uploadRoot . $config ['uploadFolderBase'];
+		$base_upload = $KUINK_CFG->uploadRoot;
 		$upload_dir = $base_upload . '/tmp/';
 		
 		// Handle dupplication of slashes in configurations

@@ -107,6 +107,7 @@ class Application {
 		// The instance can define the application name as "application,process,event"
 		// This way the default flow will not be taken from menu but from this name
 		$nameParts = explode ( ',', $appName );
+
 		$this->name = ( string ) $nameParts [0];
 		if (isset ( $nameParts [1] ) && isset ( $nameParts [2] )) {
 			$this->defaultFlow = new Flow ( $this->name, $nameParts [1], '', $nameParts [2] );
@@ -121,6 +122,7 @@ class Application {
 		
 		// Load framework.xml definiton
 		$this->loadFrameworkDefinition ();
+		//print_object($this->fwXmlDefinition);
 		
 		// Setup framework dataSources
 		\Kuink\Core\DataSourceManager::setupFrameworkDS ( $this );
@@ -227,7 +229,7 @@ class Application {
 	 * @throws \Exception
 	 */
 	private function loadInstanceConfig($instanceConfigRaw) {
-		global $KUINK_BRIDGE_CFG;
+		global $KUINK_CFG;
 		
 		$config = array ();
 		if (trim ( $instanceConfigRaw ) != '') {
@@ -244,7 +246,7 @@ class Application {
 			}
 			
 			// load locally assigned roles
-			$current_user_id = ($KUINK_BRIDGE_CFG->auth->user->id) ? ( string ) $KUINK_BRIDGE_CFG->auth->user->id : 0;
+			$current_user_id = ($KUINK_CFG->auth->user->id) ? ( string ) $KUINK_CFG->auth->user->id : 0;
 			$xpath_query = '/Configuration/Role[@user="' . ( string ) $current_user_id . '"]';
 			$instance_roles = $instanceConfigXml->xpath ( $xpath_query );
 			
@@ -262,10 +264,10 @@ class Application {
 	 * Loads the user roles from DB allocation tables
 	 */
 	private function loadRolesFromDB() {
-		global $KUINK_BRIDGE_CFG, $KUINK_TRACE, $KUINK_CFG;
+		global $KUINK_TRACE, $KUINK_CFG;
 		
 		$idCompany = ProcessOrchestrator::getCompany ();
-		$idNumber=($KUINK_BRIDGE_CFG->auth->user->id) ? (string)$KUINK_BRIDGE_CFG->auth->user->id : 0;		
+		$idNumber=($KUINK_CFG->auth->user->id) ? (string)$KUINK_CFG->auth->user->id : 0;		
 		// Load the roles
 		try {
 			if ($KUINK_CFG->useGlobalACL) {	
@@ -447,7 +449,7 @@ class Application {
 	 * It will get all necessary params
 	 */
 	function run($node = null, $functionName = null, $function_params = null) {
-		global $KUINK_CFG, $KUINK_BRIDGE_CFG, $SESSION, $KUINK_LAYOUT;
+		global $KUINK_CFG, $SESSION, $KUINK_LAYOUT;
 		
 		$msgManager = \Kuink\Core\MessageManager::getInstance ();
 		
@@ -468,7 +470,7 @@ class Application {
 			if ($functionName == null) {
 				$layout = \Kuink\UI\Layout\Layout::getInstance ();
 				$layout->setBaseUrl ( $KUINK_CFG->wwwRoot );
-				$layout->setLogOut ( $KUINK_BRIDGE_CFG->auth->user->firstName . ' ' . $KUINK_BRIDGE_CFG->auth->user->lastName, $KUINK_BRIDGE_CFG->auth->user->id, $KUINK_BRIDGE_CFG->auth->sessionKey );
+				$layout->setLogOut ( $KUINK_CFG->auth->user->firstName . ' ' . $KUINK_CFG->auth->user->lastName, $KUINK_CFG->auth->user->id, $KUINK_CFG->auth->sessionKey );
 			}
 			$runtime = null;
 			if ($functionName == null)

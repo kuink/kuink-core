@@ -460,7 +460,7 @@ class Reflection {
 			$actDoc = isset ( $action ['doc'] ) ? ( string ) $action ['doc'] : '';
 			$docXml = $action->xpath ( 'Doc' );
 			if (isset ( $docXml ))
-				$actDoc .= ( string ) $docXml [0];
+				$actDoc .= isset($docXml [0]) ? ( string ) $docXml [0] : '';
 			$permissions = self::getNodePermissions ( $action );
 			$nodeActions [] = array (
 					'name' => ( string ) $action ['name'],
@@ -493,20 +493,21 @@ class Reflection {
 			$fxOutput = array ();
 			$fxOutputSignature = '<strong>Returns</strong> (' . $returnsType . ') - ';
 			$fxOutputSignature .= $returnsDoc . '<br/><br/>';
-			foreach ( $external as $outParam ) {
-				$extType = isset ( $outParam ['type'] ) ? ( string ) $outParam ['type'] : 'text';
-				;
-				$extName = isset ( $outParam ['name'] ) ? ( string ) $outParam ['name'] : '';
-				;
-				$extDoc = isset ( $outParam ['doc'] ) ? ( string ) $outParam ['doc'] : 'undefined';
-				;
-				$fxOutputSignature .= $extType . ' <strong>' . $extName . '</strong> - ' . $extDoc . '<br/>';
-				$fxOutput [] = array (
-						'name' => $extName,
-						'type' => $extType,
-						'doc' => $extDoc 
-				);
-			}
+			if (is_array($external))
+				foreach ( $external as $outParam ) {
+					$extType = isset ( $outParam ['type'] ) ? ( string ) $outParam ['type'] : 'text';
+					;
+					$extName = isset ( $outParam ['name'] ) ? ( string ) $outParam ['name'] : '';
+					;
+					$extDoc = isset ( $outParam ['doc'] ) ? ( string ) $outParam ['doc'] : 'undefined';
+					;
+					$fxOutputSignature .= $extType . ' <strong>' . $extName . '</strong> - ' . $extDoc . '<br/>';
+					$fxOutput [] = array (
+							'name' => $extName,
+							'type' => $extType,
+							'doc' => $extDoc 
+					);
+				}
 			
 			// Errors
 			$errorsXml = $fx->xpath ( 'Errors/Error' );

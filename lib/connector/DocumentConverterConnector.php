@@ -21,7 +21,6 @@ class DocumentConverterConnector extends \Kuink\Core\DataSourceConnector {
 	function execute($params) {
 		global $KUINK_TRACE;
 		global $KUINK_CFG;
-		global $KUINK_BRIDGE_CFG;
 		$this->connect();
 		
 		$idFile = (int)$this->getParam($params, 'id');
@@ -65,7 +64,7 @@ class DocumentConverterConnector extends \Kuink\Core\DataSourceConnector {
 			
 			$fileLib = new \FileLib ( $this->nodeconfiguration, \Kuink\Core\MessageManager::getInstance () );
 			
-			$newFile = $fileLib->register( $newName, $path, $newName, $fileSize, $fileExt, $fileMime, $KUINK_BRIDGE_CFG->auth->user->id, '' );
+			$newFile = $fileLib->register( $newName, $path, $newName, $fileSize, $fileExt, $fileMime, $KUINK_CFG->auth->user->id, '' );
 		}
 		
 		return $newFile;

@@ -63,6 +63,7 @@ abstract class Control {
 		$this->position = ( string ) $this->getProperty ( $this->name, 'position', false, '' );
 		$this->guid = 'k'.uniqid(); //allways start with a letter
 		$this->refreshing = false;
+		$this->bind_data = array();
 	}
 	function setRefreshing() {
 		$this->refreshing = true;

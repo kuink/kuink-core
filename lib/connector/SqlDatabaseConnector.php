@@ -558,11 +558,13 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   	unset ( $params ['_acl']);
   	unset ( $params ['_aclPermissions']);
 		
-		if ($ignoreNulls)
-			foreach ( $params as $key => $value )
-				if ($value == '')
-					unset ( $params [$key] );
+		
+		foreach ( $params as $key => $value )
+			if (($ignoreNulls && ($value == '')) || is_array($value))
+				unset ( $params [$key] ); //ignore empty values and arrays
 			// print_object($params);
+		
+
 		if (count ( $params ) == 0 && ! $allowEmptyParams) {
 			return null;
 		}
@@ -853,7 +855,6 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   	$acl = ($aclPermissions == 'false') ? 'false' : 'true';
 		$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::view.all' : $aclPermissions;
 		$tablePrefix = $this->dataSource->getParam ( 'prefix', false, '' );
-		
 		// global $CFG;
 		// global $KUINK_TRACE;
 		// global $DB;
@@ -912,11 +913,12 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 
   		}
   	}
-  	//Expand parameters and table prefix
+		//Expand parameters and table prefix
   	foreach ($params as $key => $value) {
   		//$param_value = mysql_escape_string($value);
-  		$param_value = $value;
-  		$sql = str_replace('{param->'.$key.'}', $param_value , $sql);
+			$param_value = $value;
+			if (!is_array($param_value))
+				$sql = str_replace('{param->'.$key.'}', $param_value , $sql);
 		}
 			$sql = str_replace('{table_prefix}', $tablePrefix , $sql);
 
@@ -1849,10 +1851,11 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		return;
 	}
 	function rollbackTransaction() {
-		if ($this->db->inTransaction ()) {
-			$this->db->rollBack ();
-			parent::rollbackTransaction ();
-		}
+		if (isset($this->db))
+			if ($this->db->inTransaction ()) {
+				$this->db->rollBack ();
+				parent::rollbackTransaction ();
+			}
 		
 		return;
 	}

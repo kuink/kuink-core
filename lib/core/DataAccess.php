@@ -114,8 +114,13 @@ class DataAccess {
 					else {
 						// implode to use with IN
 						$arrayValues = array ();
-						foreach ( $value as $arrayValue )
-							$arrayValues [] = '\'' . $arrayValue . '\'';
+						foreach ( $value as $arrayValue ) {
+							if (is_string($arrayValue))
+								$arrayValues [] = '\'' . $arrayValue . '\'';
+							else
+								$arrayValues [] = '\'' . (count(array_filter(array_keys($arrayValue), 'is_string')) > 0) ? '__array' : $arrayValue . '\'';
+						}
+						
 						$newParams [$key] = implode ( ',', $arrayValues );
 					}
 				} else {

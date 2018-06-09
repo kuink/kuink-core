@@ -1096,7 +1096,7 @@ class Form extends Control {
 			$default = ( string ) $attributes [FieldProperty::DEFAULT_BUTTON];
 			$help = ( string ) $attributes [FieldProperty::HELP];
 			$runat = ( string ) $attributes [FieldProperty::RUNAT];
-			$attributes [FieldProperty::HELP] = ($help == $id) ? 'false' : neon_get_help_string ( $help );
+			$attributes [FieldProperty::HELP] = ($help == $id) ? 'false' : kuink_get_help_string ( $help );
 			if (! $hasDefault) {
 				if ($type != 'cancel' && $type != 'back' && $visible == 'true') {
 					$hasDefault = true;

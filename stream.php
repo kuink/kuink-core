@@ -1,9 +1,9 @@
 <?php
 
 /* KUINK***************************************** */
+require_once ($KUINK_INCLUDE_PATH . "kuink_includes.php");
 global $KUINK_INCLUDE_PATH;
 global $KUINK_CFG;
-require_once ($KUINK_INCLUDE_PATH . "kuink_includes.php");
 
 $type = $_GET ['type'];
 $guid = $_GET ['guid'];
@@ -57,10 +57,12 @@ switch ($type) {
 			
 			$file = (string) $fileRecord['name'];
 			$path = (string) $fileRecord['path'];
-			
-			$pathName = $KUINK_CFG->uploadRoot.$path .'/'. $file;		
-			//var_dump($pathName);
-			//die();
+
+			/* corect the file path based on $KUINK_CFG->uploadVirtualPrefix temporary key*/
+			$path = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $path);
+
+			$pathName = $KUINK_CFG->uploadRoot.$path .'/'. $file;	
+
 		} else {
 			// Without guid
 			header ( 'HTTP/1.0 404 not found' );
