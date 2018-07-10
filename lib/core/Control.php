@@ -410,7 +410,7 @@ abstract class Control {
 	 */
 	function expandFormatterParams($data, &$params) {
 		foreach ( $params as $key => $value ) {
-			if ($value [0] == '$') {
+			if ((isset($value [0])) && ($value [0] == '$')) {
 				// It's a field name
 				$field = substr ( $value, 1, strlen ( $value ) - 1 );
 				

@@ -97,7 +97,8 @@ class FileLib {
 		$iduser = (isset($params ['id_user'])) ? $params ['id_user'] : '';
 		$desc = (isset($params [5])) ? $params [5] : '';
 		$mandatory = (isset($params [6])) ? $params [6] : null;
-		
+		$showErrors = (isset($params ['showErrors'])) ? $params ['showErrors'] : 1; //default shows all errors
+
 		// print('FILENAME:'.$param_filename );
 		// print('MAXUPLOAD SIZE:'.$maxUploadSize );
 		// print('UPLOAD FOLDER:'.$upload_folder );
@@ -115,12 +116,12 @@ class FileLib {
 			$error = false;
 			// kuink_mydebug('filename', $filename);
 			
-			if ($file ['error'] != 0) {
+			if ($file ['error'] != 0 && $showErrors) {
 				$KUINK_TRACE[] = 'FileLib::Upload ERROR - '.$file['error'];
 				$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Erro no upload do ficheiro.' );
 			}
 			
-			if ($file ['error'] == 4) {
+			if ($file ['error'] == 4  && $showErrors) {
 				if ($mandatory == 'true')
 					$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'O ficheiro é obrigatório.' );
 				return null;
@@ -154,13 +155,14 @@ class FileLib {
 				if ((($filesize > $maxUploadSize) && ($maxUploadSize != 0)) || $file ['error'] == 2) {
 					$error = true;
 					unlink ( $full_path_original );
-					$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Ficheiro com tamanho superior ao permitido.' );
+					if ($showErrors)
+						$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Ficheiro com tamanho superior ao permitido.' );
 					// print('Ficheiro com tamanho superior ao permitido.');
 					// ERRO: Ficheiro com tamanho superior
 					continue;
 				}
 				
-				if ($file ['error'] != 0) {
+				if ($file ['error'] != 0 && $showErrors) {
 					$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Erro a fazer upload do ficheiro (' . $file ['error'] . ').' );
 					continue;
 				}
@@ -257,7 +259,8 @@ class FileLib {
 		// print($CFG->dataRoot.'/'.$file->path.'/'.$file->name);
 		$filename = $KUINK_CFG->uploadRoot . '/' . $file ['path'] . '/' . $file ['name'];
 		// kuink_mydebug('file',$filename);
-		unlink ( $filename );
+		if (file_exists($filename))
+			unlink ( $filename );
 		
 		$delete_file_record = isset ( $params [1] ) ? ( string ) $params [1] : 'true';
 		

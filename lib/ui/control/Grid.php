@@ -381,6 +381,7 @@ class Grid extends Control {
 		
 		// var_dump($this->sort);
 		$orderQueryArray = array ();
+		if (isset($this->sort) && is_array($this->sort))
 		foreach ( $this->sort as $sort ) {
 			if (($sort ['sort'] != 'asc') && ($sort ['sort'] != 'desc'))
 				throw new \Exception ( 'Invalid sort expression on grid ' . $sort ['sort'] );

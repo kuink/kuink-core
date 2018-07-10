@@ -59,6 +59,7 @@ class Badge extends Formatter {
 		$variables ['value'] = $value;
 		$variables ['max'] = $max;
 		$variables ['field'] = $field;
+		$palleteName = '';
 		
 		// var_dump( $params );
 		foreach ( $params as $condition => $style ) {

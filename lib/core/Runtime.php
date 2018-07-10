@@ -282,7 +282,7 @@ class Runtime {
 					$this->addCapability ( $capability );
 				}
 			}
-			return $this->nodeconfiguration [NodeConfKey::CAPABILITIES];
+			return isset($this->nodeconfiguration [NodeConfKey::CAPABILITIES]) ? $this->nodeconfiguration [NodeConfKey::CAPABILITIES] : array();
 		}
 	}
 	
@@ -1123,7 +1123,8 @@ class Runtime {
 								foreach ( $variables ['POSTDATA'] as $postKey => $postValue ) {
 									$field = explode ( '_', $postKey );
 									if ($field [0] == $listFormField) {
-										$bindArr [$field [1]] = $postValue;
+										if (isset($field [1]))
+											$bindArr [$field [1]] = $postValue;
 									}
 								}
 								$uielem->bind ( array (
@@ -2585,7 +2586,9 @@ class Runtime {
 		while ( $condition ) {
 			$instructions = $instruction_xmlnode->children ();
 			foreach ( $instructions as $new_instruction ) {
-				$value .= $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction [0], $actionname, $variables, $exit );
+				$result = $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction [0], $actionname, $variables, $exit );
+				if (!is_array($result))
+					$value .= $result;
 			}
 			$variables [$var] = $variables [$var] + $step;
 			$condition = $eval->e ( $conditionExpr, $variables, TRUE );
@@ -2628,7 +2631,9 @@ class Runtime {
 		while ( $condition ) {
 			$instructions = $instruction_xmlnode->children ();
 			foreach ( $instructions as $new_instruction ) {
-				$value .= $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction [0], $actionname, $variables, $exit );
+				$result = $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction [0], $actionname, $variables, $exit ); 
+				if (!is_array($result))
+					$value .= $result;
 			}
 			$condition = $eval->e ( $conditionExpr, $variables, TRUE );
 		}
@@ -3619,11 +3624,11 @@ class Runtime {
 			if ($value == '') { // clear all
 			                  // $node_roles = $this->getNodeRoles($roles, $this->node_xml);
 			                  // TODO:: remove the dynamic roles
-				
-				foreach ( $currentRoles as $roleToDelete => $valueToDelete ) {
-					unset ( $roles [$roleToDelete] );
-					unset ( $currentStackRoles [$roleToDelete] );
-				}
+				if (isset($currentRoles) && is_array($currentRoles))
+					foreach ( $currentRoles as $roleToDelete => $valueToDelete ) {
+						unset ( $roles [$roleToDelete] );
+						unset ( $currentStackRoles [$roleToDelete] );
+					}
 				ProcessOrchestrator::setNodeRoles ( $currentStackRoles );
 				// unset($_SESSION['KUINK_ROLES'][$custumapp_name.$process_name]);
 			} else { // clear just this role

@@ -1836,6 +1836,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		return;
 	}
 	function beginTransaction() {
+		$this->connect ();
 		if (! $this->db->inTransaction ()) {
 			$this->db->beginTransaction ();
 			parent::beginTransaction ();
@@ -1843,6 +1844,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		return;
 	}
 	function commitTransaction() {
+		$this->connect ();
 		if ($this->db->inTransaction ()) {
 			$this->db->commit ();
 			parent::commitTransaction ();
@@ -1851,6 +1853,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		return;
 	}
 	function rollbackTransaction() {
+		$this->connect ();
 		if (isset($this->db))
 			if ($this->db->inTransaction ()) {
 				$this->db->rollBack ();

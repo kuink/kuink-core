@@ -18,7 +18,7 @@ namespace Kuink\UI\Control;
 
 class Ide extends Control {
 	function display() {
-		$data = ( string ) $this->bind_data [0];
+		$data = isset($this->bind_data [0]) ? ( string ) $this->bind_data [0] : null;
 		$this->render ( array () );
 	}
 	function getHtml() {

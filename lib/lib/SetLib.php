@@ -336,6 +336,13 @@ class SetLib {
       return $merged;
     }
 
+    function reverse($params){
+      $set = $params[0];
+      $reverse = array_reverse($set);
+      
+      return $reverse;
+    }
+
 }
 
 ?>

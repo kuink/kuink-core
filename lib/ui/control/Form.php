@@ -1402,8 +1402,12 @@ class Form extends Control {
 		// var_dump($this->rulesClient);
 		$rules = array ();
 		foreach ( $this->rulesClient as $clientRule ) {
+			$dataSource = isset($clientRule ['datasource']) ? $clientRule ['datasource'] : '';
+			$dataSourceParams = isset($clientRule ['datasourceparams']) ? $clientRule ['datasourceparams'] : '';
+			$bindId = isset($clientRule ['bindid']) ? $clientRule ['bindid'] : '';
+			$bindValue = isset($clientRule ['bindvalue']) ? $clientRule ['bindvalue'] : '';
 			
-			$rules [] = '{ "field": "' . $clientRule ['field'] . '", "condition": "' . $clientRule ['condition'] . '", "attr": "' . $clientRule ['attr'] . '", "value_true":"' . $clientRule ['valueTrue'] . '", "value_false": "' . $clientRule ['valueFalse'] . '", "datasource": "' . $clientRule ['datasource'] . '", "bindid": "' . $clientRule ['bindid'] . '", "bindvalue": "' . $clientRule ['bindvalue'] . '", "datasourceparams":' . json_encode ( $clientRule ['datasourceparams'] ) . '}';
+			$rules [] = '{ "field": "' . $clientRule ['field'] . '", "condition": "' . $clientRule ['condition'] . '", "attr": "' . $clientRule ['attr'] . '", "value_true":"' . $clientRule ['valueTrue'] . '", "value_false": "' . $clientRule ['valueFalse'] . '", "datasource": "' . $dataSource  . '", "bindid": "' . $bindId . '", "bindvalue": "' . $bindValue . '", "datasourceparams":' . json_encode ( $dataSourceParams ) . '}';
 		}
 		$jsonRules = '[' . implode ( ',', $rules ) . ']';
 		return $jsonRules;

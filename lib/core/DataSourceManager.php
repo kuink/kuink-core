@@ -197,9 +197,11 @@ class DataSourceManager {
 	}
 	static public function beginTransaction() {
 		global $KUINK_DATASOURCES;
-		
-		foreach ( $KUINK_DATASOURCES as $ds )
+		//print_object($KUINK_DATASOURCES);
+		foreach ( $KUINK_DATASOURCES as $ds ) {
+			//print_object($ds->name);
 			$ds->beginTransaction ();
+		}
 	}
 	static public function commitTransaction() {
 		global $KUINK_DATASOURCES;

@@ -107,7 +107,7 @@ class Menu extends Control {
 		$layout = \Kuink\UI\Layout\Layout::getInstance ();
 		
 		// print_object(count($menu['child']));
-		if (isset($actionPermissions [$actionName]) || ($actionName == '' && count ( $menu ['child'] ) > 0))
+		if (isset($actionPermissions [$actionName]) || ($actionName == '' && isset($menu ['child']) && count ( $menu ['child'] ) > 0))
 			$layout->setNodeMenu ( $menu );
 	}
 	
