@@ -288,7 +288,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		
 		if (! file_exists ( $fileName ))
 			file_put_contents ( $fileName, $xmlDefinition );
-		$filePath = $NEON_CFG->appRoot."apps/$appBase/$application/lang";
+		$filePath = $KUINK_CFG->appRoot."apps/$appBase/$application/lang";
 		$fileName = $filePath.'/pt.xml';      
 		//Check if the path exists
 		if (!is_dir($filePath))
