@@ -31,26 +31,20 @@ class GoogleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector {
 		$this->connector = isset ( $this->connector ) ? $this->connector : '';
 		if (! $this->connector) {
 			// Connect to the server
-			$this->clientID = $this->dataSource->getParam ( 'clientID', true );
-			$this->serviceAccountName = $this->dataSource->getParam ( 'serviceAccountName', true );
 			$this->keyfile = $this->dataSource->getParam ( 'keyfile', true );
 			$this->delegatedAdmin = $this->dataSource->getParam ( 'delegatedAdmin', true );
 			$this->domain = $this->dataSource->getParam ( 'domain', true );
 			$this->scopes = $this->dataSource->getParam ( 'scopes', true );
-			$this->applicationName = $this->dataSource->getParam ( 'applicationName', true );
 			
 			if (! file_exists ( $KUINK_CFG->appRoot . '/apps/' . $this->keyfile ))
 				throw new \Exception ( __CLASS__ . ': invalid key file ' . $this->keyfile );
 			
-			$creds = new \Google_Auth_AssertionCredentials ( $this->serviceAccountName, $this->scopes, file_get_contents ( $KUINK_CFG->appRoot . '/apps/' . $this->keyfile ) );
-			
-			$creds->sub = $this->delegatedAdmin;
-			
-			$this->connector = new \Google_Client ();
-			$this->connector->setApplicationName ( $this->applicationName );
-			$this->connector->setClientId ( $this->clientID );
-			// $this->connector->setAccessType('offline');
-			$this->connector->setAssertionCredentials ( $creds );
+			$this->connector = new \Google_Client();
+			$this->connector->useApplicationDefaultCredentials();
+			$this->connector->setAuthConfig($KUINK_CFG->appRoot . '/apps/' . $this->keyfile);
+			$this->connector->setAccessType('offline');
+			$this->connector->setScopes($this->scopes );
+			$this->connector->setSubject($this->delegatedAdmin);
 		}
 	}
 	function userExists($params) {
@@ -76,6 +70,8 @@ class GoogleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector {
 		try {
 			$account = $dir->users->get ( $uid . '@' . $this->domain );
 		} catch ( \Exception $e ) {
+			$KUINK_TRACE [] = 'ERROR GOOGLE ADMIN SDK'; // print_object($e->getMessage());
+			$KUINK_TRACE [] = $e->getMessage(); // print_object($e->getMessage());
 			$KUINK_TRACE [] = __CLASS__ . '::' . $entity . '::' . $e->getMessage (); // print_object($e->getMessage());
 			                                                               // throw new \Exception($e);
 			$account = null;
