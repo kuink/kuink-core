@@ -63,14 +63,21 @@ class NTLMSoapClient extends \SoapClient
     	curl_setopt($this->ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
     	curl_setopt($this->ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC | CURLAUTH_NTLM);
     	curl_setopt($this->ch, CURLOPT_USERPWD, $this->user.':'.$this->passwd);
+    	curl_setopt($this->ch, CURLINFO_HEADER_OUT, true);
+    	
+    	$KUINK_TRACE[] = 'Request: ' . '<pre>'.htmlspecialchars($request).'</pre>';
     
     	$response = curl_exec($this->ch);
+    	$headerData = curl_getinfo($this->ch);
+
+    	$KUINK_TRACE[] = 'Response: ' . '<pre>'.htmlspecialchars($response).'</pre>';
+    	$KUINK_TRACE[] = 'HttpCode: ' . $headerData['http_code'];    	
     
     	if ($response === false) {
-    		$KUINK_TRACE = 'Exception calling webservice';
-    		$KUINK_TRACE = 'Request: ' . $this->__getLastRequest();
-    		$KUINK_TRACE = 'Response: ' . $this->__getLastResponse();
-    		$KUINK_TRACE = 'Error: ' . curl_error($this->ch) . ':' . curl_errno($this->ch);
+    		$KUINK_TRACE[] = 'Exception calling webservice';
+    		$KUINK_TRACE[] = 'Request: ' . $request;
+    		$KUINK_TRACE[] = 'Response: ' . $response;
+    		$KUINK_TRACE[] = 'Error: ' . curl_error($this->ch) . ':' . curl_errno($this->ch);
     		throw new \Exception(
     				'Curl error: ' . curl_error($this->ch),
     				curl_errno($this->ch)
@@ -114,7 +121,7 @@ class NTLMSoapClient extends \SoapClient
     	$this->ch = curl_init($location);
     
     	curl_setopt($this->ch, CURLOPT_SSL_VERIFYPEER, true);
-    	curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, true);
+    	curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, 2);
     	curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, true);
     	curl_setopt($this->ch, CURLOPT_HTTPHEADER, $headers);
     	curl_setopt($this->ch, CURLOPT_POST, true );
@@ -250,7 +257,16 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
 
     return $resultData; 
   }
-  
+	
+	// convert object to array
+	protected function object_to_array($obj) {
+    $arrObj = is_object ( $obj ) ? get_object_vars ( $obj ) : $obj;
+    foreach ( $arrObj as $key => $val ) {
+      $val = (is_array ( $val ) || is_object ( $val )) ? $this->object_to_array ( $val ) : $val;
+      $arr [$key] = $val;
+    }
+    return $arr;
+  }
   
   /***
    */
@@ -274,7 +290,7 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
   	$action=$prefix.$wsFunction;
   	$version=$this->dataSource->getParam('version', true);
   	$this->user=$this->dataSource->getParam('user', true);
-  	$this->passwd=$this->dataSource->getParam('passwd', true);;
+  	$this->passwd=$this->dataSource->getParam('passwd', true);
   	$oneWay=0;
   	 
   	$entity = (string) $params['_entity'];
@@ -284,15 +300,18 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
   	$newParams = array();
   	foreach ($params as $key=>$value)
   		$newParams[$key] = (string)$value;
-  	
+
+  	//Inject in the request all mandatory params set in the datasource definition (param name params)
+  	$mandatoryParams=$this->dataSource->getParam('params', false, array());
+  	foreach ($mandatoryParams as $key=>$value)
+  		$newParams[$key] = (string)$value;
   	try {
-  		$response = (array)$this->soapClient->$entity($newParams);
+			// hack to cast to array a object of objects
+			$response = $this->object_to_array($this->soapClient->$entity($newParams));
+
   	} catch (\Exception $e) {
   		$KUINK_TRACE[]='Error calling webservice '.$this->dataSource->name.':'.$entity.':'.$e->getMessage() ;
   	}
-  	
-  	$KUINK_TRACE[]='<pre>'.htmlspecialchars($this->soapClient->__getLastRequest()).'</pre>';
-  	$KUINK_TRACE[]='<pre>'.htmlspecialchars($this->soapClient->__getLastResponse()).'</pre>';  	
 
   	return $response;
   }
@@ -323,7 +342,7 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
   	$passwd=$this->dataSource->getParam('passwd', true);;
   	$oneWay=0;
   	
-  	$KUINK_TRACE[]='Calling webservice: '.$this->dataSource->name.' : '.$params[_entity];
+  	$KUINK_TRACE[]='Calling webservice: '.$this->dataSource->name.' : '.$params['_entity'];
 	$rawXMLresponse = $this->soapClient->__doRequestLegacy($request, $location, $action, $version, $oneWay, $user, $passwd);
 	
     return $rawXMLresponse; 
@@ -441,12 +460,14 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
 		<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
 		  <soap:Body>'.$call.'
 		  </soap:Body>
-		</soap:Envelope> 
-  	';
+		</soap:Envelope>';
   
   	return $envelope;
-  }  
-  
+	}  
+	
+	public function getSchemaName($params) {
+		return null;
+	}
 }
 
 ?>

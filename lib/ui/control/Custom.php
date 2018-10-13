@@ -52,7 +52,7 @@ class Custom extends Control {
 		$newnodeconfiguration = $this->nodeconfiguration;
 		$params = array ();
 		$value = '';
-		if (key ( $this->value ) == '0') {
+		if (is_array($this->value) && key ( $this->value ) == '0') {
 			// Single value
 			$value = current ( $this->value );
 		} else {

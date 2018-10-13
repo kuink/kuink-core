@@ -36,7 +36,8 @@ class Smarty extends \Smarty {
 		$this->assign ( 'THEME', $themeName );
 		
 		$context = \Kuink\Core\ProcessOrchestrator::getContext ();
-		$this->assign ( '_idContext', $context->id );
+		
+		$this->assign ( '_idContext', ($context == null) ? null : $context->id );
 		$this->assign ( '_apiUrl', $KUINK_CFG->apiUrl );
 		$this->assign ( '_kuinkRoot', $KUINK_CFG->kuinkRoot );
 		$this->assign ( '_themeRoot', $KUINK_CFG->themeRoot );
@@ -45,10 +46,32 @@ class Smarty extends \Smarty {
 		$this->assign ( '_imageUrl', $KUINK_CFG->imageRemote );
 		$this->assign ( '_photoUrl', $KUINK_CFG->photoRemote );
 		$this->assign ( '_environment', $KUINK_CFG->environment );
-		
-		// TODO: remove this PMT
+		$this->assign ( '_lang', $KUINK_CFG->auth->user->lang );		
+		$userEmail = '';
+		if (isset($KUINK_CFG->auth->user->email) && ($KUINK_CFG->auth->user->email != 'root@localhost'))
+			$userEmail = $KUINK_CFG->auth->user->email;
+		$this->assign ( '_userEmail',  $userEmail  );		
+		//Get rid of unnecessary reporting
+		$this->error_reporting = E_ALL & ~E_NOTICE;
+		$this->muteExpectedErrors();
+		//Do not use this in production
 		// $this->force_compile = true;
 	}
+
+	public function setTheme($themeName) {
+		$this->setTemplateDir(dirname(__FILE__).'/../../../theme/'.$themeName.'/template/');
+		$this->setCompileDir(dirname(__FILE__).'/../../../theme/theme_cache_compiled/');
+		$this->setCacheDir(dirname(__FILE__).'/../../../theme/theme_cache/');
+		
+		$this->themeName = $themeName;
+		$this->assign( 'THEME', $themeName );
+		//print_object('Setting theme '. $themeName);
+	}
+
+	public function getTheme() {
+		return($this->themeName);
+	}	
+
 	public function setAppTemplate($appTemplate) {
 		$this->appTemplate = $appTemplate;
 	}
@@ -70,14 +93,14 @@ class Smarty extends \Smarty {
 	public function render($html) {
 		global $KUINK_CFG;
 		$POSITION = array ();
-		
 		// Set post redirect pattern to prevent double-click and F5
 		// var_dump($_GET);
 		// var_dump($_SERVER);
 		
 		$currentNode = \Kuink\Core\ProcessOrchestrator::getCurrentNode ();
+		$qstrForm = isset($_GET ['form']) ? $_GET ['form'] : '';
 		// var_dump($currentNode);
-		$redirectUrl = $currentNode->url . '&action=' . $currentNode->action . '&actionvalue=' . $currentNode->actionValue . '&form=' . $_GET ['form'];
+		$redirectUrl = $currentNode->url . '&action=' . $currentNode->action . '&actionvalue=' . $currentNode->actionValue . '&form=' . $qstrForm;
 		$this->setRedirectHeader ( $redirectUrl );
 		
 		foreach ( $this->positionsHtml as $key => $value ) {
@@ -147,9 +170,10 @@ class Smarty extends \Smarty {
 		$this->assign ( "sessKey", $sessKey );
 	}
 	public function setAppMenu($appMenuEntries) {
-		foreach ( $appMenuEntries as $item ) {
-			$this->menuItems [] = $item;
-		}
+		if (isset($appMenuEntries) && is_array($appMenuEntries))
+			foreach ( $appMenuEntries as $item ) {
+				$this->menuItems [] = $item;
+			}
 		// $this->assign("appMenuEntries", $appMenuEntries);
 	}
 	public function setNodeMenu($nodeMenuEntries) {
@@ -173,6 +197,9 @@ class Smarty extends \Smarty {
 	public function setBreadCrumb($breadcrumbEntries) {
 		$this->assign ( "breadcrumbEntries", $breadcrumbEntries );
 	}
+	public function setRefresh($actionUrl){
+		$this->assign("_refresh", $actionUrl);
+	}    
 	public function setGlobalVariable($name, $value) {
 		$this->assign ( $name, $value );
 	}
@@ -184,19 +211,24 @@ class Smarty extends \Smarty {
 		$this->assign ( '_actionsSource', $actionsSource );
 	}
 	static function getTemplate($templateName, $data) {
-		$smarty = new Smarty ();
-		$smarty->setTemplateDir ( dirname ( __FILE__ ) . '/../../../theme/default/template/' );
+		$smarty = new \Smarty ();
+		$smarty->setTemplateDir ( dirname ( __FILE__ ) . '/../../../theme/adminlte/template/' );
 		$smarty->setCompileDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache_compiled/' );
 		$smarty->setCacheDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache/' );
 		$smarty->assign ( $data );
-		return $smarty->fetch ( $templateName . '.tpl' );
+		
+		$result = $smarty->fetch ( $templateName . '.tpl' ); 
+		//print_object(dirname ( __FILE__ ) . '/../../../theme/default/template/'.$templateName );
+		//print_object($result);
+		return $result;
 	}
 	static function getApplicationTemplate($application, $process, $templateName, $data) {
 		global $KUINK_CFG, $KUINK_APPLICATION;
 		
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 		
-		$smarty = new Smarty ();
+		$smarty = new \Smarty ();
+
 		$templateDir = $KUINK_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/templates/';
 		$smarty->setTemplateDir ( $templateDir );
 		// print($templateDir);
@@ -207,7 +239,7 @@ class Smarty extends \Smarty {
 	}
 	static function expandTemplate($templateCode, $data) {
 		global $KUINK_CFG;
-		$smarty = new Smarty ();
+		$smarty = new \Smarty ();
 		$templateDir = $KUINK_CFG->appRoot . 'files/temp/';
 		
 		// Create template file

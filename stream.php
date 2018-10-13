@@ -1,9 +1,9 @@
 <?php
 
 /* KUINK***************************************** */
+require_once ($KUINK_INCLUDE_PATH . "kuink_includes.php");
 global $KUINK_INCLUDE_PATH;
 global $KUINK_CFG;
-require_once ($KUINK_INCLUDE_PATH . "kuink_includes.php");
 
 $type = $_GET ['type'];
 $guid = $_GET ['guid'];
@@ -53,25 +53,29 @@ switch ($type) {
 			$dataAccess = new \Kuink\Core\DataAccess ( 'load', 'framework', 'config' );
 			$params ['_entity'] = 'fw_file';
 			$params ['guid'] = $guid;
-			$file_record = $dataAccess->execute ( $params );
+			$fileRecord = $dataAccess->execute ( $params );
 			
-			$file = ( string ) $file_record ['name'];
-			$path = ( string ) $file_record ['path'];
+			$file = (string) $fileRecord['name'];
+			$path = (string) $fileRecord['path'];
+
+			/* corect the file path based on $KUINK_CFG->uploadVirtualPrefix temporary key*/
+			$path = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $path);
+
+			$pathName = $KUINK_CFG->uploadRoot.$path .'/'. $file;	
+
 		} else {
 			// Without guid
 			header ( 'HTTP/1.0 404 not found' );
 			print_error ( 'Not Allowed', 'error' );
 		}
 		
-		$pathName = $KUINK_CFG->dataRoot . '/' . $path . '/' . $file;
-		
 		if (file_exists ( $pathName ) and ! is_dir ( $pathName )) {
 			ob_clean ();
-			header ( 'Content-Type: ' . $file_record ['mimetype'] );
-			header ( 'Content-Length: ' . filesize ( $pathName . $file ) );
-			
+			header ( 'Content-Type: ' . $fileRecord ['mimetype'] );
+			header ( 'Content-Length: ' . filesize ( $pathName ) );
+			header('Content-Disposition: attachment; filename="'.$guid.'.'.$fileRecord['ext'].'"');
+
 			readfile ( $pathName );
-			// send_file($pathName, $file, 0);
 		} else {
 			header ( 'HTTP/1.0 404 not found' );
 			print_error ( 'filenotfound', 'error' );
@@ -83,13 +87,28 @@ switch ($type) {
 		
 		if (file_exists ( $pathName ) and ! is_dir ( $pathName )) {
 			ob_clean ();
-			header ( 'Content-Type: text/csv' );
+			$mimeType = mime_content_type($filePath);
+			header( 'Content-Type: ' . $mimeType);
 			header ( 'Content-Length: ' . filesize ( $pathName ) );
 			readfile ( $pathName );
 		} else {
 			header ( 'HTTP/1.0 404 not found' );
 			print_error ( 'filenotfound', 'error' );
 		}
+		break;
+	case "daily":
+		$pathName = realPath($NEON_CFG->dataRoot.'/kuink/files/daily/'.$guid);
+		if ((file_exists($pathName) and !is_dir($pathName)) and (strpos($pathName, $NEON_CFG->dataRoot.'/kuink/files/daily/') !== false)) {
+			ob_clean();
+			$mimeType = mime_content_type($pathName);
+			header('Content-Type: '.$mimeType);
+			header('Content-Length: '.filesize($pathName));
+			readfile($pathName);	
+		} else {
+			header('HTTP/1.0 404 not found');
+			print_error('filenotfound', 'error'); //this is not displayed on IIS??
+		}
+		break;
 }
 
 ?>

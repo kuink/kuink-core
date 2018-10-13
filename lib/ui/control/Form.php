@@ -102,6 +102,8 @@ class FieldProperty {
 	const EVENT = 'event';
 	const DECORATION = 'decoration';
 	const INPUT_SIZE = 'inputsize';
+	const LABEL_SIZE = 'labelsize';
+	const LABEL_POSITION = 'labelposition';	
 	const MODAL = 'modal';
 	const SEARCHABLE = 'searchable';
 	const PRINTABLE = 'printable';
@@ -112,6 +114,8 @@ class FieldProperty {
 	const COLLAPSED = 'collapsed';
 	const RUNAT = 'runat';
 	const VALIDATE = 'validate';
+	const ALLOW_DELETE = 'allowdelete';
+	const CLOSE = 'close';	
 }
 
 /**
@@ -159,6 +163,8 @@ class FieldPropertyDefaults {
 	const EVENT = '';
 	const DECORATION = '';
 	const INPUT_SIZE = 'large';
+	const LABEL_SIZE = 'small';
+	const LABEL_POSITION = 'left';	
 	const MODAL = 'false';
 	const SEARCHABLE = 'false';
 	const PRINTABLE = 'true';
@@ -169,6 +175,8 @@ class FieldPropertyDefaults {
 	const COLLAPSED = 'true';
 	const RUNAT = 'server';
 	const VALIDATE = 'true';
+	const ALLOW_DELETE = 'false';	
+	const CLOSE = 'false';	
 }
 
 /**
@@ -239,6 +247,7 @@ class Form extends Control {
 	var $tabs; // Tabs present in the form <Tab id="..."/>
 	var $columns; // Number of columns in the form if it doesn't have TABS!! If it has, then tey will be in the $this->tabs array
 	var $dataBound; // Data Bound to the form with datasource and formatters completed
+	var $dataBoundWithoutFormatter; //Data Bound without the formatters applied to the data	
 	var $fieldFormatter; // holds the formatters of the fields (used in bindData)
 	var $rulesClient; // Array to hold client side rules (dynamic rules)
 	var $rulesServer; // Array to hold server side rules (dynamic rules)
@@ -258,19 +267,67 @@ class Form extends Control {
 		$this->tabs = array ();
 		$this->columns = 0;
 		$this->dataBound = array ();
+		$this->dataBoundWithoutFormatter = array(); //original values before formatter		
 		$this->listFormFields = array ();
 		$this->rulesClient = array ();
 		$this->rulesServer = array ();
-		
+	
+		//Add the first tab
+		$this->addTab('_default', '');
+				
 		$this->static_bind = array ();
 	}
 	
+	/***
+	 * Adds a tab to the form
+	 * @param $id tabid
+	 * @param $label tab label
+	 */
+	private function addTab( $id, $label )
+	{
+		if ($id == '_default')
+			$this->tabs[-1] = array(FieldProperty::ID=>$id, FieldProperty::LABEL=>$label, 'columns'=>array(0) );
+		else
+			$this->tabs[] = array(FieldProperty::ID=>$id, FieldProperty::LABEL=>$label, 'columns'=>array(0) );
+	}
+
+	/***
+	 * Adds a column to the current tab
+	 */
+	private function addCurrentTabColumn()
+	{
+		if (count($this->tabs[count($this->tabs)-2]['columns']) == 0)
+			$this->tabs[count($this->tabs)-2]['columns'][] = 1;
+		else 
+			$this->tabs[count($this->tabs)-2]['columns'][count($this->tabs[count($this->tabs)-2]['columns'])-1] += 1;
+	}
+
+	/***
+	 * Closes a column to the current tab
+	 */
+	private function closeCurrentTabColumn()
+	{
+		$this->tabs[count($this->tabs)-2]['columns'][] = 0;
+	}
+
+
+	/***
+	 * Determines if this form has tabs
+	 */
+	private function hasTabs()
+	{
+		return ((count($his->tabs) > 1) ? 1 : 0);
+	}
+
 	/**
 	 * Dynamically adding a rule to a form field
 	 * 
 	 * @param unknown_type $field_properties        	
 	 */
 	function addRule($params) {
+		global $KUINK_LAYOUT;
+		$theme = $KUINK_LAYOUT->getTheme(); 
+
 		$numParams = count ( $params );
 		if (count ( $params ) == 5 || count ( $params ) == 6) {
 			$id = ( string ) $this->getParam ( $params, 0, true );
@@ -283,7 +340,7 @@ class Form extends Control {
 			throw new \Exception ( $this->type . '->' . $this->name . '. addRule: invalid number of parameters.' );
 		
 		if ($runat == 'client') {
-			$clientCondition = $this->conditionToJavascript ( $ruleCondition, $this->name );
+			$clientCondition = $this->conditionToJavascript($ruleCondition, ($theme=='default') ? $this->name : $this->guid);			
 			$this->rulesClient [] = array (
 					'field' => $id,
 					'attr' => $ruleAttr,
@@ -321,6 +378,9 @@ class Form extends Control {
 	 * @param unknown $fieldRule        	
 	 */
 	function addFieldRule($fieldRule) {
+		global $KUINK_LAYOUT;
+		$theme = $KUINK_LAYOUT->getTheme();
+		
 		$fieldId = ( string ) $fieldRule [0];
 		$rule = $fieldRule [1];
 		
@@ -332,7 +392,7 @@ class Form extends Control {
 		if ($runat == 'client') {
 			$datasource = $rule ['datasource'];
 			$datasourceParams = $rule ['datasourceparams'];
-			$clientCondition = $this->conditionToJavascript ( $rule ['condition'], $this->name );
+			$clientCondition = $this->conditionToJavascript($rule['condition'], ($theme=='default') ? $this->name : $this->guid);			
 			$clientValueTrue = isset ( $rule ['valuetrue'] ) ? $rule ['valuetrue'] : $rule ['value'];
 			$clientValueFalse = isset ( $rule ['valuefalse'] ) ? $rule ['valuefalse'] : $oldAttrValue;
 			
@@ -438,7 +498,6 @@ class Form extends Control {
 		if ($showHelp != 'false')
 			$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $id, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		$attributes [FieldProperty::HELP] = $help;
-		
 		$attributes [FieldProperty::NAME] = $this->getProperty ( $id, FieldProperty::NAME, false, FieldPropertyDefaults::NAME, $formfield );
 		$attributes [FieldProperty::REQUIRED] = $this->getProperty ( $id, FieldProperty::REQUIRED, false, FieldPropertyDefaults::REQUIRED, $formfield );
 		$attributes [FieldProperty::DISABLED] = $this->getProperty ( $id, FieldProperty::DISABLED, false, FieldPropertyDefaults::DISABLED, $formfield );
@@ -451,7 +510,6 @@ class Form extends Control {
 		$attributes [FieldProperty::COLS] = $this->getProperty ( $id, FieldProperty::COLS, false, FieldPropertyDefaults::COLS, $formfield );
 		$attributes [FieldProperty::ROWS] = $this->getProperty ( $id, FieldProperty::ROWS, false, FieldPropertyDefaults::ROWS, $formfield );
 		$attributes [FieldProperty::MULTILANG] = $this->getProperty ( $id, FieldProperty::MULTILANG, false, FieldPropertyDefaults::MULTILANG, $formfield );
-		
 		$attributes [FieldProperty::DATASOURCE] = $this->getProperty ( $id, FieldProperty::DATASOURCE, false, FieldPropertyDefaults::DATASOURCE, $formfield );
 		$attributes [FieldProperty::DATASOURCE_PARAMS] = $this->getProperty ( $id, FieldProperty::DATASOURCE_PARAMS, false, FieldPropertyDefaults::DATASOURCE_PARAMS, $formfield );
 		$attributes [FieldProperty::DATASOURCE_INITIAL] = $this->getProperty ( $id, FieldProperty::DATASOURCE_INITIAL, false, FieldPropertyDefaults::DATASOURCE_INITIAL, $formfield );
@@ -459,24 +517,20 @@ class Form extends Control {
 		$attributes [FieldProperty::BINDVALUE] = $this->getProperty ( $id, FieldProperty::BINDVALUE, false, FieldPropertyDefaults::BINDVALUE, $formfield );
 		$attributes [FieldProperty::BINDIMAGE] = $this->getProperty ( $id, FieldProperty::BINDIMAGE, false, FieldPropertyDefaults::BINDIMAGE, $formfield );
 		$attributes [FieldProperty::BINDRESULTS] = $this->getProperty ( $id, FieldProperty::BINDRESULTS, false, FieldPropertyDefaults::BINDRESULTS, $formfield );
-		
 		$attributes [FieldProperty::STARTYEAR] = $this->getProperty ( $id, FieldProperty::STARTYEAR, false, FieldPropertyDefaults::STARTYEAR, $formfield );
 		$attributes [FieldProperty::STOPYEAR] = $this->getProperty ( $id, FieldProperty::STOPYEAR, false, FieldPropertyDefaults::STOPYEAR, $formfield );
 		$attributes [FieldProperty::NOW] = $this->getProperty ( $id, FieldProperty::NOW, false, FieldPropertyDefaults::NOW, $formfield );
-		
 		$attributes [FieldProperty::SKELETON] = $this->getProperty ( $id, FieldProperty::SKELETON, false, FieldPropertyDefaults::SKELETON, $formfield );
 		$attributes [FieldProperty::SKIN] = $this->getProperty ( $id, FieldProperty::SKIN, false, FieldPropertyDefaults::SKIN, $formfield );
-		
 		$attributes [FieldProperty::TYPE] = $this->getProperty ( $id, FieldProperty::TYPE, false, FieldPropertyDefaults::TYPE, $formfield );
 		$attributes [FieldProperty::ACTION] = $this->getProperty ( $id, FieldProperty::ACTION, false, FieldPropertyDefaults::ACTION, $formfield );
 		$attributes [FieldProperty::EVENT] = $this->getProperty ( $id, FieldProperty::EVENT, false, FieldPropertyDefaults::EVENT, $formfield );
-		
 		$attributes [FieldProperty::DECORATION] = $this->getProperty ( $id, FieldProperty::DECORATION, false, FieldPropertyDefaults::DECORATION, $formfield );
 		$attributes [FieldProperty::THEME] = $this->getProperty ( $id, FieldProperty::THEME, false, FieldPropertyDefaults::THEME, $formfield );
 		$attributes [FieldProperty::INPUT_SIZE] = $this->getProperty ( $id, FieldProperty::INPUT_SIZE, false, FieldPropertyDefaults::INPUT_SIZE, $formfield );
-		
+		$attributes [FieldProperty::LABEL_SIZE] = $this->getProperty($id, FieldProperty::LABEL_SIZE, false, FieldPropertyDefaults::LABEL_SIZE, $formfield);
+		$attributes [FieldProperty::LABEL_POSITION] = $this->getProperty($id, FieldProperty::LABEL_POSITION, false, FieldPropertyDefaults::LABEL_POSITION, $formfield);
 		$attributes [FieldProperty::DEFAULT_BUTTON] = $this->getProperty ( $id, FieldProperty::DEFAULT_BUTTON, false, FieldPropertyDefaults::DEFAULT_BUTTON, $formfield );
-		
 		$attributes [FieldProperty::MODAL] = $this->getProperty ( $id, FieldProperty::MODAL, false, FieldPropertyDefaults::MODAL, $formfield );
 		$attributes [FieldProperty::SEARCHABLE] = $this->getProperty ( $id, FieldProperty::SEARCHABLE, false, FieldPropertyDefaults::SEARCHABLE, $formfield );
 		$attributes [FieldProperty::COLLAPSIBLE] = $this->getProperty ( $id, FieldProperty::COLLAPSIBLE, false, FieldPropertyDefaults::COLLAPSIBLE, $formfield );
@@ -484,8 +538,9 @@ class Form extends Control {
 		$attributes [FieldProperty::RUNAT] = $this->getProperty ( $id, FieldProperty::RUNAT, false, FieldPropertyDefaults::RUNAT, $formfield );
 		$attributes [FieldProperty::NEWCONTEXT] = $this->getProperty ( $id, FieldProperty::NEWCONTEXT, false, FieldPropertyDefaults::NEWCONTEXT, $formfield );
 		$attributes [FieldProperty::PRINTABLE] = $this->getProperty ( $id, FieldProperty::PRINTABLE, false, FieldPropertyDefaults::PRINTABLE, $formfield );
-		
 		$attributes [FieldProperty::VALIDATE] = $this->getProperty ( $id, FieldProperty::VALIDATE, false, FieldPropertyDefaults::VALIDATE, $formfield );
+		$attributes [FieldProperty::ALLOW_DELETE] = $this->getProperty($id, FieldProperty::ALLOW_DELETE, false, FieldPropertyDefaults::ALLOW_DELETE, $formfield);
+		$attributes [FieldProperty::CLOSE] = $this->getProperty($id, FieldProperty::CLOSE, false, FieldPropertyDefaults::CLOSE, $formfield);
 		
 		return $attributes;
 	}
@@ -564,23 +619,13 @@ class Form extends Control {
 				}
 		else {
 			// Check if we can get datasource from a table
-			$this->loadDataSource ( $datasourcename, $bindid, $bindvalue );
-			
-			// var_dump( $this->datasources[$datasourcename] );
-			
-			if ($this->datasources [$datasourcename] != null) {
-				$selectoptions = $this->datasources [$datasourcename];
-				foreach ( $selectoptions as $selectoption ) {
-					$id = (gettype ( $selectoption ) == 'array') ? $selectoption [$bindid] : $selectoption->$bindid;
-					$name = (gettype ( $selectoption ) == 'array') ? $selectoption [$bindvalue] : $selectoption->$bindvalue;
-					$fieldOptions [$id] = $name;
-				}
-			} else {
-				// Get from POST
-				$elem = $_POST [$fieldname];
-				if ($elem)
-					$fieldOptions [$id] = '';
-			}
+			//kuink_mydebug('Loading datasources: '.$datasourcename);
+
+			// Get from POST
+			$fieldname='';
+			$elem = isset($_POST [$fieldname]) ? $_POST [$fieldname] : null;
+			if ($elem)
+				$fieldOptions [$id] = '';
 		}
 		return $fieldOptions;
 	}
@@ -623,6 +668,9 @@ class Form extends Control {
 	
 	// If this field has rules, then register them
 	private function addRules($formfield, $id, $attributes) {
+		global $KUINK_LAYOUT;
+		$theme = $KUINK_LAYOUT->getTheme();
+		
 		$f_xml = $formfield->children ();
 		foreach ( $f_xml as $child ) {
 			$childname = ( string ) $child->getname ();
@@ -636,8 +684,7 @@ class Form extends Control {
 				
 				$oldAttrValue = ( string ) $attributes [$ruleAttr];
 				if ($ruleRunAt == 'client') {
-					
-					$clientCondition = $this->conditionToJavascript ( $ruleCondition, $this->name );
+					$clientCondition = $this->conditionToJavascript($ruleCondition ,($theme=='default') ? $this->name : $this->guid);
 					if ($datasource != '') {
 						// var_dump($datasource);
 						$clientDataSourceUrl = $this->getDataSourceUrl ( $datasource, $datasourceParams );
@@ -714,8 +761,8 @@ class Form extends Control {
 			return;
 		
 		$form ['title'] = Core\Language::getString ( $title, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
-		$form ['_guid'] = $this->getProperty ( $this->name, FormProperty::NAME, false, $this->name );
-		;
+		$form ['_guid'] = $this->getProperty( $this->name, FormProperty::NAME, false, $this->name);//Default theme doesnt support the guid so keep it this way
+		$form ['name'] = $this->getProperty ( $this->name, FormProperty::NAME, false, $this->name );
 		$form ['baseUrl'] = $this->nodeconfiguration [Core\NodeConfKey::BASEURL] . '&form=' . $this->name;
 		$this->form = $form;
 		
@@ -791,19 +838,17 @@ class Form extends Control {
 		if ($visible == 'false')
 			return;
 			
-			// Add the tab to the tabs array
+		//Add the tab to the tabs array
 		if ($type == FieldType::TAB)
-			$this->tabs [] = array (
-					FieldProperty::ID => $id,
-					FieldProperty::LABEL => ( string ) $attributes [FieldProperty::LABEL],
-					'columns' => 0 
-			);
-		
-		if ($type == FieldType::COLUMN)
-			if (count ( $this->tabs ) == 0)
-				$this->columns += 1;
+			$this->addTab($id, (string)$attributes[FieldProperty::LABEL]);
+
+		if ($type == FieldType::COLUMN) {
+			if ($attributes[FieldProperty::CLOSE] == 'true') 
+				$this->closeCurrentTabColumn();
 			else
-				$this->tabs [count ( $this->tabs ) - 1] ['columns'] += 1;
+				$this->addCurrentTabColumn();
+		}
+
 		
 		if ($type == FieldType::CHECKBOXLIST || $attributes [FieldProperty::MULTILANG] == 'true')
 			$this->listFormFields [] = $id;
@@ -838,8 +883,8 @@ class Form extends Control {
 		if ($attributes [FieldProperty::REQUIRED] == 'true' && ($type != FieldType::cSTATIC))
 			$this->rules [$id] [] = 'required';
 			
-			// Adding formatters
-		if ($type == FieldType::cSTATIC) {
+		// Adding formatters
+		if ($type == FieldType::cSTATIC || $type == FieldType::FILE) {
 			$this->addFormatter ( $formfield, $id );
 		}
 		
@@ -863,7 +908,9 @@ class Form extends Control {
 				$this->static_bind [$id] = $datasourcename . ',' . $bindid . ',' . $bindvalue;
 			$this->static_fields [$id] = true;
 			
-			if ($options != null) {
+			
+			//options will return allways the empty option se if count(options) > 1 states that there are options
+			if (count($options) > 1) {
 				
 				$datasource = array ();
 				foreach ( $options as $key => $value )
@@ -876,6 +923,8 @@ class Form extends Control {
 				$this->datasources [$datasourcename] = $datasource;
 				$this->static_bind [$id] = $datasourcename;
 			}
+			//kuink_mydebug('datasource', $this->static_bind [$id].'::'.count($options));
+			
 		}
 		
 		if ($type == FieldType::INT)
@@ -883,6 +932,7 @@ class Form extends Control {
 			
 			// Get the value of the field from the databound property
 		$value = isset ( $this->dataBound [$id] ) ? $this->dataBound [$id] : null;
+		$originalValue = isset( $this->dataBoundWithoutFormatter[ $id ] ) ? $this->dataBoundWithoutFormatter[ $id ] : null;		
 		
 		// Finally add the field to the fields collection
 		// Do not add container field, just the dynamic fields included
@@ -893,7 +943,8 @@ class Form extends Control {
 					'options' => $options,
 					'skeleton' => $skeleton,
 					'skin' => $skin,
-					'value' => $value 
+					'value' => $value,
+					'original'=>$originalValue 
 			);
 			$this->fields [$id] = $field;
 		}
@@ -1031,7 +1082,7 @@ class Form extends Control {
 			$default = ( string ) $attributes [FieldProperty::DEFAULT_BUTTON];
 			$help = ( string ) $attributes [FieldProperty::HELP];
 			$runat = ( string ) $attributes [FieldProperty::RUNAT];
-			$attributes [FieldProperty::HELP] = ($help == $id) ? 'false' : neon_get_help_string ( $help );
+			$attributes [FieldProperty::HELP] = ($help == $id) ? 'false' : kuink_get_help_string ( $help );
 			if (! $hasDefault) {
 				if ($type != 'cancel' && $type != 'back' && $visible == 'true') {
 					$hasDefault = true;
@@ -1079,18 +1130,20 @@ class Form extends Control {
 				$this->bind_data [] = $this->defaultData;
 			}
 		} else  // Store the data in context
-if ($persist == 'true') {
-			// $this->setContextVariable($this->name.'_contextData', $this->bind_data);
-			
-			$newStoredData = array ();
-			foreach ( $this->bind_data as $bind_data )
-				foreach ( $bind_data as $newBindKey => $newBindData )
-					$newStoredData [$newBindKey] = $newBindData;
-				// print_object($newStoredData);
-			$this->setContextVariable ( $this->name . '_contextData', $newStoredData );
-		}
+			if ($persist == 'true') {
+				// $this->setContextVariable($this->name.'_contextData', $this->bind_data);
+				
+				$newStoredData = array ();
+				foreach ( $this->bind_data as $bind_data ) {
+					if (is_array($bind_data))
+						foreach ( $bind_data as $newBindKey => $newBindData )
+							$newStoredData [$newBindKey] = $newBindData;
+				}
+					// print_object($newStoredData);
+				$this->setContextVariable ( $this->name . '_contextData', $newStoredData );
+			}
 		
-		// print_object( $this->bind_data );
+		//var_dump( $this->bind_data );
 		// print_object( $this->static_bind );
 		// print_object( $this->datasources );
 		// print_object( $this->dynamic_fields);
@@ -1102,9 +1155,10 @@ if ($persist == 'true') {
 			$fields = array ();
 			
 			foreach ( $this->bind_data as $data ) {
-				foreach ( $data as $key => $value ) {
-					$fields [] = $key;
-				}
+				if (is_array($data) || is_object($data))
+					foreach ( $data as $key => $value ) {
+						$fields [] = $key;
+					}
 			}
 			foreach ( $fields as $key => $value ) {
 				$this->addField ( array (
@@ -1121,76 +1175,118 @@ if ($persist == 'true') {
 			$this->buildDynamicFields ( $formField, '_infer' );
 		}
 		
-		$data = array ();
-		// neon_mydebug('INICIO','*************************************');
-		if (isset ( $this->bind_data ))
-			foreach ( $this->bind_data as $bind_data ) {
-				
-				$bind_data = ( array ) $bind_data;
-				foreach ( $bind_data as $key => $value ) {
-					// If this is a static bind, then expand the value from the datasource
-					$static_bind = isset ( $this->static_bind [( string ) $key] ) ? $this->static_bind [( string ) $key] : '';
-					// neon_mydebug($key,$value.'::'.$static_bind);
-					
-					if ($static_bind != '') {
-						// neon_mydebug( $static_bind );
-						$source = explode ( ',', $static_bind );
-						$datasourcename = ( string ) $source [0];
-						$bindid = isset ( $source [1] ) ? ( string ) $source [1] : 'id';
-						$bindvalue = isset ( $source [2] ) ? ( string ) $source [2] : 'name';
-						// neon_mydebug('datasource',$datasourcename.'.'.$bindid.'.'.$bindvalue.' - '.$value);
-						$this->loadDataSource ( $datasourcename, $bindid, $bindvalue );
-						if (isset ( $this->datasources [$datasourcename] )) {
-							$datasource = $this->datasources [$datasourcename];
-							
-							// print_object( $datasource );
-							$datasource_value = isset ( $datasource [$value] ) ? ( array ) $datasource [$value] : array ();
-							// neon_mydebug($key.'.'.$value.'.', $datasource_value);
-							// if (empty($datasource_value))
-							$new_value = $this->datasourceFindValue ( $datasource, $bindid, $bindvalue, $value ); // print_object($datasource_value);
-							                                                                                   // else
-							                                                                                   // $new_value = (string)$datasource_value[$bindvalue];
-							                                                                                   // neon_mydebug( $key, $value.'::'.htmlentities(utf8_decode($new_value)) );
-							                                                                                   
-							// print_object($datasource);
-							if ($new_value != '')
-								$bind_data [$key] = $new_value;
-							else
-								$bind_data [$key] = $value;
-							// $bindable_value = $datasource[];
-							// neon_mydebug('Binding...'.$key, $bind_data[$key]);
-						}
-					} elseif (isset ( $this->static_fields [( string ) $key] )) {
-						// print_object($this->static_fields);
-						// $bind_data[$key] = htmlentities(utf8_decode($value));
-						$bind_data [$key] = $value;
-					} else {
-						// neon_mydebug($key,$value.'::'.$static_bind);
-						$bind_data [$key] = $value;
-					}
-					
-					// Check if there is a formatter
-					// print_object( $this->fieldFormatter );
-					$formatter_data = $this->fieldFormatter [( string ) $key];
-					if ($formatter_data) {
-						foreach ( $formatter_data as $f_name => $f_attributes ) {
-							$attributes = null;
-							foreach ( $f_attributes as $akey => $avalue ) {
-								$attributes [( string ) $akey] = ( string ) $avalue;
-							}
-							
-							$new_value = ( string ) $this->callFormatter ( $f_name, $value, $attributes, $bind_data );
-							
-							// neon_mydebug($key, $new_value);
-							// $bind_data[$key] = htmlentities(utf8_decode($new_value));
-							$bind_data [$key] = $new_value;
-						}
-					}
-				}
-				
-				// print_object($bind_data);
-				$this->dataBound = array_merge ( $this->dataBound, $bind_data );
+		//merge all bind_data in one array overriding values from the order
+		$bind_data = array();
+		foreach ( $this->bind_data as $data ) {
+			$data = ( array ) $data;
+			$bind_data = array_merge($bind_data,$data);
+		}
+		$bind_data_original = $bind_data;
+
+		//Load all datasources and rebuild options
+		//build all the datasources at this time, because we have data so datasource parameters can be expanded
+		foreach ($this->fields as $index=>$field) {
+			$attributes = $field['attributes'];
+			$datasourcename = ( string ) $attributes [FieldProperty::DATASOURCE];
+			$bindid = ( string ) $attributes [FieldProperty::BINDID];
+			$bindvalue = ( string ) $attributes [FieldProperty::BINDVALUE];
+			$datasourceParams = ( string ) $attributes [FieldProperty::DATASOURCE_PARAMS];
+			
+			if ($datasourcename != '') {
+				if ($datasourceParams != '')
+					$datasourcename = $datasourcename.'('.$datasourceParams.')';
+				//kuink_mydebug('loading datasource', $datasourcename);
+				$this->loadDataSource($datasourcename, $bindid, $bindvalue, $bind_data);
+
+				$fieldOptions = array ();
+				$fieldOptions [''] = ''; //Add empty option		
+				$selectoptions = $this->datasources [$datasourcename];
+				foreach ( $selectoptions as $selectoption ) {
+					if ((gettype ( $selectoption ) == 'array'))
+						$id = isset($selectoption [$bindid]) ? $selectoption [$bindid] : null;	
+					else
+						$id = isset($selectoption->$bindid) ? $selectoption->$bindid : null;
+					if ((gettype ( $selectoption ) == 'array'))
+						$name = isset($selectoption [$bindid]) ? $selectoption [$bindvalue] : null;	
+					else
+						$name = isset($selectoption->$bindid) ? $selectoption->$bindvalue : null;
+					$fieldOptions [$id] = $name;
+				}				
+				//Update field with options
+				$field['options'] = $fieldOptions;
+				$this->fields[$index] = $field;
 			}
+		}
+
+		foreach ( $bind_data as $key => $value ) {
+			// If this is a static bind, then expand the value from the datasource
+			
+			//Check to see if we have to load the datasource again because 
+
+			$static_bind = isset ( $this->static_bind [( string ) $key] ) ? $this->static_bind [( string ) $key] : '';
+			//kuink_mydebug($key,$value.'::'.$static_bind);
+			
+			if ($static_bind != '') {
+				//kuink_mydebug( $static_bind );
+				$source = explode ( ',', $static_bind );
+				$datasourcename = ( string ) $source [0];
+				$bindid = isset ( $source [1] ) ? ( string ) $source [1] : 'id';
+				$bindvalue = isset ( $source [2] ) ? ( string ) $source [2] : 'name';
+				//kuink_mydebug('datasource',$datasourcename.'.'.$bindid.'.'.$bindvalue.' - '.$value);
+				$this->loadDataSource ( $datasourcename, $bindid, $bindvalue);
+				//var_dump($bind_data);
+				if (isset ( $this->datasources [$datasourcename] )) {
+					$datasource = $this->datasources [$datasourcename];
+					//kuink_mydebug('datasource', $datasource);
+					// print_object( $datasource );
+					$datasource_value = isset ( $datasource [$value] ) ? ( array ) $datasource [$value] : array ();
+					// if (empty($datasource_value))
+					$new_value = $this->datasourceFindValue ( $datasource, $bindid, $bindvalue, $value ); // print_object($datasource_value);
+																																															// else
+																																															// $new_value = (string)$datasource_value[$bindvalue];
+																																															// neon_mydebug( $key, $value.'::'.htmlentities(utf8_decode($new_value)) );
+					//kuink_mydebug($key.'.'.$value.'.', $new_value);
+					if ($new_value != '')
+						$bind_data [$key] = $new_value;
+					else
+						$bind_data [$key] = $value;
+					// $bindable_value = $datasource[];
+					// neon_mydebug('Binding...'.$key, $bind_data[$key]);
+				}
+			} elseif (isset ( $this->static_fields [( string ) $key] )) {
+				// print_object($this->static_fields);
+				// $bind_data[$key] = htmlentities(utf8_decode($value));
+				$bind_data [$key] = $value;
+			} else {
+				// neon_mydebug($key,$value.'::'.$static_bind);
+				$bind_data [$key] = $value;
+			}
+			//Save the value before applying the formatters
+			//$bind_data_original[$key] = $value;
+			
+			// Check if there is a formatter
+			// print_object( $this->fieldFormatter );
+			$formatter_data = isset($this->fieldFormatter [( string ) $key]) ? $this->fieldFormatter [( string ) $key] : null;
+			if ($formatter_data) {
+				foreach ( $formatter_data as $f_name => $f_attributes ) {
+					$attributes = null;
+					foreach ( $f_attributes as $akey => $avalue ) {
+						$attributes [( string ) $akey] = ( string ) $avalue;
+					}
+					
+					$new_value = ( string ) $this->callFormatter ( $f_name, $value, $attributes, $bind_data );
+					
+					// neon_mydebug($key, $new_value);
+					// $bind_data[$key] = htmlentities(utf8_decode($new_value));
+					$bind_data [$key] = $new_value;
+				}
+			}
+		}
+		
+		// print_object($bind_data);
+		$this->dataBound = array_merge ( $this->dataBound, $bind_data );
+		$this->dataBoundWithoutFormatter = array_merge($this->dataBoundWithoutFormatter,$bind_data_original);				
+
 	}
 	
 	/**
@@ -1199,6 +1295,7 @@ if ($persist == 'true') {
 	function updateValues() {
 		foreach ( $this->fields as $key => $value ) {
 			$this->fields [$key] ['value'] = isset ( $this->dataBound [$key] ) ? $this->dataBound [$key] : '';
+			$this->fields[ $key ]['original'] = isset( $this->dataBoundWithoutFormatter[ $key ] ) ? $this->dataBoundWithoutFormatter[ $key ] : '';
 		}
 		// var_dump( $this->fields );
 	}
@@ -1220,9 +1317,10 @@ if ($persist == 'true') {
 		$this->build ();
 		$this->bindData ();
 		$this->updateValues ();
+		$this->calculateRows();		
 		
-		$neonUser = new \Kuink\Core\User ();
-		$neon_user = $neonUser->getUser ();
+		$kuinkUser = new \Kuink\Core\User ();
+		$user = $kuinkUser->getUser ();
 		
 		$listFormFields = implode ( ',', $this->listFormFields );
 		
@@ -1236,7 +1334,7 @@ if ($persist == 'true') {
 		$params ['form'] = $this->form;
 		$params ['tabs'] = $this->tabs;
 		$params ['buttonsPosition'] = $this->buttonsPosition;
-		$params ['hasTabs'] = (count ( $this->tabs ) > 0);
+		$params ['hasTabs'] = (count($this->tabs) > 1); //If there is only one tab, don't show the headers
 		$params ['tabsPosition'] = $this->getProperty ( $this->name, FormProperty::TABS, false, FormPropertyDefaults::TABS );
 		$params ['fields'] = $this->fields;
 		$params ['rules'] = $this->rules;
@@ -1249,11 +1347,11 @@ if ($persist == 'true') {
 		
 		$dateTimeLib = new \DateTimeLib ( $this->nodeconfiguration, null );
 		$personTimeZoneOffset = $dateTimeLib->getTzOffset ( array (
-				0 => $neon_user ['timezone'] 
+				0 => $user ['timezone'] 
 		) );
 		$params ['personTimeZoneOffset'] = $personTimeZoneOffset;
-		$params ['personTimeZone'] = $neon_user ['timezone'];
-		$params ['validate'] = $this->validate;
+		$params ['personTimeZone'] = $user ['timezone'];
+		$params ['validate'] = isset($this->validate) ? $this->validate : null;
 		
 		// var_dump( $this->tabs );
 		// var_dump( $this->columns );
@@ -1329,11 +1427,50 @@ if ($persist == 'true') {
 		// var_dump($this->rulesClient);
 		$rules = array ();
 		foreach ( $this->rulesClient as $clientRule ) {
+			$dataSource = isset($clientRule ['datasource']) ? $clientRule ['datasource'] : '';
+			$dataSourceParams = isset($clientRule ['datasourceparams']) ? $clientRule ['datasourceparams'] : '';
+			$bindId = isset($clientRule ['bindid']) ? $clientRule ['bindid'] : '';
+			$bindValue = isset($clientRule ['bindvalue']) ? $clientRule ['bindvalue'] : '';
 			
-			$rules [] = '{ "field": "' . $clientRule ['field'] . '", "condition": "' . $clientRule ['condition'] . '", "attr": "' . $clientRule ['attr'] . '", "value_true":"' . $clientRule ['valueTrue'] . '", "value_false": "' . $clientRule ['valueFalse'] . '", "datasource": "' . $clientRule ['datasource'] . '", "bindid": "' . $clientRule ['bindid'] . '", "bindvalue": "' . $clientRule ['bindvalue'] . '", "datasourceparams":' . json_encode ( $clientRule ['datasourceparams'] ) . '}';
+			$rules [] = '{ "field": "' . $clientRule ['field'] . '", "condition": "' . $clientRule ['condition'] . '", "attr": "' . $clientRule ['attr'] . '", "value_true":"' . $clientRule ['valueTrue'] . '", "value_false": "' . $clientRule ['valueFalse'] . '", "datasource": "' . $dataSource  . '", "bindid": "' . $bindId . '", "bindvalue": "' . $bindValue . '", "datasourceparams":' . json_encode ( $dataSourceParams ) . '}';
 		}
 		$jsonRules = '[' . implode ( ',', $rules ) . ']';
 		return $jsonRules;
 	}
+
+		//Calculate whether one field should create a row or not
+		private function calculateRows(){
+			$fields = array();
+			//Making a copy ot the fields array to get an integer index. This will make the row calculation more simple
+			$inline = false;
+			foreach ($this->fields as $field) {
+				$fields[] = $field;
+			}
+	
+			//Count how many inline fields there are for each fields 
+			$lastNumberOfInlineFields = 1;
+			for ($i=0; $i<count($fields); $i++) {
+				$numberOfInlineFields = 1;
+				$j = $i+1;
+				//print(' | '.(string)($fields[$i]['attributes']['id']));
+				if ($lastNumberOfInlineFields == 1 && isset($fields[$j]))
+					while (isset($fields[$j]) && ($fields[$j]['attributes']['inline'] != 'false') && ($j < count($fields))) {
+						//print('*');
+						$j++; 
+						$numberOfInlineFields++;
+					}
+				if ($numberOfInlineFields > 1)
+					$lastNumberOfInlineFields = $numberOfInlineFields;
+				$fieldId = $fields[$i]['attributes']['id'];
+				$nextFieldId = isset($fields[$i+1]) ? $fields[$i+1]['attributes']['id'] : null;
+				$this->fields[$fieldId]['attributes']['_rowStart'] = (int)($this->fields[$fieldId]['attributes']['inline'] == 'false');
+				$this->fields[$fieldId]['attributes']['_rowEnd'] = (int) (isset($this->fields[$nextFieldId]) && ($this->fields[$nextFieldId]['attributes']['inline'] == 'false') || ($i == count($fields)-1));
+				$this->fields[$fieldId]['attributes']['_rowLength'] = ($i == count($fields)) ? 1 : $lastNumberOfInlineFields;
+				if (isset($this->fields[$nextFieldId]) && ($this->fields[$nextFieldId]['attributes']['inline'] == 'false') || ($i == count($fields)))
+					$lastNumberOfInlineFields = 1;
+			}
+			//print_object($this->fields);
+		}
+	
 }
 ?>

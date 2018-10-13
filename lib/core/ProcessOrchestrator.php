@@ -82,8 +82,19 @@ class Flow {
 	}
 }
 class ProcessOrchestrator {
+
+	static function generateNewContextId() {
+		$n = (string)uniqid();
+		
+		return 'k'.$n;
+	}
+
 	static function getContextId() {
-		$contextId = (isset ( $_GET [QueryStringParam::ID_CONTEXT] ) && ($_GET [QueryStringParam::ID_CONTEXT] != '')) ? $_GET [QueryStringParam::ID_CONTEXT] : uniqid (); // The stack context, generate one if not in url
+		$contextId = (isset ( $_GET [QueryStringParam::ID_CONTEXT] ) && ($_GET [QueryStringParam::ID_CONTEXT] != '')) ? $_GET [QueryStringParam::ID_CONTEXT] : self::generateNewContextId(); // The stack context, generate one if not in url
+		//if (!isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId] ))
+		//	self::addContext($contextId);
+		//var_dump($_GET);
+		//var_dump($_GET [QueryStringParam::ID_CONTEXT]);
 		/*
 		 * if (isset($_GET[QueryStringParam::ID_CONTEXT]))
 		 * $contextId = $_GET[QueryStringParam::ID_CONTEXT];
@@ -98,7 +109,7 @@ class ProcessOrchestrator {
 	
 	// Copy the current context to a new one
 	static function duplicateContext($previousContextId) {
-		$newContextId = uniqid ();
+		$newContextId = self::generateNewContextId();
 		$oldContext = self::getContext ( $previousContextId );
 		$currentNode = self::getCurrentNode ( $previousContextId );
 		$newContext = self::addContext ( $oldContext->baseApplication, $newContextId );
@@ -145,7 +156,7 @@ class ProcessOrchestrator {
 				self::clearContexts ();
 		}
 		
-		$numContexts = count ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] );
+		$numContexts = isset($_SESSION ['KUINK_CONTEXT']) ? count ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] ) : 0;
 		if ($numContexts < $KUINK_CFG->maxProcessOrchestratorContexts) {
 			$context = new \stdClass ();
 			$context->id = $contextId;
@@ -155,9 +166,9 @@ class ProcessOrchestrator {
 			$context->eventParams = array (); // last event params
 			$context->sessionVars = array (); // last event params
 			$_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId] = $context; // add the context
-				                                                               // var_dump($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]);
+			// var_dump($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]);
 		} else {
-			if ($_GET [QueryStringParam::RESET])
+			if (isset($_GET [QueryStringParam::RESET]) && $_GET [QueryStringParam::RESET])
 				self::clearContexts ();
 			else
 				throw new \Exception ( 'Kuink::Cannot create a new context. Close this window and use the others.' );
@@ -248,27 +259,29 @@ class ProcessOrchestrator {
 	static function getCurrentNode($contextId = null) {
 		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();
 		$context = self::getContext ( $contextId ); // end($_SESSION['KUINK_CONTEXT']['KUINK_PROCESS_STACK'][$contextId]);
-		$currentNode = end ( $context->stack );
-		
+		$currentNode = isset($context->stack) ? end($context->stack) : null;
+		//$c = self::getContextId();
+		//var_dump($c);
 		return $currentNode;
 	}
 	static function updateCurrentNodeAction($action, $actionvalue) {
 		$lastNode = self::getCurrentNode ( $contextId );
 	}
 	static function addNode($node, $contextId = null) {
-		global $KUINK_CFG, $KUINK_BRIDGE_CFG;
+		global $KUINK_CFG;
 		
 		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();
 		
 		// Check if the node is already in the stack with the same RWX or IMPERSONATE
 		$found = - 1;
-		$foundNode = null;
-		foreach ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->stack as $item => $stackNode ) {
-			if ($stackNode->application == $node->application && $stackNode->process == $node->process && $stackNode->node == $node->node) {
-				$found = $item;
-				break;
-			}
-		}
+    $foundNode = null;
+    if (isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->stack))
+      foreach ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->stack as $item => $stackNode ) {
+        if ($stackNode->application == $node->application && $stackNode->process == $node->process && $stackNode->node == $node->node) {
+          $found = $item;
+          break;
+        }
+      }
 		if ($found != - 1) {
 			// Remove all the nodes from the found
 			$count = count ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->stack );
@@ -298,15 +311,16 @@ class ProcessOrchestrator {
 			$newNode->node = $node->node;
 			$newNode->event = $node->event;
 			$newNode->action = $node->action;
-			$newNode->actionValue = $node->actionValue;
-			$newNode->processGuid = ($lastNode->application == $node->application && $lastNode->process == $node->process) ? $lastNode->processGuid : uniqid ();
+      $newNode->actionValue = isset($node->actionValue) ? $node->actionValue : null;
+			$newNode->processGuid = (isset($lastNode) && $lastNode->application == $node->application && $lastNode->process == $node->process) ? $lastNode->processGuid : uniqid ();
 			$newNode->nodeGuid = uniqid ();
 			$newNode->rwx = 7; // TODO
 			$newNode->idUserImpersonate = null; // TODO
-			$newNode->idUser = ($KUINK_BRIDGE_CFG->auth->user->id) ? $KUINK_BRIDGE_CFG->auth->user->id : 0; // TODO
-			$newNode->url = $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $_GET [QueryStringParam::ID] . '&' . QueryStringParam::ID_CONTEXT . '=' . $_GET [QueryStringParam::ID_CONTEXT] . '&' . QueryStringParam::NODE_GUID . '=' . $newNode->nodeGuid;
+      $newNode->idUser = ($KUINK_CFG->auth->user->id) ? $KUINK_CFG->auth->user->id : 0; // TODO
+      $qstrId = isset($_GET [QueryStringParam::ID]) ? $_GET [QueryStringParam::ID] : '';
+			$newNode->url = $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $qstrId . '&' . QueryStringParam::ID_CONTEXT . '=' . $_GET [QueryStringParam::ID_CONTEXT] . '&' . QueryStringParam::NODE_GUID . '=' . $newNode->nodeGuid;
 			$newNode->params = self::getEventParams ( $contextId );
-			$newNode->roles = $lastNode->roles;
+			$newNode->roles = isset($lastNode) ? $lastNode->roles : null;
 			
 			$context->stack [] = $newNode;
 			self::setContext ( $context, $contextId );
@@ -328,7 +342,7 @@ class ProcessOrchestrator {
 	static function getNodeRoles($contextId = null) {
 		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();
 		$currentNode = self::getCurrentNode ( $contextId );
-		return $currentNode->roles;
+		return isset($currentNode->roles) ? $currentNode->roles : null;
 	}
 	static function setSessionVariable($variable, $key = '', $value, $contextId = null) {
 		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();
@@ -351,9 +365,9 @@ class ProcessOrchestrator {
 		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();
 		$value = '';
 		if ($key == '')
-			$value = $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->sessionVars [$variable];
+			$value = isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->sessionVars [$variable]) ? $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->sessionVars [$variable] : '';
 		else
-			$value = $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->sessionVars [$variable] [$key];
+			$value = isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->sessionVars [$variable] [$key]) ? $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->sessionVars [$variable] [$key] : '';
 		
 		return $value;
 	}
@@ -387,7 +401,9 @@ class ProcessOrchestrator {
 			// var_dump($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->processVars[$currentProcessGuid][$variable]);
 			$_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] = $value;
 		} else {
-			
+			//Converts into ana array if variable had a previous value not array
+			if (!isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable]) || !is_array($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable]))
+				$_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] = array();
 			$_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] [$key] = $value;
 		}
 		return;
@@ -416,11 +432,11 @@ class ProcessOrchestrator {
 		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();
 		$currentNode = self::getCurrentNode ( $contextId );
 		$currentProcessGuid = $currentNode->processGuid;
-		
+		//var_dump($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]);
 		if ($key == '')
-			$value = $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable];
+			$value = isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable]) ? $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] : null;
 		else
-			$value = $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] [$key];
+			$value = isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] [$key]) ? $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] [$key] : null;
 		
 		/**
 		 * Ugly workaround for unset process variables with arrays
@@ -550,14 +566,15 @@ class ProcessOrchestrator {
 		foreach ( $context->stack as $stackNode ) {
 			$app = $stackNode->application;
 			$proc = $stackNode->process;
-			$vars = var_export ( $context->processVars [$stackNode->processGuid], true );
+			$vars = isset($context->processVars [$stackNode->processGuid]) ? var_export ( $context->processVars [$stackNode->processGuid], true ) : '';
 			$sessionVars = ''; // var_export($context->sessionVars, true);
 			$roles = var_export ( $stackNode->roles, true );
-			$stackProcessStack = $stackNode->stack;
+      $stackProcessStack = isset($stackNode->stack) ? $stackNode->stack : null;
+      $idCompany = isset($context->idCompany) ? $context->idCompany : '';
 			$html .= '
           <li class="span2">
             <span class="thumbnail" style="display: inline-table">
-            <p><strong>' . $contextId . '::' . $context->baseApplication . '(' . $context->idCompany . ')' . '</strong></p>
+            <p><strong>' . $contextId . '::' . $context->baseApplication . '(' . $idCompany . ')' . '</strong></p>
             <p><strong>' . $stackNode->processGuid . '</strong></p>
             <p>' . $app . ',' . $proc . '</p>
             <p><a href="' . $stackNode->url . '">' . $stackNode->node . '</a></p>
@@ -585,13 +602,11 @@ class ProcessOrchestrator {
 		if (isset ( $_GET [QueryStringParam::NODE_GUID] )) {
 			$nodeGuid = $_GET [QueryStringParam::NODE_GUID];
 			$nodeToExecute = self::setCurrentNode ( $nodeGuid );
-			
 			return $nodeToExecute;
 		}
 		
 		$currentFlow = (isset ( $forceFlow )) ? $forceFlow : self::getCurrentFlow ( $setEvent );
-		// var_dump($currentFlow);
-		
+		//print_object($currentFlow);		
 		// The process is set is flow? else get the default flow
 		
 		if (! isset ( $currentFlow->process )) {
@@ -602,7 +617,8 @@ class ProcessOrchestrator {
 		self::setEventParamsByUrl ();
 		
 		// var_dump($defaultFlow);
-		// var_dump($currentFlow);
+		//print('<br/>');
+		//var_dump($currentFlow);
 		
 		// if an event is set in url or by parameter than the node to execute could be different from the current one
 		$nodeToExecute = self::getCurrentNode ();
@@ -632,13 +648,13 @@ class ProcessOrchestrator {
 		// var_dump($currentFlow);
 		$addFlow = new Flow ( $nodeToExecute->application, $nodeToExecute->process, $nodeToExecute->node, $currentFlow->event, $currentFlow->action, $currentFlow->action_value );
 		self::addNode ( $addFlow );
-		
+		//print_object($nodeToExecute);
 		return $nodeToExecute;
 	}
 	static function processEvent($roles, $flow) {
 		global $KUINK_CFG;
 		global $KUINK_APPLICATION;
-		
+
 		$appBase = $KUINK_APPLICATION->appManager->getApplicationBase ( $flow->application );
 		
 		// var_dump($flow); //DEBUG
@@ -657,7 +673,7 @@ class ProcessOrchestrator {
 		if ($processXml == null)
 			throw new \Exception ( 'Cannot open flow file: ' . $flowFile );
 			
-			// Get the correct flow
+			// Get the correct flow	
 		$flows = array ();
 		foreach ( $roles as $role => $value ) {
 			$xpath = '//Process/Transitions/Flow[contains(@role, \'' . $role . '\') and @startnode="' . $flow->node . '" and @event="' . $flow->event . '"]';
@@ -665,10 +681,11 @@ class ProcessOrchestrator {
 			if (! empty ( $roleFlow ))
 				$flows [] = $roleFlow;
 		}
-		
-		if (! isset ( $flows [0] [0] ))
-			throw new \Exception ( 'Kuink::ProcessOrchestrator::Invalid Transition.' );
-		$processFlow = $flows [0] [0];
+
+		//if (! isset ( $flows [0] [0] ))
+		//	throw new \Exception ( 'Kuink::ProcessOrchestrator::Invalid Transition.' );
+	
+		$processFlow = isset($flows [0]) && isset($flows [0] [0]) ? $flows [0] [0] : null;
 		$nodeToExecute = new Node ( $flow->application, $flow->process, ( string ) $processFlow ['endnode'] );
 		
 		// Check to see if we are exiting a process
@@ -702,12 +719,11 @@ class ProcessOrchestrator {
 		
 		$context = self::getContext ();
 		$currentStackNode = self::getCurrentNode ();
-		
-		// Initialize data with the current node values in stack
+    // Initialize data with the current node values in stack
 		$application = isset ( $currentStackNode->application ) ? $currentStackNode->application : $context->baseApplication;
-		$process = isset ( $currentStackNode->process ) ? $currentStackNode->process : $_GET [QueryStringParam::PROCESS];
+		$process = isset ( $currentStackNode->process ) ? $currentStackNode->process : (isset($_GET[QueryStringParam::PROCESS]) ? $_GET[QueryStringParam::PROCESS] : null);
 		$node = isset ( $currentStackNode->node ) ? $currentStackNode->node : null;
-		$event = isset ( $setEvent ) ? $setEvent : $_GET [QueryStringParam::EVENT];
+		$event = isset ( $setEvent ) ? $setEvent : (isset($_GET[QueryStringParam::EVENT]) ? $_GET[QueryStringParam::EVENT] : null);
 		
 		// Update action values
 		if (! $setEvent) {
@@ -738,7 +754,7 @@ class ProcessOrchestrator {
 	 * sets the company id in session
 	 */
 	static function setCompany() {
-		global $KUINK_CFG, $KUINK_BRIDGE_CFG;
+		global $KUINK_CFG;
 		// unset( $_SESSION['KUINK_CONTEXT']['idCompany'] );
 		
 		$context = self::getContext ();
@@ -759,7 +775,7 @@ class ProcessOrchestrator {
 		} else if (! isset ( $context->idCompany )) {
 			// Load the user companies
 			$datasource = new \Kuink\Core\DataSource ( null, 'framework/framework,user,user.getCompanies', 'framework', 'user' );
-			$idNumber = ($KUINK_BRIDGE_CFG->auth->user->id) ? $KUINK_BRIDGE_CFG->auth->user->id : 0;
+			$idNumber = ($KUINK_CFG->auth->user->id) ? $KUINK_CFG->auth->user->id : 0;
 			$pars = array (
 					'id_person' => $idNumber 
 			);
@@ -782,7 +798,7 @@ class ProcessOrchestrator {
 	}
 	static function getCompany() {
 		$context = self::getContext ();
-		return $context->idCompany;
+		return (isset($context->idCompany) ? $context->idCompany : null);
 	}
 	static function getCompanies() {
 		return $_SESSION ['KUINK_CONTEXT'] ['companies'];

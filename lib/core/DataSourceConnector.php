@@ -10,6 +10,7 @@ namespace Kuink\Core;
 abstract class DataSourceConnector {
 	var $dataSource;
 	var $transactionStarted;
+	var $user; //The user performing this request	
 	function __construct($dataSource) {
 		$this->dataSource = $dataSource;
 	}
@@ -24,6 +25,10 @@ abstract class DataSourceConnector {
 	abstract function update($params);
 	abstract function delete($params);
 	abstract function load($params);
+	abstract function getSchemaName($params);
+  function setUser($user) {
+  	$this->user = $user;
+  }
 	function beginTransaction() {
 		$this->transactionStarted = 1;
 		return;

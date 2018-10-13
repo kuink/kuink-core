@@ -24,15 +24,17 @@
  * @copyright 2010 Your Name
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-global $KUINK_INCLUDE_PATH, $KUINK_BRIDGE_CFG;
+global $KUINK_INCLUDE_PATH, $KUINK_CFG;
 
 require_once ($KUINK_INCLUDE_PATH . 'kuink_includes.php');
 require_once ('locallib.php');
 // require_once($KUINK_INCLUDE_PATH.'test.php');
 
+date_default_timezone_set ( 'UTC' );
+
 $kuink_session_active = isset ( $_SESSION ['KUINK_CONTEXT'] ['KUINK_SESSION_ACTIVE'] ) ? $_SESSION ['KUINK_CONTEXT'] ['KUINK_SESSION_ACTIVE'] : 0;
-if ($kuink_session_active != 1 && $_GET ['startnode'] != '')
-	redirect ( $KUINK_BRIDGE_CFG->wwwroot, 0 );
+if ($kuink_session_active != 1 && isset($_GET ['startnode']) && $_GET ['startnode'] != '')
+	redirect ( $KUINK_CFG->wwwRoot, 0 );
 	
 	// Set up SINGLETON OBJECTS
 $KUINK_LAYOUT = null; // Handles all the output, layouts, templates and themes
@@ -43,7 +45,12 @@ $KUINK_DATASOURCES = array (); // Will replace $KUINK_DATABASES
 $KUINK_TRANSLATION = null; // Holds pointers to xml language files
 $KUINK_APPLICATION = null; // The Application object to run
 
-global $KUINK_CFG, $USER;
+global $KUINK_CFG;
+
+if (isset($KUINK_CFG->displayNativeErrors) && $KUINK_CFG->displayNativeErrors) {
+	error_reporting(E_ALL);
+	ini_set('display_errors', 1);
+}
 
 // Handling External Roles
 $roles = array ();
@@ -54,9 +61,15 @@ $KUINK_LAYOUT->setTheme ( $KUINK_CFG->theme );
 
 // Check to see if this is a call to a widget
 // If so then the application will be given by the widget istead of the kuink configuration in moodle
-$application = $KUINK_BRIDGE_CFG->application;
-$configuration = $KUINK_BRIDGE_CFG->configuration;
-$lang = $KUINK_BRIDGE_CFG->auth->user->lang;
+$application = $KUINK_CFG->application;
+$configuration = $KUINK_CFG->configuration;
+$lang = $KUINK_CFG->auth->user->lang;
+
+//Setting the modal default to widgetContainer to display widgets correctly
+$modal = isset($_GET['modal']) ? (string)$_GET['modal'] : '';
+//if ($modal == '') 
+//	$_GET['modal'] = 'widgetContainer';
+
 
 if (isset ( $_GET ['idWidget'] )) {
 	$KUINK_APPLICATION = new Kuink\Core\Application ( $application, $lang, $configuration );
@@ -64,12 +77,19 @@ if (isset ( $_GET ['idWidget'] )) {
 	$idWidget = ( string ) $_GET ['idWidget'];
 	$node = new \Kuink\Core\Node ( 'framework', 'widget', 'api' );
 	
-	$wsParams ['guid'] = $idWidget;
+	$wsParams ['uuid'] = $idWidget;
 	
 	$wsResult = $KUINK_APPLICATION->run ( $node, 'getByGuid', $wsParams );
 	$widgetData = $wsResult ['RETURN'];
 	
 	$application = $widgetData ['init_flow'];
+	//$application = $appParts[0];
+
+	//var_dump($application);
+	//If the init flow is composed by application,process,event
+	//var_dump($application);
+	//var_dump($_GET['idWidget']);
+
 	$configuration = $widgetData ['configuration'];
 	
 	unset ( $_GET ['idWidget'] );
@@ -78,15 +98,22 @@ if (isset ( $_GET ['idWidget'] )) {
 	$KUINK_TRANSLATION = null; // Holds pointers to xml language files
 	$KUINK_APPLICATION = null; // The Application object to run
 }
-
+//print_object($application);
 // Creating the application
-$KUINK_APPLICATION = new Kuink\Core\Application ( $application, $KUINK_BRIDGE_CFG->auth->user->lang, $configuration );
+$KUINK_APPLICATION = new Kuink\Core\Application ( $application, $KUINK_CFG->auth->user->lang, $configuration );
 // Adding roles to the application
-foreach ( $KUINK_BRIDGE_CFG->auth->roles as $role )
+foreach ( $KUINK_CFG->auth->roles as $role )
 	$KUINK_APPLICATION->addRole ( ( string ) $role );
 	
 	// Run the application
-$KUINK_APPLICATION->run ();
+	try {
+		$KUINK_APPLICATION->run ();
+	} catch (\Exception $e) {
+		print($e->getMessage());
+	} catch (Throwable $t) {
+		print($t->getMessage());
+		print_object($KUINK_TRACE);
+	}
 
 // Render the screen
 $KUINK_LAYOUT->render ();

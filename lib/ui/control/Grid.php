@@ -18,7 +18,6 @@ namespace Kuink\UI\Control;
 
 use Kuink\Core as Core;
 
-// require_once('NeonControl.php');
 /**
  * Default values for properties
  * 
@@ -29,7 +28,7 @@ class GridDefaults {
 	const FREEZE = 'true';
 	const VIEW = GridViewType::GRID;
 	const PAGEABLE = 'false';
-	const EXPORTABLE = 'false';
+	const EXPORTABLE = 'true';
 	const COLLAPSIBLE = 'false';
 	const PAGING_ACTION = '';
 	const VISIBLE = 'true';
@@ -45,6 +44,7 @@ class GridDefaults {
 	const PIVOT_COLS = '';
 	const PIVOT_DATA = '';
 	const PIVOT_SEPARATOR = '|';
+	const PIVOT_SORT = '';	
 	const TREE = 'false';
 	const TREE_ID = '';
 	const TREE_PARENT_ID = '';
@@ -80,6 +80,7 @@ class GridProperty {
 	const PIVOT_COLS = 'pivotcols';
 	const PIVOT_DATA = 'pivotdata';
 	const PIVOT_SEPARATOR = 'pivotseparator';
+	const PIVOT_SORT = 'pivotsort';	
 	const TREE = 'tree';
 	const TREE_ID = 'treeid';
 	const TREE_PARENT_ID = 'treeparentid';
@@ -212,6 +213,7 @@ class Grid extends Control {
 	var $sort; // Stores the sorting of this grid 1_asc 2_desc where 1 and 2 are the column numbers
 	var $hidden; // Stores the hidden columns of this grid, can be changed in rendered grids
 	var $tablecolumns;
+	var $tablecolnotvisible; //Collumns not visible	
 	var $tablesubcolumns;
 	var $tableinfercolumns; // list of columns infered
 	var $tableheaders;
@@ -242,6 +244,7 @@ class Grid extends Control {
 	var $pivotcols;
 	var $pivotdata;
 	var $pivotseparator;
+	var $pivotsort; //Sort the pivot data	
 	var $dynamicColumns; // Fields dynamically added to a container
 	var $dynamicRules; // Field rules dynamically added to a field
 	var $dynamicFormatters; // Field rules dynamically added to a field
@@ -262,9 +265,10 @@ class Grid extends Control {
 		
 		$this->dynamicColumns = array ();
 		
-		$this->pagesize = $this->getPageSize ();
+		$this->pagesize = $this->getPageSize (null);
 		
 		$this->export = isset ( $_GET ['export'] ) ? true : false;
+		$this->tableinfercolumns = array();
 		
 		// Getting the page to display
 		// $currentStoredPage = \Kuink\Core\ProcessOrchestrator::getProcessVariable('__grid_'.$this->name, 'page');
@@ -321,15 +325,15 @@ class Grid extends Control {
 			if (isset ( $_GET [$this->name . '_pagesize'] ))
 				$pagesize = $_GET [$this->name . '_pagesize'];
 			else
-				$pagesize = isset ( $currentStoredPageSize ) ? $currentStoredPageSize : $defaultPageSize;
+				$pagesize = (isset($currentStoredPageSize) && ($currentStoredPageSize != '') ) ? $currentStoredPageSize : $defaultPageSize;
 		}
-		
 		// \Kuink\Core\ProcessOrchestrator::setProcessVariable('__grid_'.$this->name, 'pagesize', $pagesize);
 		if ($pageable == 'true') {
 			// persist context variables
 			$this->setContextVariable ( GridContextVariables::PAGE, $this->page );
 			$this->setContextVariable ( GridContextVariables::PAGE_SIZE, $pagesize );
 		}
+
 		$this->pagesize = $pagesize;
 	}
 	function getPageSize($params) {
@@ -377,6 +381,7 @@ class Grid extends Control {
 		
 		// var_dump($this->sort);
 		$orderQueryArray = array ();
+		if (isset($this->sort) && is_array($this->sort))
 		foreach ( $this->sort as $sort ) {
 			if (($sort ['sort'] != 'asc') && ($sort ['sort'] != 'desc'))
 				throw new \Exception ( 'Invalid sort expression on grid ' . $sort ['sort'] );
@@ -392,8 +397,8 @@ class Grid extends Control {
 	 * @param unknown_type $field_properties        	
 	 */
 	function addColumn($columnProperties) {
-		// var_dump($columnProperties);
 		$this->dynamicColumns [] = $columnProperties;
+		//print_object($this->dynamicColumns);		
 		return;
 	}
 	
@@ -425,9 +430,10 @@ class Grid extends Control {
 		$attributes = array ();
 		
 		// var_dump( $this->properties );
-		
+		$id = $this->getProperty ( $name, GridColumnProperty::ID, false, $name, $column );
+
 		$attributes [GridColumnProperty::NAME] = $name;
-		$attributes [GridColumnProperty::ID] = $this->getProperty ( $name, GridColumnProperty::ID, false, $name, $column );
+		$attributes [GridColumnProperty::ID] = $id;
 		
 		$label = $this->getProperty ( $name, GridColumnProperty::LABEL, false, $name, $column );
 		$label = Core\Language::getString ( $label, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
@@ -463,7 +469,7 @@ class Grid extends Control {
 		if ($attributes [GridColumnProperty::HIDDEN] == 'true')
 			if (($this->hidden !== NULL) && (! (in_array ( $name, $this->hidden ))))
 				$attributes [GridColumnProperty::HIDDEN] = 'false';
-		if (in_array ( $name, $this->hidden ))
+		if (is_array($this->hidden) && in_array ( $name, $this->hidden ))
 			$attributes [GridColumnProperty::HIDDEN] = 'true';
 		
 		$attributes [GridColumnProperty::COLLAPSED] = $this->getProperty ( $name, GridColumnProperty::COLLAPSED, false, GridColumnDefaults::COLLAPSED, $column );
@@ -554,7 +560,7 @@ class Grid extends Control {
 	 * Build the dynamic fields in the Grid
 	 */
 	function buildDynamicFields() {
-		// var_dump($this->dynamicColumns);
+		// print_object($this->dynamicColumns);
 		// iterate through dynamic fields
 		foreach ( $this->dynamicColumns as $dynamicColumn ) {
 			$name = $dynamicColumn ['name'];
@@ -595,10 +601,11 @@ class Grid extends Control {
 	 */
 	private function build() {
 		global $SESSION;
-		// kuink_mydebug('Building...',$this->name);
+
 		if ($this->built)
 			return;
 		
+		//kuink_mydebug('Building...',$this->name);
 		$this->buildDynamicFields (); // Add all the dynamic fields in the properties array
 		
 		$form = isset ( $_GET ['form'] ) ? '&form=' . $_GET ['form'] : '';
@@ -631,12 +638,13 @@ class Grid extends Control {
 		$this->pivotcols = ( string ) $this->getProperty ( $this->name, GridProperty::PIVOT_COLS, false, GridDefaults::PIVOT_COLS );
 		$this->pivotdata = ( string ) $this->getProperty ( $this->name, GridProperty::PIVOT_DATA, false, GridDefaults::PIVOT_DATA );
 		$this->pivotseparator = ( string ) $this->getProperty ( $this->name, GridProperty::PIVOT_SEPARATOR, false, GridDefaults::PIVOT_SEPARATOR );
+		$this->pivotsort = (string) $this->getProperty($this->name, GridProperty::PIVOT_SORT, false, GridDefaults::PIVOT_SORT);		
 		if ($this->pivot == 'true')
 			$this->infer = 'true';
 			// Hack to rteplace form in base url
 		$freeze = $this->getProperty ( $this->name, GridProperty::FREEZE, false, GridDefaults::FREEZE, null, true );
 		if ($freeze != "true") {
-			$getForm = $_GET ['form'];
+			$getForm = isset($_GET ['form']) ? $_GET ['form'] : null;
 			$this->baseurl = str_replace ( 'form=' . $getForm, 'form=' . $this->name, $this->baseurl );
 		}
 		// var_dump($this->collapsible);
@@ -661,7 +669,7 @@ class Grid extends Control {
 		 * This applies to all params included under <View> element
 		 */
 		$view = $tablexml->xpath ( './View' );
-		$this->view_params = $this->buildViewParams ( $view [0] );
+		$this->view_params = isset($view[0]) ? $this->buildViewParams ( $view [0] ) : array();
 		
 		foreach ( $global_actions as $global_action ) {
 			$this->is_form = true;
@@ -692,28 +700,34 @@ class Grid extends Control {
 		$table_colinline = array ();
 		$index = 0;
 		$newColumns = array (); // Columns with dynamically added
-		                       
+
+		$table_collookup = array();
+		$table_colattributes = array();		
 		// Expand dynamic added columns
 		foreach ( $columns as $column ) {
+			$colname = ( string ) $this->getProperty ( '', GridColumnProperty::NAME, false, GridColumnDefaults::NAME, $column );			
 			$colType = ( string ) $this->getProperty ( $colname, GridColumnProperty::TYPE, false, GridColumnDefaults::TYPE, $column );
-			$colName = ( string ) $this->getProperty ( '', GridColumnProperty::NAME, false, GridColumnDefaults::NAME, $column );
 			if ($colType == 'container') {
 				// Add all the columns in this container
 				foreach ( $this->properties as $dynColumn ) {
-					$currentContainer = ( string ) $dynColumn ['container'];
-					if ($currentContainer == $colName) {
+					$currentContainer = isset($dynColumn ['container']) ? ( string ) $dynColumn ['container'] : null;
+					if ($currentContainer == $colname) {
 						// Create a new element with the dynamic fields
+						//kuink_mydebug('Dynamic:', $colname);
+						//kuink_mydebug('Dynamic:', $currentContainer);
 						$attrs = '';
 						$rules = '';
 						$formatters = '';
 						foreach ( $dynColumn as $key => $value )
 							$attrs .= ' ' . ( string ) $key . '="' . ( string ) $value . '"';
 						$dynRules = $this->dynamicRules [$dynColumn ['name']];
-						foreach ( $dynRules as $dynRule )
-							$rules .= '<Rule attr="' . ( string ) $dynRule ['attr'] . '" condition="' . ( string ) $dynRule ['condition'] . '"  value="' . ( string ) $dynRule ['value'] . '"/>';
+						if (is_array($dynRules))
+							foreach ( $dynRules as $dynRule )
+								$rules .= '<Rule attr="' . ( string ) $dynRule ['attr'] . '" condition="' . ( string ) $dynRule ['condition'] . '"  value="' . ( string ) $dynRule ['value'] . '"/>';
 						$dynFormatters = $this->dynamicFormatters [( string ) $dynColumn ['name']];
-						foreach ( $dynFormatters as $dynFormatter )
-							$formatters .= '<Formatter name="' . ( string ) $dynFormatter ['name'] . '" method="' . ( string ) $dynFormatter ['method'] . '"/>';
+						if (is_array($dynFormatters))
+							foreach ( $dynFormatters as $dynFormatter )
+								$formatters .= '<Formatter name="' . ( string ) $dynFormatter ['name'] . '" method="' . ( string ) $dynFormatter ['method'] . '"/>';
 						$newColumn = new \SimpleXMLElement ( '<Column ' . $attrs . '>' . $rules . $formatters . '</Column>' );
 						// var_dump($dynFormatters);
 						$newColumns [] = $newColumn;
@@ -745,8 +759,10 @@ class Grid extends Control {
 			
 			$this->tablecoltype [$index] = $coltype;
 			
-			if ($visible != 'true')
-				continue;
+			if ($visible != 'true') {
+				$this->tablecolnotvisible[] = $colname;
+					continue;
+			}
 			
 			$formatter = '';
 			$method = '';
@@ -831,7 +847,7 @@ class Grid extends Control {
 		$this->tablecolattributes = $table_colattributes;
 		$this->static_bind = $table_collookup;
 		$this->tablecolinline = $table_colinline;
-		// var_dump( $this->tablecolformatter );
+		// print_object( $this->tablecolumns );
 		// bind the data
 		$this->bindData ();
 		
@@ -845,15 +861,20 @@ class Grid extends Control {
 			$pivotLines = explode ( ',', $this->pivotlines );
 			$pivotCols = explode ( ',', $this->pivotcols );
 			$pivotData = explode ( ',', $this->pivotdata );
+			$pivotSort = explode(',', $this->pivotsort);
 			$count = 0;
 			$utilsLib = new \UtilsLib ();
+			$setLib = new \SetLib();			
 			foreach ( $this->bind_data as $data ) {
-				$this->bind_data [$count ++] = $utilsLib->pivotTable ( array (
-						( array ) $data,
-						$this->pivotlines,
-						$this->pivotcols,
-						$this->pivotdata 
-				) );
+				$unsortedData = $utilsLib->pivotTable(array((array) $data, $this->pivotlines, $this->pivotcols, $this->pivotdata));
+				//zprint_object($unsortedData);
+				if (trim($this->pivotsort != '')) {
+					$mergedData = array_merge(array($unsortedData), $pivotSort);
+					$sortedData = $setLib->SortBy($mergedData);
+				} else 
+					$sortedData = $unsortedData;
+					
+				$this->bind_data[$count++] = $sortedData;
 			}
 		}
 		// var_dump($this->bind_data[0]);
@@ -861,18 +882,20 @@ class Grid extends Control {
 		if ($this->infer == 'true') {
 			// Build the grid columns
 			// var_dump($this->tablecolumns);
-			foreach ( $this->bind_data as $data ) {
-				$record = ( array ) reset ( $data );
-				foreach ( $record as $key => $value ) {
-					if (! in_array ( $key, $this->tablecolumns )) {
-						$this->tableinfercolumns [] = $key;
-						$this->tablecolumns [] = $key;
-						$this->tableheaders [] = $key;
+			if (is_array($this->bind_data) || is_object($this->bind_data))
+				foreach ( $this->bind_data as $data ) {
+					$record = ( array ) reset ( $data );
+					foreach ( $record as $key => $value ) {
+						if (is_array($this->tablecolumns) && !in_array($key, $this->tablecolumns) && is_array($this->tablecolnotvisible) && !in_array($key, $this->tablecolnotvisible)) { // && (strpos($key, '__infer_') > 0)					
+							$this->tableinfercolumns [] = $key;
+							$this->tablecolumns [] = $key;
+							$this->tableheaders [] = $key;
+						}
 					}
 				}
-			}
 		}
 		$this->total = 0;
+		if (is_array($this->bind_data) || is_object($this->bind_data))
 		foreach ( $this->bind_data as $data ) {
 			$data = ( array ) $data;
 			// var_dump($data);
@@ -885,8 +908,7 @@ class Grid extends Control {
 			
 			// var_dump( $this->tablecolumns );
 			$records = (isset ( $data ['records'] )) ? $data ['records'] : $data;
-			$this->_reccords = $records; // TODO STI: Joao Patricio tirar isto daqui
-			                             // var_dump( $records );
+			$originalValuesArray = array ();																	 
 			$new_data = array ();
 			foreach ( $records as $record ) {
 				$record = ( array ) $record;
@@ -919,14 +941,14 @@ class Grid extends Control {
 						$datatoinsert [$current_key] ['value'] = $value;
 					}
 					// Handling rules
-					$colRules = $this->tablecolrules [$index];
+					$colRules = isset($this->tablecolrules [$index]) ? $this->tablecolrules [$index] : array();
 					// initialize with the default column attributes that can be changed by the rules
-					$colAttributes = $this->tablecolattributes [$index];
+					$colAttributes = isset($this->tablecolattributes [$index]) ? $this->tablecolattributes [$index] : array();
 					foreach ( $colRules as $attrName => $ruleCondition ) {
 						$condExpr = $ruleCondition ['condition'];
 						$condCapability = $ruleCondition ['capability'];
 						$condAttrValue = $ruleCondition ['value'];
-						$recordValue = ( string ) $record [$condField];
+						//$recordValue = ( string ) $record [$condField];
 						$capabilityValue = isset ( $this->nodeconfiguration [\Kuink\Core\NodeConfKey::CAPABILITIES] [$condCapability] ) ? 1 : 0;
 						
 						// Parse the conditionExpr
@@ -986,7 +1008,7 @@ class Grid extends Control {
 					// handle infered columns formatters
 					$tableColFormatter = null;
 					if (! in_array ( $column, $this->tableinfercolumns ) && (strpos ( $column, '__infer' ) === false)) {
-						$tableColFormatter = $this->tablecolformatter [$index];
+						$tableColFormatter = isset($this->tablecolformatter [$index]) ? $this->tablecolformatter [$index] : null;
 					} else {
 						if (count ( $originalValuesArray ) > 0) {
 							$arrayKeys = array_keys ( $originalValuesArray );
@@ -1044,8 +1066,8 @@ class Grid extends Control {
 					}
 					
 					if ($this->tree == 'true') {
-						$datatoinsert [$current_key] ['attributes'] ['treeid'] = $record [$this->treeid];
-						$datatoinsert [$current_key] ['attributes'] ['treeparentid'] = $record [$this->treeparentid];
+						$datatoinsert [$current_key] ['attributes'] ['treeid'] = isset($record [$this->treeid]) ? $record [$this->treeid] : null;
+						$datatoinsert [$current_key] ['attributes'] ['treeparentid'] = isset($record [$this->treeparentid]) ? $record [$this->treeparentid] : null;
 					}
 					
 					// If this is an action column then create the action link
@@ -1167,8 +1189,8 @@ class Grid extends Control {
 							if ($cond_fieldvalue == $action_condvalue || $conditionTrue == 1) {
 								$action_url = '';
 								$action_constructor = array ();
-								$confirm_label = ($action ['confirm'] == '') ? 'false' : ( string ) $action ['confirm'];
-								$newContext = ($action ['newcontext'] == '') ? 'false' : ( string ) $action ['newcontext'];
+								$confirm_label = (( ( string ) $action ['confirm']) === '') ? 'false' : ( string ) $action ['confirm'];
+								$newContext = (( ( string ) $action ['newcontext']) === '') ? 'false' : ( string ) $action ['newcontext'];
 								$target = '';
 								if ($newContext == 'true') {
 									// Remove de idContext from the url then set target _blank
@@ -1178,7 +1200,7 @@ class Grid extends Control {
 									$location = $location . '&previousidcontext=' . $currentIdContext;
 									$target = '_blank';
 								}
-								
+								$confirm_text = '';
 								if ($confirm_label != 'false') {
 									
 									$confirm_text = ($confirm_label == 'true') ? Core\Language::getString ( 'ask_proceed', 'framework' ) : Core\Language::getString ( $confirm_label, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
@@ -1235,9 +1257,9 @@ class Grid extends Control {
 				// $this->tableobj->setup();
 				// var_dump( $datatoinsert );
 				unset ( $datatoinsert ['__infer'] ); // remove __infer data that is allways empty
-				foreach ( $originalValuesArray as $origKey => $origValue ) {
-					unset ( $datatoinsert [$origKey] );
-				}
+				if (is_array($originalValuesArray))
+					foreach ( $originalValuesArray as $origKey => $origValue )
+						unset ( $datatoinsert [$origKey] );
 				$new_data [] = $datatoinsert;
 				// $this->tableobj->add_data( $datatoinsert );
 			}
@@ -1503,7 +1525,7 @@ class Grid extends Control {
 		
 		$series = array ();
 		$data = $this->bind_data;
-		$data = $data [0];
+		$data = isset($data [0]) ? $data [0] : array();
 		
 		// only one serie?
 		$flag_onlyOneSerie = (count ( explode ( ',', $this->pivotdata ) ) == 1) ? true : false;
@@ -1544,6 +1566,7 @@ class Grid extends Control {
 		}
 		$params ['data'] = $series;
 		$this->skeleton = '_chart_v2';
+		//print_object($params);
 		$uiParams ['jsonData'] = $params;
 		$uiParams ['name'] = $this->name;
 		$uiParams ['width'] = $width;
@@ -1610,7 +1633,7 @@ class Grid extends Control {
 		$params ['isPageable'] = $this->pageable;
 		$params ['pageSize'] = $this->pagesize;
 		$params ['pageCurrent'] = $this->page;
-		$params ['pageTotal'] = ( int ) ($this->total / $this->pagesize) + 1;
+		$params ['pageTotal'] = ($this->pagesize != 0) ? ( int ) ($this->total / $this->pagesize) + 1 : 1;
 		$params ['recordsTotal'] = ( int ) ($this->total);
 		$params ['globalActions'] = $globalActions;
 		$params ['exportable'] = $this->exportable;
@@ -1643,7 +1666,7 @@ class Grid extends Control {
 		
 		$dateTimeLib = new \DateTimeLib ( $this->nodeconfiguration, null );
 		$personTimeZoneOffset = $dateTimeLib->getTzOffset ( array (
-				0 => $neon_user ['timezone'] 
+				0 => $kuink_user ['timezone']
 		) );
 		$params ['personTimeZoneOffset'] = $personTimeZoneOffset;
 		$params ['personTimeZone'] = $kuink_user ['timezone'];
@@ -1665,12 +1688,12 @@ class Grid extends Control {
 		
 		$config = $this->nodeconfiguration ['config'];
 		
-		$base_upload = $config ['neonUploadFolderBase'];
+		$base_upload = $KUINK_CFG->uploadRoot;
 		$upload_dir = $base_upload . '/tmp/';
 		
 		// Handle dupplication of slashes in configurations
 		$upload_dir = str_replace ( '//', '/', $upload_dir );
-		$filePath = $KUINK_CFG->dataroot . '/' . $upload_dir;
+		$filePath = $upload_dir;
 		$fileName = $file_guid . '.' . $type;
 		$myFile = $filePath . $fileName;
 		

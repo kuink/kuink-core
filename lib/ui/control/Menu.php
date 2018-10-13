@@ -32,9 +32,9 @@ class Menu extends Control {
 		) ) : '#';
 		$menu ['icon'] = (isset ( $parent [0] ['icon'] )) ? ( string ) $parent [0] ['icon'] : 'circle';
 		$menu ['id'] = (isset ( $parent [0] ['id'] )) ? ( string ) $parent [0] ['id'] : '';
-		
-		// print_object($this->dynamic_fields);
-		if (sizeof ( $this->dynamic_fields ) <= 0) {
+		//var_dump(sizeof($this->dynamic_fields));
+		$menuSize = !(isset($this->dynamic_fields)) ? 0 : sizeof ( $this->dynamic_fields );
+		if ($menuSize <= 0) {
 			foreach ( $root as $action ) {
 				
 				$name = isset ( $action ['name'] ) ? ( string ) $action ['name'] : '';
@@ -65,40 +65,41 @@ class Menu extends Control {
 				}
 			}
 		} else {
-			foreach ( $this->dynamic_fields as $action ) {
-				$actionAttributes = $action [0];
-				// print_object($actionAttributes);
-				$name = isset ( $actionAttributes ['name'] ) ? ( string ) $actionAttributes ['name'] : '';
-				$id = isset ( $actionAttributes ['id'] ) ? ( string ) $actionAttributes ['id'] : '';
-				$label = isset ( $actionAttributes ['label'] ) ? ( string ) $actionAttributes ['label'] : $id;
-				$visible = isset ( $actionAttributes ['visible'] ) ? ( string ) $actionAttributes ['visible'] : 'true';
-				$modal = isset ( $actionAttributes ['modal'] ) ? ( string ) $actionAttributes ['modal'] : '';
-				$target = isset ( $actionAttributes ['target'] ) ? ( string ) $actionAttributes ['target'] : '_self';
-				$icon = isset ( $actionAttributes ['icon'] ) ? ( string ) $actionAttributes ['icon'] : 'circle';
-				$value = isset ( $actionAttributes ['value'] ) ? ( string ) $actionAttributes ['value'] : '';
-				
-				// print_object($actionPermissions[ $name ].' '.$visible);
-				
-				if ($actionPermissions [$name] && $visible == 'true') {
-					// The user has permissions to execute this action
-					// Add this action to the array
-					$label = \Kuink\Core\Language::getString ( $label, $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] );
+			if (isset($this->dynamic_fields))
+				foreach ( $this->dynamic_fields as $action ) {
+					$actionAttributes = $action [0];
+					// print_object($actionAttributes);
+					$name = isset ( $actionAttributes ['name'] ) ? ( string ) $actionAttributes ['name'] : '';
+					$id = isset ( $actionAttributes ['id'] ) ? ( string ) $actionAttributes ['id'] : '';
+					$label = isset ( $actionAttributes ['label'] ) ? ( string ) $actionAttributes ['label'] : $id;
+					$visible = isset ( $actionAttributes ['visible'] ) ? ( string ) $actionAttributes ['visible'] : 'true';
+					$modal = isset ( $actionAttributes ['modal'] ) ? ( string ) $actionAttributes ['modal'] : '';
+					$target = isset ( $actionAttributes ['target'] ) ? ( string ) $actionAttributes ['target'] : '_self';
+					$icon = isset ( $actionAttributes ['icon'] ) ? ( string ) $actionAttributes ['icon'] : 'circle';
+					$value = isset ( $actionAttributes ['value'] ) ? ( string ) $actionAttributes ['value'] : '';
 					
-					$url = $utils->ActionUrl ( array (
-							0 => $name 
-					) );
-					$url = ($modal == 'true') ? $url . '&modal=true' : $url;
-					$url = ($value != '') ? $url . '&actionvalue=' . $value : $url;
-					$menu ['child'] [] = array (
-							'href' => $url,
-							'modal' => $modal,
-							'label' => $label,
-							'target' => $target,
-							"icon" => $icon,
-							"id" => $id 
-					);
+					// print_object($actionPermissions[ $name ].' '.$visible);
+					
+					if ($actionPermissions [$name] && $visible == 'true') {
+						// The user has permissions to execute this action
+						// Add this action to the array
+						$label = \Kuink\Core\Language::getString ( $label, $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] );
+						
+						$url = $utils->ActionUrl ( array (
+								0 => $name 
+						) );
+						$url = ($modal == 'true') ? $url . '&modal=true' : $url;
+						$url = ($value != '') ? $url . '&actionvalue=' . $value : $url;
+						$menu ['child'] [] = array (
+								'href' => $url,
+								'modal' => $modal,
+								'label' => $label,
+								'target' => $target,
+								"icon" => $icon,
+								"id" => $id 
+						);
+					}
 				}
-			}
 		}
 		
 		// return $actionarray;
@@ -106,9 +107,8 @@ class Menu extends Control {
 		$layout = \Kuink\UI\Layout\Layout::getInstance ();
 		
 		// print_object(count($menu['child']));
-		if ($actionPermissions [$actionName] || ($actionName == '' && count ( $menu ['child'] ) > 0)) {
+		if (isset($actionPermissions [$actionName]) || ($actionName == '' && isset($menu ['child']) && count ( $menu ['child'] ) > 0))
 			$layout->setNodeMenu ( $menu );
-		}
 	}
 	
 	/**

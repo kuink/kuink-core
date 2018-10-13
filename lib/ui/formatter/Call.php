@@ -26,7 +26,7 @@ class Call extends Formatter {
 		unset ( $params ['function'] );
 		unset ( $params ['method'] );
 		unset ( $params ['key'] );
-		if ($params ['name'] == 'call')
+		if (isset($params ['name']) && $params ['name'] == 'call')
 			unset ( $params ['name'] );
 		
 		$formatter = $value;

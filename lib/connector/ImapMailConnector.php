@@ -78,6 +78,9 @@ class ImapMailConnector extends \Kuink\Core\DataSourceConnector {
 		// var_dump($result);
 		return $result;
 	}
+	public function getSchemaName($params) {
+		return null;
+	}
 }
 
 ?>

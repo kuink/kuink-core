@@ -41,21 +41,26 @@ class Tools {
 		
 		return $KUINK_CFG->wwwRoot;
 	}
-	static public function setUrlParams($baseurl, $params) {
-		$url_parsed = parse_url ( $baseurl );
+	static public function setUrlParams($baseurl, $params=array()) {
+		$url_parsed = parse_url ( htmlspecialchars_decode($baseurl) );
+		//print_object($url_parsed);
 		$query = ( string ) $url_parsed ['query'];
 		parse_str ( $query, $query_parsed );
 		// var_dump($query);
 		
 		foreach ( $params as $key => $value )
-			$query_parsed [$key] = $value;
+			if (trim($value!=''))
+				$query_parsed [$key] = $value;
+			else
+				unset($query_parsed[$key]);
 		
-		$query = http_build_query ( $query_parsed );
+		$query =  htmlspecialchars_decode(http_build_query ( $query_parsed ));
 		$url_parsed ['query'] = $query;
 		$url = explode ( '?', $baseurl );
 		$server = ( string ) $url [0];
 		$location = $server . '?' . $query;
-		
+	  //rint_object($location);		
+
 		return $location;
 	}
 }

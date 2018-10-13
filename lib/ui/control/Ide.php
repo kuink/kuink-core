@@ -17,10 +17,24 @@
 namespace Kuink\UI\Control;
 
 class Ide extends Control {
-	function display() {
-		$data = ( string ) $this->bind_data [0];
-		$this->render ( array () );
+	var $baseUrl; //The base url to define actions or events
+
+	function __construct($nodeconfiguration, $xml_definition) {
+		parent::__construct ( $nodeconfiguration, $xml_definition );
+				
+		$baseUrl = $nodeconfiguration ['baseurl'];
+		$url = \Kuink\Core\Tools::setUrlParams ( $baseUrl );
+		$this->baseUrl = $url;		
 	}
+
+	function display() {
+		$data = isset($this->bind_data [0]) ? ( string ) $this->bind_data [0] : null;
+		$params = array();
+		$params['baseUrl'] = $this->baseUrl;
+		
+		$this->render( $params );
+	}
+
 	function getHtml() {
 		$html = $this->name;
 		return $html;

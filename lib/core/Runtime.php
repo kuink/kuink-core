@@ -18,6 +18,9 @@ namespace Kuink\Core;
 
 use Kuink\UI\Layout\Layout;
 use Kuink\Core;
+use Kuink\Core\Exception\ERROR_CODE;
+use Kuink\Core\Exception\GenericException;
+
 
 /**
  * Enum values used for Action types
@@ -32,18 +35,23 @@ class ActionType {
 }
 class User {
 	function getUser() {
-		global $KUINK_BRIDGE_CFG;
-		
+		global $KUINK_CFG;
+		//var_dump($KUINK_CFG->auth->user);
+		if (isset($_SESSION['kuink.logged.user']))
+			$kuinkUser = $_SESSION['kuink.logged.user'];
+		else
+			$kuinkUser = array ();	
+
 		$currentNode = ProcessOrchestrator::getCurrentNode ();
-		$rwx = $currentNode->rwx;
-		$impersonate = $currentNode->idUserImpersonate;
+		$rwx = isset($currentNode->rwx) ? $currentNode->rwx : null;
+		$impersonate = isset($currentNode->idUserImpersonate) ? $currentNode->idUserImpersonate : null;
 		$kuinkUser = array ();
 		$kuinkUser ['rwx'] = $rwx;
 		$kuinkUser ['isImpersonated'] = isset ( $impersonate ) ? 1 : 0;
 		
 		$idNumber = 0; // the guest id_number
-		if ($KUINK_BRIDGE_CFG->auth->user->id != null)
-			$idNumber = $KUINK_BRIDGE_CFG->auth->user->id;
+		if ($KUINK_CFG->auth->user->id != null)
+			$idNumber = $KUINK_CFG->auth->user->id;
 			
 			// Handle impersonated user
 		if ($kuinkUser ['isImpersonated'])
@@ -54,7 +62,7 @@ class User {
 			// get the idCompany
 		$kuinkUser ['idCompany'] = ProcessOrchestrator::getCompany ();
 		
-		// var_dump($kuinkUser['id']);
+		//var_dump($kuinkUser['id']);
 		
 		// Load the person from fw_person
 		// Set the public key
@@ -73,15 +81,15 @@ class User {
 		$kuinkUser ['email'] = $person ['email']; // $USER->email;
 		$kuinkUser ['publicKey'] = $person ['public_key']; // $USER->email;
 		                                                 // $kuink_user['tipo'] = $current_user->tipo;
-		$kuinkUser ['idExternal'] = $KUINK_BRIDGE_CFG->auth->user->id; // $current_user->idexternal;
-		$kuinkUser ['lang'] = $USER->lang;
+		$kuinkUser ['idExternal'] = $KUINK_CFG->auth->user->id; // $current_user->idexternal;
+		$kuinkUser ['lang'] = $KUINK_CFG->auth->user->lang;
 		
 		// @todoSTI: Joao Patricio get this value from person table
-		$kuinkUser ['timezone'] = 'Europe/Lisbon';
+		$kuinkUser ['timezone'] = $KUINK_CFG->defaultTimezone;
 		// get the client ip address
 		$kuinkUser ['ip'] = $_SERVER ["REMOTE_ADDR"];
 		
-		// var_dump($kuink_user);
+		//var_dump($kuinkUser);
 		return $kuinkUser;
 	}
 }
@@ -139,11 +147,12 @@ class Runtime {
 		$currentNode = ProcessOrchestrator::getCurrentNode ();
 		// die();
 		//print_r($currentNode->params);
-		$this->params = $currentNode->params;
-		//foreach ( $params as $key => $value )
-		//	$this->params [$key] = $value;
-			
-			// $this->params = empty( $params ) ? $currentNode->params : $params ;
+		$this->params = isset($currentNode->params) ? $currentNode->params : null;
+		if (isset($params))
+			foreach ( $params as $key => $value )
+				$this->params [$key] = $value;
+				
+		// $this->params = empty( $params ) ? $currentNode->params : $params ;
 		$this->variables [] = null;
 		$this->libraries [] = null;
 		
@@ -165,31 +174,33 @@ class Runtime {
 		$server_info ['name'] = $_SERVER ['SERVER_NAME'];
 		$server_info ['ip'] = $_SERVER ['SERVER_ADDR'];
 		$server_info ['port'] = $_SERVER ['SERVER_PORT'];
+		$server_info ['userAgent'] = $_SERVER ['HTTP_USER_AGENT'];
 		$server_info ['wwwRoot'] = $KUINK_CFG->wwwRoot;
 		$server_info ['appRoot'] = $KUINK_CFG->appRoot;
 		$server_info ['apiUrl'] = $KUINK_CFG->apiUrl;
 		$server_info ['streamUrl'] = $KUINK_CFG->streamUrl;
 		$server_info ['guestUrl'] = $KUINK_CFG->guestUrl;
-		$server_info ['baseUploadDir'] = $this->nodeconfiguration [NodeConfKey::CONFIG] ['neonUploadFolderBase'];
-		$server_info ['fullUploadDir'] = $KUINK_CFG->dataRoot . '/' . $this->nodeconfiguration [NodeConfKey::CONFIG] ['neonUploadFolderBase'];
+		$server_info ['baseUploadDir'] = $KUINK_CFG->uploadRoot; //(isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)$this->nodeconfiguration [NodeConfKey::CONFIG] ['uploadFolderBase'] : '';
+		//$config = (isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)($this->nodeconfiguration [NodeConfKey::CONFIG] ['uploadFolderBase']) : '';
+		$server_info ['fullUploadDir'] = $KUINK_CFG->uploadRoot; //$KUINK_CFG->dataRoot . '/' . $config;
 		$server_info ['environment'] = $KUINK_CFG->environment;
 		
 		$this->variables ['SYSTEM'] = $server_info;
 		$this->nodeconfiguration [NodeConfKey::SYSTEM] = $server_info;
 		
-		$nodeContext ['application'] = $currentNode->application;
-		$nodeContext ['process'] = $currentNode->process;
-		$nodeContext ['node'] = $currentNode->node;
-		$nodeContext ['action'] = $currentNode->action;
+		$nodeContext ['application'] = isset($currentNode->application) ? $currentNode->application : null;
+		$nodeContext ['process'] = isset($currentNode->process) ? $currentNode->process : null;
+		$nodeContext ['node'] = isset($currentNode->node) ? $currentNode->node : null;
+		$nodeContext ['action'] = isset($currentNode->action) ? $currentNode->action : null;
 		$nodeContext ['idContext'] = ProcessOrchestrator::getContextId ();
-		$nodeContext ['processGuid'] = $currentNode->nodeGuid;
-		$nodeContext ['nodeGuid'] = $currentNode->nodeGuid;
-		$nodeContext ['nid'] = $currentNode->application . ',' . $currentNode->process . ',' . $currentNode->nodeGuid;
+		$nodeContext ['processGuid'] = isset($currentNode->nodeGuid) ? $currentNode->nodeGuid : null;
+		$nodeContext ['nodeGuid'] = isset($currentNode->nodeGuid) ? $currentNode->nodeGuid : null;
+		$nodeContext ['nid'] = (isset($currentNode) && $currentNode !== false) ? $currentNode->application . ',' . $currentNode->process . ',' . $currentNode->nodeGuid : ',,';
 		$this->variables ['CONTEXT'] = $nodeContext;
 		
 		// kuink_mydebug('NODE', $node_name);
 		
-		$roles = $this->nodeconfiguration [NodeConfKey::ROLES];
+		$roles = isset($this->nodeconfiguration [NodeConfKey::ROLES]) ? $this->nodeconfiguration [NodeConfKey::ROLES] : null;
 		$this->is_fw_admin = isset ( $roles ['framework.admin'] );
 		
 		return;
@@ -201,19 +212,59 @@ class Runtime {
 	 * @param $roles Node
 	 *        	configuration roles
 	 */
-	public function buildAllCapabilities() {
-		$roles = $this->nodeconfiguration [NodeConfKey::ROLES];
-		if (count ( $roles ) > 0) {
-			$rolesFilter = array ();
-			foreach ( $roles as $roleName => $roleValue ) {
-				$rolesFilter [] = '\'' . $roleName . '\'';
-			}
-			$rolesFilterStr = implode ( ',', $rolesFilter );
+	public function buildAllCapabilities($idAcl=null, $aclCode=null, $force=false){
+		Global $KUINK_CFG;
+		
+			$roles = isset($this->nodeconfiguration[NodeConfKey::ROLES]) ? $this->nodeconfiguration[NodeConfKey::ROLES] : null;
+			$capabilities = isset($this->nodeconfiguration[NodeConfKey::CAPABILITIES]) ? $this->nodeconfiguration[NodeConfKey::CAPABILITIES] : null;
 			
-			$this->buildCapabilitiesOfList ( $rolesFilterStr );
+			//Only rebuild if the capabilites are not set
+			if (count($capabilities) == 0 || $force) {
+				//print_object('NEW...');
+				if (count($roles)>0) {
+					$rolesFilter = array();
+					foreach ($roles as $roleName => $roleValue) {
+						$rolesFilter[] = '\''.$roleName.'\'';
+					}
+					$rolesFilterStr = implode(',', $rolesFilter);
+					//print_object($rolesFilterStr);
+						
+					if (!($KUINK_CFG->useGlobalACL))
+						$this->buildCapabilitiesOfList($rolesFilterStr);
+						
+					if ($idAcl || $aclCode) {
+						$this->buildCapabilitiesOfAcl($idAcl, $aclCode);
+					}
+				}
+			}
+	}
+
+
+	/**
+	 * Build capabilities from an access control list
+	 * @param $idAcl - the acl identifier
+	 */
+	public function buildCapabilitiesOfAcl($idAcl, $aclCode){
+		//print_object($idAcl);
+		if ($idAcl || $aclCode){
+			//get the value from fw_config
+			$dataAccess = new \Kuink\Core\DataAccess('framework/framework,acl,getPermissions', 'framework', 'acl');
+			$params['id'] = $idAcl;
+			$params['code'] = $aclCode;			
+			$params['id_person'] = $this->nodeconfiguration[NodeConfKey::USER]['id'];
+			$params['id_company'] = $this->nodeconfiguration[NodeConfKey::USER]['idCompany'];
+			$resultset = $dataAccess->execute($params);
+			//print_object($resultset);
+			if ($resultset){
+				foreach ($resultset as $capability){
+					$this->addCapability($capability);
+				}
+			}
+			
+			return $this->nodeconfiguration[NodeConfKey::CAPABILITIES];
 		}
 	}
-	
+
 	/**
 	 * Build capabilities from a list of roles
 	 * 
@@ -231,9 +282,34 @@ class Runtime {
 					$this->addCapability ( $capability );
 				}
 			}
-			return $this->nodeconfiguration [NodeConfKey::CAPABILITIES];
+			return isset($this->nodeconfiguration [NodeConfKey::CAPABILITIES]) ? $this->nodeconfiguration [NodeConfKey::CAPABILITIES] : array();
 		}
 	}
+	
+	/**
+	 * Build capabilities from an access control list
+	 * @param $idAcl - the acl identifier
+	 */
+	public function getAllRolesAcl($idAcl){
+		//print_object($idAcl);
+		$roles = null;
+		if ($idAcl){
+			//get the value from fw_config
+			$dataAccess = new \Kuink\Core\DataAccess('framework/framework,acl,getRoles', 'framework', 'acl');
+			$params['id'] = $idAcl;
+			$params['id_person'] = $this->nodeconfiguration[NodeConfKey::USER]['id'];
+			$resultset = $dataAccess->execute($params);
+			$params['id_company'] = $this->nodeconfiguration[NodeConfKey::USER]['idCompany'];			
+			//print_object($resultset);
+			if ($resultset){
+				foreach ($resultset as $role){
+					$roles[$role['code']] = 1;
+				}
+			}
+	
+			return $roles;
+		}
+	}	
 	
 	/**
 	 * Add capability to current nodeconfiguration
@@ -281,19 +357,11 @@ class Runtime {
 		global $SESSION;
 		global $KUINK_APPLICATION;
 		global $KUINK_LAYOUT;
-		// kuink_mydebug('FUNCTION', $function_name);
-		// var_dump( $function_params );
-		
-		// var_dump( $this->app_name);
-		// var_dump( $this->process_name);
-		// var_dump( $this->node_name);
-		// die();
-		
+
 		// Registering global apis
 		// This shouldn't be here
 		\Kuink\Core\ProcessOrchestrator::registerAPI ( 'framework,ticket,api,add' );
 		\Kuink\Core\ProcessOrchestrator::registerAPI ( 'framework,ticket,api,getHandlers' );
-		
 		// Clear event control variables
 		$this->event_raised = false;
 		$this->event_raised_name = '';
@@ -302,8 +370,8 @@ class Runtime {
 		$this->event_raised_process = $this->process_name;
 		
 		// Getting current action settings
-		$actionname = $this->nodeconfiguration [NodeConfKey::ACTION];
-		$actionvalue = $this->nodeconfiguration [NodeConfKey::ACTION_VALUE];
+		$actionname = isset($this->nodeconfiguration [NodeConfKey::ACTION]) ? $this->nodeconfiguration [NodeConfKey::ACTION] : null;
+		$actionvalue = isset($this->nodeconfiguration [NodeConfKey::ACTION_VALUE]) ? $this->nodeconfiguration [NodeConfKey::ACTION_VALUE] : null;
 		
 		// kuink_mydebug('$actionname', $actionname);
 		// kuink_mydebug('$actionvalue', $actionvalue);
@@ -315,7 +383,7 @@ class Runtime {
 		$get_role = isset ( $_GET [UrlParam::ROLE] ) ? ( string ) $_GET [UrlParam::ROLE] : '';
 		$get_doc = isset ( $_GET [UrlParam::DOC] ) ? ( string ) $_GET [UrlParam::DOC] : '';
 		
-		$roles = $this->nodeconfiguration [NodeConfKey::ROLES];
+		$roles = isset($this->nodeconfiguration [NodeConfKey::ROLES]) ?  $this->nodeconfiguration [NodeConfKey::ROLES] : null;
 		// var_dump($roles);
 		
 		$showtrace = $get_trace;
@@ -349,7 +417,7 @@ class Runtime {
 			// Get node attributes
 			// Set event params if they exist, in the EVENT_PARAMS general variable
 			$this->variables ['EVENT_PARAMS'] = ProcessOrchestrator::getEventParams (); // isset($_SESSION['KUINK_CONTEXT']['EVENT_PARAMS']) ? $_SESSION['KUINK_CONTEXT']['EVENT_PARAMS'] : null;
-			
+	
 			/**
 			 * ***************************************
 			 */
@@ -375,6 +443,7 @@ class Runtime {
 				else
 					$node_params [$param_name] = $param_value;
 			}
+
 			/**
 			 * ***************************************
 			 */
@@ -389,7 +458,7 @@ class Runtime {
 			// Get the event to start the subprocess - Get it from the EVENT_PARAMS variable if it starts with $
 			$node_event = $this->get_inst_attr ( $nodexml, 'event', $this->variables ['EVENT_PARAMS'], false, '' );
 			
-			// kuink_mydebug('reference', $node_reference);
+			 //kuink_mydebug('reference', $node_reference);
 			
 			// Check if this node is a reference to an existing node or is a subprocess
 			if ($node_reference != '') {
@@ -400,8 +469,10 @@ class Runtime {
 					throw new \Exception ( 'ERROR: node source name must be appname,processname,nodename or appname,processname if event is set' );
 					
 					// Getting the reference application, process and node
-				$refnodeappname = ($refnodeappname == 'this') ? $this->app_name : trim ( $node_parts [0] );
-				$refnodeprocessname = ($refnodeprocessname == 'this') ? $this->process_name : trim ( $node_parts [1] );
+				$refnodeappname = trim ( $node_parts [0] );
+				$refnodeappname = ($refnodeappname == 'this') ? $this->app_name : $refnodeappname;
+				$refnodeprocessname = trim ( $node_parts [1] );
+				$refnodeprocessname = ($refnodeprocessname == 'this') ? $this->process_name : $refnodeprocessname;
 				$refnodename = isset ( $node_parts [2] ) ? trim ( $node_parts [2] ) : '';
 				
 				// kuink_mydebug($refnodeappname, $refnodeprocessname.'->'.$node_event);
@@ -462,7 +533,7 @@ class Runtime {
 			}
 			
 			// load node and instance configuration
-			$config = $this->nodeconfiguration [NodeConfKey::CONFIG];
+			$config = isset($this->nodeconfiguration [NodeConfKey::CONFIG]) ? $this->nodeconfiguration [NodeConfKey::CONFIG] : null;
 			$node_configs = $nodexml->xpath ( '/Node/Configuration//Config' );
 			foreach ( $node_configs as $node_config ) {
 				$key = ( string ) $node_config ['key'];
@@ -479,10 +550,9 @@ class Runtime {
 			
 			// Add global config
 			$config ['APPLICATION'] = ( string ) $this->nodeconfiguration [NodeConfKey::APPLICATION];
-			$config ['PROCESS'] = ( string ) $this->nodeconfiguration [NodeConfKey::PROCESS];
-			$config ['NODE'] = ( string ) $this->nodeconfiguration [NodeConfKey::NODE];
-			$config ['ACTION'] = ( string ) $this->nodeconfiguration [NodeConfKey::ACTION];
-			
+			$config ['PROCESS'] = isset($this->nodeconfiguration [NodeConfKey::PROCESS]) ?  ( string ) $this->nodeconfiguration [NodeConfKey::PROCESS] : null;
+			$config ['NODE'] = isset($this->nodeconfiguration [NodeConfKey::NODE]) ? ( string ) $this->nodeconfiguration [NodeConfKey::NODE] : null;
+			$config ['ACTION'] = isset($this->nodeconfiguration [NodeConfKey::ACTION]) ? ( string ) $this->nodeconfiguration [NodeConfKey::ACTION] : null;
 			$this->nodeconfiguration [NodeConfKey::CONFIG] = $config;
 			
 			// Set parameters if they exist
@@ -536,11 +606,11 @@ class Runtime {
 			// global $SESSION, $OUTPUT, $USER, $DB;
 			$custumapp_name = ( string ) $this->nodeconfiguration [NodeConfKey::APPLICATION];
 			$process_name = ( string ) $this->nodeconfiguration [NodeConfKey::PROCESS];
-			$node = ( string ) $this->nodeconfiguration [NodeConfKey::NODE];
+			$node = isset($this->nodeconfiguration [NodeConfKey::NODE]) ? ( string ) $this->nodeconfiguration [NodeConfKey::NODE] : null;
 			
 			// Add the roles stored in session:
-			$new_roles = $this->nodeconfiguration [NodeConfKey::ROLES];
-			global $SESSION;
+			$new_roles = isset($this->nodeconfiguration [NodeConfKey::ROLES]) ? $this->nodeconfiguration [NodeConfKey::ROLES] : null;
+			global $SESSION, $KUINK_CFG;
 			
 			$currentStackRoles = ProcessOrchestrator::getNodeRoles ();
 			
@@ -552,45 +622,71 @@ class Runtime {
 				// var_dump( $node_roles );
 			$this->nodeconfiguration [NodeConfKey::NODE_ROLES] = $node_roles;
 			$this->nodeconfiguration [NodeConfKey::ROLES] = $new_roles;
-			$this->buildAllCapabilities ();
-			$this->variables['ROLES'] = $this->nodeconfiguration[NodeConfKey::ROLES];
-			$this->variables['CAPABILITIES'] = $this->nodeconfiguration[NodeConfKey::CAPABILITIES];			
+			if ($KUINK_CFG->useGlobalACL)
+				$this->buildAllCapabilities(null, '_global');
+			else
+				$this->buildAllCapabilities();
+
+			$this->variables['ROLES'] = isset($this->nodeconfiguration[NodeConfKey::ROLES]) ? $this->nodeconfiguration[NodeConfKey::ROLES] : null;
+			$this->variables['CAPABILITIES'] = isset($this->nodeconfiguration[NodeConfKey::CAPABILITIES]) ? $this->nodeconfiguration[NodeConfKey::CAPABILITIES] : null;			
 			$action_permissions = $this->getActionPermissions ( $nodexml );
 			$this->nodeconfiguration [NodeConfKey::ACTION_PERMISSIONS] = $action_permissions;
-			$actionname = $this->nodeconfiguration [NodeConfKey::ACTION];
+			$actionname = isset($this->nodeconfiguration [NodeConfKey::ACTION]) ? $this->nodeconfiguration [NodeConfKey::ACTION] : null;
 			// Execute the current action, if there's no current action execute the default action init
 			$actionname = ($actionname != '') ? $actionname : 'init';
 			// kuink_mydebug('$actionname', $actionname);
 			
 			// var_dump( $nodexml );
 			// Get the action definition xml node
-			$action_xmlnode = null;
-			
+
 			if ($function_name) {
 				// Execute directly a function
 				// kuink_mydebug('Executing Function::'.$function_name);
+				$action_xmlnode = null;
 				$exit = 0;
 				$value = $this->function_execute ( $this->nodeconfiguration, $nodexml, $action_xmlnode, $function_name, $this->variables, $exit, $function_params );
 				return $value;
 			} else {
 				// Execute this action
-				// kuink_mydebug('Executing action:',$actionname);
+				//kuink_mydebug('Executing action:',$actionname);
+
 				$action_xmlnode = $this->action_get_xmlnode ( $this->nodeconfiguration, $nodexml, $actionname );
 				$html = $this->action_execute ( $this->nodeconfiguration, $nodexml, $action_xmlnode, $actionname, $this->variables );
 				// var_dump($this->nodeconfiguration);
 			}
-		} catch ( \Exception $e ) {
-			// TODO: - Set a new entry automatically in bugtracking tool
+		} catch(\Error $e) {
+			//TODO: - Set a new entry automatically in bugtracking tool
 			
 			// - Resgister user, timestamp, application, process, node, action, variables, instruction, executionstack?!?
 			if ($function_name) {
-				throw new \Exception ( $e->getMessage () );
+				//throw new \Exception($e->getMessage());
+				throw $e;
 			} else {
-				$msg_manager = \Kuink\Core\MessageManager::getInstance ();
-				$msg_manager->add ( MessageType::EXCEPTION, 'Exception:: ' . $e->getMessage () );
+				$msg_manager = \Kuink\Core\MessageManager::getInstance();
+				$msg_manager->add(MessageType::EXCEPTION,'Exception:: '. $e->getMessage());
 			}
-			// Rollback transactions
-			\Kuink\Core\DataSourceManager::rollbackTransaction ();
+			//Rollback transactions
+			//global $KUINK_TRACE;
+			//print_object($KUINK_TRACE);
+			//die();			
+			//print_object($e->getMessage());
+			\Kuink\Core\DataSourceManager::rollbackTransaction();
+				
+		}
+		catch(\Exception $e) {
+			//TODO: - Set a new entry automatically in bugtracking tool
+
+			// - Resgister user, timestamp, application, process, node, action, variables, instruction, executionstack?!?
+		      if ($function_name) {
+			      //throw new \Exception($e->getMessage());
+		      		throw $e;
+		  		} else {
+		      	$msg_manager = \Kuink\Core\MessageManager::getInstance();
+		        $msg_manager->add(MessageType::EXCEPTION,'Exception:: '. $e->getMessage());
+		      }
+					//Rollback transactions
+					//print_object($e->getMessage());
+		      \Kuink\Core\DataSourceManager::rollbackTransaction();
 		}
 		
 		if ($this->event_raised) {
@@ -617,7 +713,8 @@ class Runtime {
 	function show_trace($show_trace) {
 		global $SESSION, $KUINK_TRACE, $KUINK_MANUAL_TRACE;
 		
-		if ($show_trace == 'true' && $this->type == 'nodes' && $this->is_fw_admin) {
+		if (1==1) {
+		//if ($show_trace == 'true' && $this->type == 'nodes' && $this->is_fw_admin) {
 			$html = '<div class="container-fluid"><div class="row-fluid"><div class="span12">';
 			$html .= '<h4><i class="fa fa-wrench fa-2x" ></i> Developer Tracing Tools</h4>';
 			$html .= '<br/>Manual Trace » ';
@@ -633,7 +730,12 @@ class Runtime {
 			$html .= '<pre class="pre-scrollable">';
 			// var_dump( $KUINK_TRACE );
 			foreach ( $KUINK_MANUAL_TRACE as $key => $value ) {
-				$html .= '<p>' . $key . ' => ' . $value . '</p>';
+				$dump = '';
+				if (is_string($value))
+					$dump = $value;
+				else
+					$dump = var_export($value, true);				
+				$html .= $dump; //'<p>' . $key . ' => ' . $dump . '</p>';
 			}
 			$html .= '</pre></div>';
 			
@@ -646,7 +748,6 @@ class Runtime {
 			$html .= '<br/>Node Configuration » ';
 			$html .= '<a href="javascript:;" onmousedown="if(document.getElementById(\'nodeconf\').style.display == \'none\'){ document.getElementById(\'nodeconf\').style.display = \'block\'; }else{ document.getElementById(\'nodeconf\').style.display = \'none\'; }">Show/Hide</a><br/> ';
 			$html .= '<div id="nodeconf" style="display:none">';
-			// var_dump($this->nodeconfiguration);
 			$html .= '<pre class="pre-scrollable"><p>' . var_export ( $this->nodeconfiguration, true ) . '</p></pre>';
 			$html .= '</div>';
 			
@@ -654,19 +755,28 @@ class Runtime {
 			$html .= '<a href="javascript:;" onmousedown="if(document.getElementById(\'trace\').style.display == \'none\'){ document.getElementById(\'trace\').style.display = \'block\'; }else{ document.getElementById(\'trace\').style.display = \'none\'; }">Show/Hide</a><br/> ';
 			$html .= '<div id="trace" style="display:none">';
 			$html .= '<pre class="pre-scrollable">';
-			// var_dump( $KUINK_TRACE );
+			//var_dump( $KUINK_TRACE );
 			foreach ( $KUINK_TRACE as $key => $value ) {
-				$html .= '<p>' . $key . ' => ' . $value . '</p>';
+				//if (is_string($value))
+				//var_dump($value);
+				$dump = '';
+				if (is_string($value))
+					$dump = $value;
+				else
+					$dump = var_export($value, true);
+
+				$html .= '<pre>' . $key . ' => ' . $dump . '</pre>';
 			}
 			$html .= '</pre>';
 			$html .= '</div>';
 			
+			
 			$html .= "<br/>Variables » ";
 			$html .= '<a href="javascript:;" onmousedown="if(document.getElementById(\'vars\').style.display == \'none\'){ document.getElementById(\'vars\').style.display = \'block\'; }else{ document.getElementById(\'vars\').style.display = \'none\'; }">Show/Hide</a><br/> ';
 			$html .= '<div id="vars" style="display:none">';
-			// var_dump($this->variables);
 			$html .= '<pre class="pre-scrollable"><p>' . var_export ( $this->variables, true ) . '</p></pre>';
 			$html .= '</div>';
+			
 			
 			$html .= '<br/>Session Variables » ';
 			$html .= '<a href="javascript:;" onmousedown="if(document.getElementById(\'sess\').style.display == \'none\'){ document.getElementById(\'sess\').style.display = \'block\'; }else{ document.getElementById(\'sess\').style.display = \'none\'; }">Show/Hide</a><br/> ';
@@ -674,6 +784,7 @@ class Runtime {
 			$html .= '<pre class="pre-scrollable"><p>' . var_export ( $_SESSION ['KUINK_CONTEXT'], true ) . '</p></pre>';
 			$html .= '</div>';
 			
+
 			$html .= '</div></div></div>';
 			
 			$layout = \Kuink\UI\Layout\Layout::getInstance ();
@@ -757,7 +868,7 @@ class Runtime {
 		// $currentRWX = $stack->rwx;
 		
 		$stack = ProcessOrchestrator::getCurrentNode ();
-		$currentRWX = $stack->rwx;
+		$currentRWX = isset($stack->rwx) ? $stack->rwx : null;
 		
 		// var_dump($actions);
 		foreach ( $actions as $action ) {
@@ -834,9 +945,14 @@ class Runtime {
 		}
 		return $action_permissions;
 	}
+	function setRolesAndCapabilities($roles, $capabilities) {
+		$this->nodeconfiguration[NodeConfKey::ROLES] = $roles;
+		$this->nodeconfiguration[NodeConfKey::CAPABILITIES] = $capabilities;
+	}
 	function getNodeRoles($roles, $nodexml) {
 		$perms = $nodexml->xpath ( '/Node/Permissions//Role' );
 		$noderoles = array ();
+		if (is_array($roles) || is_object($roles))
 		foreach ( $roles as $role ) {
 			$noderoles [( string ) $role] = 'true';
 		}
@@ -876,8 +992,8 @@ class Runtime {
 	function action_execute(&$nodeconfiguration, $nodexml, $action_xmlnode, $actionname, &$variables) {
 		global $KUINK_TRACE;
 		global $KUINK_MANUAL_TRACE;
-		global $KUINK_BRIDGE_CFG;
-		// kuink_mydebug('Executing action', $actionname);
+		global $KUINK_CFG;
+		//kuink_mydebug('Executing action', $actionname);
 		
 		$context = ProcessOrchestrator::getContext ();
 		
@@ -918,7 +1034,9 @@ class Runtime {
 		if ($log_level != 'action' && $log_level != 'post' && $log_level != 'full' && $log_level != '')
 			throw new \Exception ( 'Invalid log type: ' . $log_level );
 		
-		$key = (( string ) $nodeconfiguration [NodeConfKey::ACTION_VALUE] == '') ? '-' : ( string ) $nodeconfiguration [NodeConfKey::ACTION_VALUE];
+		//var_dump((string)$nodeconfiguration [NodeConfKey::ACTION_VALUE]);
+		$actionValue = is_array($nodeconfiguration [NodeConfKey::ACTION_VALUE]) ? '' : (string)$nodeconfiguration [NodeConfKey::ACTION_VALUE];
+		$key = ($actionValue == '') ? '-' : $actionValue;
 		
 		$html = ''; // return the html if this is a ui node
 		            
@@ -930,7 +1048,7 @@ class Runtime {
 			// var_dump($nodeconfiguration);
 			$pars = array (
 					'table' => 'log',
-					'id_user' => $KUINK_BRIDGE_CFG->auth->user->id,
+					'id_user' => $KUINK_CFG->auth->user->id,
 					'type' => $log_level,
 					'application' => $nodeconfiguration [NodeConfKey::APPLICATION],
 					'process' => $nodeconfiguration [NodeConfKey::PROCESS],
@@ -950,7 +1068,6 @@ class Runtime {
 			// Getting the submitted data from POST.
 			$variables ['POSTDATA'] = $this->get_submitted_data ();
 		}
-		
 		// var_dump($variables['POSTDATA']);
 		// var_dump($KUINK_TRACE);
 		// if this is a screen object load all the screen objects, forms, grids, everything
@@ -1006,7 +1123,8 @@ class Runtime {
 								foreach ( $variables ['POSTDATA'] as $postKey => $postValue ) {
 									$field = explode ( '_', $postKey );
 									if ($field [0] == $listFormField) {
-										$bindArr [$field [1]] = $postValue;
+										if (isset($field [1]))
+											$bindArr [$field [1]] = $postValue;
 									}
 								}
 								$uielem->bind ( array (
@@ -1033,7 +1151,7 @@ class Runtime {
 				$this->current_controls [] = $uielem;
 			}
 		}
-		
+
 		$instructions = $action_xmlnode [0]->children ();
 		// var_dump( $instructions[0] );
 		// Start executing instructions inside this action
@@ -1044,7 +1162,7 @@ class Runtime {
 			// kuink_mydebug('Calling instruction', $instruction_xmlnode->getName());
 			// var_dump( $instruction_xmlnode );
 			// Execute this instruction
-			$this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
+				$this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
 			// print( $actionname.'::' );
 			// print( (string)$exit );
 			// Check if there is an event raised
@@ -1056,7 +1174,7 @@ class Runtime {
 			if ($exit)
 				break;
 		}
-		
+
 		// Handle export from grids...
 		// Export the grid data and redo the action.
 		$export = isset ( $_GET ['export'] ) ? true : false;
@@ -1091,39 +1209,40 @@ class Runtime {
 				
 				// var_dump( $course );
 				$url = Tools::getWWWRoot ();
-				global $course;
-				
+				global $KUINK_CFG;
+
 				$layout = \Kuink\UI\Layout\Layout::getInstance ();
-				$breadcrumbEntries = array (
-						array (
-								'label' => Language::getString ( 'home' ),
-								'href' => $url 
-						),
-						array (
-								'label' => $course->fullname,
-								'href' => $url . '/course/view.php?id=' . $course->id,
-								'last' => false 
-						),
-						array (
-								'label' => $app_desc,
-								'href' => $nodeconfiguration [NodeConfKey::BASEURL],
-								'last' => false 
-						),
-						array (
-								'label' => $proc_desc,
-								'href' => '',
-								'last' => false 
-						),
-						array (
-								'label' => $node_desc,
-								'href' => '',
-								'last' => true 
-						) 
+				$breadcrumbEntries = array ();
+				$breadcrumbEntries[] = array (
+					'label' => Language::getString ( 'home' ),
+					'href' => $url 
 				);
+				if (isset($KUINK_CFG->trigger->url))
+					$breadcrumbEntries[] = array (
+						'label' => $KUINK_CFG->trigger->label,
+						'href'  => $KUINK_CFG->trigger->url,
+						'last'  => false 
+					);
+				$breadcrumbEntries[] = array (
+					'label' => $app_desc,
+					'href' => $nodeconfiguration [NodeConfKey::BASEURL],
+					'last' => false 
+				);
+				$breadcrumbEntries[] = array (
+					'label' => $proc_desc,
+					'href' => '',
+					'last' => false 
+				);
+				$breadcrumbEntries[] = array (
+					'label' => $node_desc,
+					'href' => '',
+					'last' => true 
+				); 
 				$layout->setBreadCrumb ( $breadcrumbEntries );
 				$layout->setAppName ( $app_desc );
 				$layout->setProcessName ( $proc_desc );
 				$layout->setNodeName ( $node_desc );
+				$layout->setRefresh($nodeconfiguration[NodeConfKey::BASEURL].'&action=init');
 				// print '<h1 align="center" class="headingblock header outline"> '.$app_desc.' » '.$proc_desc.'</h1>';
 				// print '<h2 align="center" class="headingblock header outline"> '. $node_desc.'</h2>';
 			}
@@ -1135,7 +1254,7 @@ class Runtime {
 				
 				// We want jus this control
 				$refreshControlName = isset ( $_GET ['control'] ) ? $_GET ['control'] : null;
-				
+				if (isset($this->current_controls))
 				foreach ( $this->current_controls as $uielem ) {
 					$currentNode = ProcessOrchestrator::getCurrentNode ();
 					$rwx = $currentNode->rwx;
@@ -1165,7 +1284,7 @@ class Runtime {
 		$form_type = isset ( $_POST ['_FORM_TYPE'] ) ? $_POST ['_FORM_TYPE'] : null;
 		$multi = ($form_type == 'multi');
 		
-		$listFormFields = $_POST ['_FORM_LIST_FIELDS'];
+		$listFormFields = isset($_POST ['_FORM_LIST_FIELDS']) ? $_POST ['_FORM_LIST_FIELDS'] : null;
 		$listFormFieldsArr = explode ( ',', $listFormFields );
 		foreach ( $listFormFieldsArr as $listFormField ) {
 			if ($listFormField != '') {
@@ -1186,8 +1305,8 @@ class Runtime {
 			if ($multi) {
 				// if multi form then organize in form POSTDATA[id][field] = value
 				$newKey = explode ( '-', $key );
-				$id = $newKey [0];
-				$field = $newKey [1];
+				$id = isset($newKey [0]) ? $newKey [0] : '';
+				$field = isset($newKey [1]) ? $newKey [1] : '';
 				$postdata [$id] [$field] = $value;
 			} else if (is_array ( $value )) {
 				$valuearray = $value + array (
@@ -1243,6 +1362,8 @@ class Runtime {
 		$local_variables ['SYSTEM'] = $variables ['SYSTEM'];
 		$local_variables ['CONTEXT'] = $variables ['CONTEXT'];
 		$local_variables ['EVENT_PARAMS'] = $variables ['EVENT_PARAMS'];
+		$local_variables ['ROLES'] = $variables ['ROLES'];
+		$local_variables ['CAPABILITIES'] = $variables ['CAPABILITIES'];
 		
 		// PARAMS will hold the function params data instead of node params
 		// $local_variables['PARAMS'] = $variables['PARAMS'];
@@ -1254,8 +1375,9 @@ class Runtime {
 		// Get the function definition
 		$funct_xmlnode = $nodexml->xpath ( '/Node/Library/Function [@name="' . $function_name . '"]' );
 		
-		if ($funct_xmlnode == null)
-			throw new \Exception ( 'Function ' . $function_name . ' not found! Check the function name in the node.' );
+		if ($funct_xmlnode == null) {
+			throw new GenericException('framework/runtime::functionNotFound', 'Function '.$nodeconfiguration[NodeConfKey::APPLICATION].','.$nodeconfiguration[NodeConfKey::PROCESS].','.$nodeconfiguration[NodeConfKey::NODE].','.$function_name.' not found! Check the function name in the node.');
+		}
 			
 			// Get the function parameters to create the ones with default value
 		$funct_params = $funct_xmlnode [0]->xpath ( './Params/Param' );
@@ -1319,7 +1441,7 @@ class Runtime {
 			throw new \Exception ( 'Instruction "' . $inst_name . '" needs attribute "' . $attr_name . '" which was not supplied.' );
 		}
 		$attr_value = ( string ) $instruction [$attr_name];
-		$type = $attr_value [0];
+		$type = isset($attr_value[0]) ? $attr_value[0] : null;
 		$var_name = substr ( $attr_value, 1, strlen ( $attr_value ) - 1 );
 		
 		if ($type == '$' || $type == '#' || $type == '@') {
@@ -1452,6 +1574,12 @@ class Runtime {
 				if ($result == 0)
 					throw new \Exception ( 'No permission!' );
 				break;
+			case 'AccessControlList':
+				$result = $this->inst_accessControlList( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  $variables, $exit );
+				break;
+			case 'AccessControlList':
+				$result = $this->inst_accessControlList( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  $variables, $exit );
+				break;
 			case 'Role' :
 				$result = $this->inst_role ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
@@ -1576,6 +1704,9 @@ class Runtime {
 			case 'Commit' :
 			case 'RollBack' :
 			case 'Dummy' :
+            case 'Auth.setLoggedUser' :
+                $result = $this->genericInstExecute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
+                break;
 			case 'Uuid' :
 				// case 'Var':
 				$result = $this->genericInstExecute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
@@ -1583,7 +1714,7 @@ class Runtime {
 			default :
 				// Check the libraries
 				$manager = isset ( $this->libraries [$instructionname] ) ? $this->libraries [$instructionname] : null;
-				// TODO STI: PMT this is just transitive while old controls are not migrated to NeonControl
+				// TODO: PMT this is just transitive while old controls are not migrated to Control
 				if ($manager == null) {
 					// $object = (string)$instruction_xmlnode[0]['object'];
 					$object = ( string ) $this->get_inst_attr ( $instruction_xmlnode, 'object', $variables, false );
@@ -1643,27 +1774,27 @@ class Runtime {
 	 * Send a mail
 	 * 
 	 * @param
-	 *        	[Neon_Param] to
+	 *        	[Param] to
 	 * @param
-	 *        	[Neon_Param] to_email
+	 *        	[Param] to_email
 	 * @param
-	 *        	[Neon_Param] from
+	 *        	[Param] from
 	 * @param
-	 *        	[Neon_Param] from_email
+	 *        	[Param] from_email
 	 * @param
-	 *        	[Neon_Param] cc
+	 *        	[Param] cc
 	 * @param
-	 *        	[Neon_Param] bcc
+	 *        	[Param] bcc
 	 * @param
-	 *        	[Neon_Param] reply_to
+	 *        	[Param] reply_to
 	 * @param
-	 *        	[Neon_Param] subject
+	 *        	[Param] subject
 	 * @param
-	 *        	[Neon_Param] body
+	 *        	[Param] body
 	 * @param
-	 *        	[Neon_Param] charset
+	 *        	[Param] charset
 	 * @param
-	 *        	[Neon_Param] content_type
+	 *        	[Param] content_type
 	 * @return JSON Mail headers
 	 */
 	function inst_mail($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
@@ -1713,7 +1844,7 @@ class Runtime {
 		return $errors;
 	}
 	function inst_log($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
-		global $KUINK_BRIDGE_CFG;
+		global $KUINK_CFG;
 		
 		$type = $this->get_inst_attr ( $instruction_xmlnode, 'type', $variables, true );
 		$key = $this->get_inst_attr ( $instruction_xmlnode, 'key', $variables, true );
@@ -1745,7 +1876,7 @@ class Runtime {
 		
 		$pars = array (
 				'table' => 'fw_log',
-				'id_user' => $KUINK_BRIDGE_CFG->auth->user->id,
+				'id_user' => $KUINK_CFG->auth->user->id,
 				'type' => $type,
 				'application' => $nodeconfiguration [NodeConfKey::APPLICATION],
 				'process' => $nodeconfiguration [NodeConfKey::PROCESS],
@@ -1792,6 +1923,8 @@ class Runtime {
 		$param_values = ($function_params == '') ? array () : $variables [$function_params];
 		$param_vars = array ();
 		
+		$action_xmlnode = null;
+		$actionname = '';
 		foreach ( $paramsxml as $param ) {
 			
 			$paramname = ( string ) $param ['name'];
@@ -1823,9 +1956,9 @@ class Runtime {
 		if (trim ( $library ) != '') {
 			// Call a function in a different application,process
 			$lib_parts = explode ( ',', $library );
-			// var_dump($lib_parts);
-			if (count ( $lib_parts ) < 3)
+			if (count ( $lib_parts ) < 3) {
 				throw new \Exception ( 'ERROR: library name must be appname,processname,nodename' );
+			}
 			
 			$lib_appname = trim ( $lib_parts [0] );
 			$lib_processname = trim ( $lib_parts [1] );
@@ -1866,24 +1999,24 @@ class Runtime {
 		$item_name = $this->get_inst_attr ( $instruction_xmlnode, 'item', $variables, true );
 		$key_name = $this->get_inst_attr ( $instruction_xmlnode, 'key', $variables, false );
 		
-		$set = $variables [$var_name];
+		$set = isset($variables [$var_name]) ? $variables [$var_name] : array();
 		$value = '';
-		// var_dump($set);
-		foreach ( $set as $key => $item ) {
-			// var_dump($key.'=>'.$item);
-			// $variables[$item_name] = (array)$item;
-			if (is_object ( $item ))
-				$item = ( array ) $item;
-			$variables [$item_name] = $item;
-			$variables [$key_name] = $key;
-			if ($instruction_xmlnode->count () > 0) {
-				$instructions = $instruction_xmlnode->children ();
-				foreach ( $instructions as $new_instruction ) {
-					$value = $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction, $actionname, $variables, $exit );
-				}
-			} else
-				$value = $instruction_xmlnode [0];
-		}
+		if (is_array($set) || is_object($set))
+			foreach ( $set as $key => $item ) {
+				// var_dump($key.'=>'.$item);
+				// $variables[$item_name] = (array)$item;
+				if (is_object ( $item ))
+					$item = ( array ) $item;
+				$variables [$item_name] = $item;
+				$variables [$key_name] = $key;
+				if ($instruction_xmlnode->count () > 0) {
+					$instructions = $instruction_xmlnode->children ();
+					foreach ( $instructions as $new_instruction ) {
+						$value = $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction, $actionname, $variables, $exit );
+					}
+				} else
+					$value = $instruction_xmlnode [0];
+			}
 		
 		return $value;
 	}
@@ -1924,31 +2057,62 @@ class Runtime {
 	}
 	
 	// return true if all the params are equal
-	function inst_exception($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
-		$code = ( string ) $instruction_xmlnode ['code'];
-		// Execute inner instructions
-		
-		$message = "No message";
-		// Execute inner instructions
-		$newinstruction_xmlnode = $instruction_xmlnode->children ();
-		if (count ( $newinstruction_xmlnode ) > 0)
-			$message = ( string ) $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $newinstruction_xmlnode [0], $actionname, $variables, $exit );
-		else
-			$message = ( string ) $instruction_xmlnode [0];
-		
-		switch ($code) {
-			case 'ZeroRowsAffected' :
-				throw new Exception\ZeroRowsAffected ( $message );
-				break;
-			case 'ClassNotFound' :
-				throw new Exception\ClassNotFound ( $message );
-				break;
-			case 'InvalidParameters' :
-				throw new Exception\InvalidParameters ( $message );
-				break;
+	function inst_exception( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  &$variables, &$exit ) {
+		global $KUINK_TRACE;
+		$name = (string) $this->get_inst_attr($instruction_xmlnode, 'name', $variables, false, '');
+		$conditionExpr = (string) $this->get_inst_attr($instruction_xmlnode, 'condition', $variables, false, '');
+				
+		//If condition is set then evaluate it and only continue if it is true
+		if ($conditionExpr != '') {
+			$eval = new \Kuink\Core\EvalExpr();
+				$value = $eval->e( $conditionExpr, $variables, TRUE);
+				if (!$value)
+					return; //If the condition is not true then return immediately, else let it flow
+		}
+		$KUINK_TRACE[] = '*** EXCEPTION ('.$name.')';   
+		if ($name != '') {	
+			//This is an exception with a name specified so act differently
+			$paramsxml = $instruction_xmlnode->xpath('./Param');
+				
+			$values = array();
 			
-			default :
-				throw new \Exception ( $message );
+			foreach($paramsxml as $param)
+			if ($param->count() > 0)
+				$values[] = $this->inst_aux_getvalue($nodeconfiguration, $nodexml, $action_xmlnode, $param[0], $actionname,$instructionname,  $variables, $exit);
+			else
+				$values[] = (string)$param[0];
+		
+			$message = (string)\Kuink\Core\Language::getExceptionString($name, $nodeconfiguration[NodeConfKey::APPLICATION], $values);
+			$KUINK_TRACE[] = '*** EXCEPTION ('.$name.') - '.$message;           	
+			throw new Exception\GenericException($name, $message);
+		}
+	 
+		//Legacy behavior
+		//Execute inner instructions
+
+		$message = 'No message';
+		$code = '';
+		//Execute inner instructions
+
+		$newinstruction_xmlnode = $instruction_xmlnode->children();
+		if (count($newinstruction_xmlnode) > 0)
+			$message = (string) $this->instruction_execute ($nodeconfiguration, $nodexml, $action_xmlnode, $newinstruction_xmlnode[0], $actionname,  $variables, $exit);
+		else
+			$message = (string)$instruction_xmlnode[0];
+		$KUINK_TRACE[] = '*** EXCEPTION ('.$name.') - '.$message;
+		switch ($code) {
+			case 'ZeroRowsAffected':
+				throw new Exception\ZeroRowsAffected($message);
+				break;
+			case 'ClassNotFound':
+				throw new Exception\ClassNotFound($message);
+				break;
+			case 'InvalidParameters':
+				throw new Exception\InvalidParameters($message);
+				break;
+
+			default:
+				throw new \Exception($message);
 				break;
 		}
 	}
@@ -2245,7 +2409,6 @@ class Runtime {
 			$value = $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction [0], $actionname, $variables, $exit );
 			
 			// Now load the result and execute it
-			// neon_mydebugxml('Eval', $value);
 			libxml_use_internal_errors ( true );
 			$eval_instructions_xml = simplexml_load_string ( $value );
 			$errors = libxml_get_errors ();
@@ -2269,52 +2432,99 @@ class Runtime {
 		}
 		return $eval_value;
 	}
-	function inst_try($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
-		// Get the condition to the 'If' instruction
-		$instructionsxml = $instruction_xmlnode->xpath ( './Instructions' );
+	function inst_try( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  &$variables, &$exit )
+	{
+		global $KUINK_TRACE;
 		
+		//Get the condition to the 'If' instruction
+		$instructionsxml = $instruction_xmlnode->xpath('./Instructions');
+
 		if (! $instructionsxml)
-			throw new \Exception ( "Instruction: $instructionname. No 'Instructions' block supplied to the instruction." );
-		
-		$instructions = $instructionsxml [0]->children ();
-		// var_dump($instructions);
+			throw new \Exception("Instruction: $instructionname. No 'Instructions' block supplied to the instruction.");
+
+		$instructions = $instructionsxml[0]->children();
+		//print_object($instructions);
 		$value = '';
 		try {
-			foreach ( $instructions as $new_instruction ) {
-				// var_dump($exit);
-				// var_dump($new_instruction);
-				
-				$value .= $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction [0], $actionname, $variables, $exit );
+			foreach ($instructions as $new_instruction ) {
+				//print_object($exit);
+				//print_object($new_instruction);
+				$instResult = $this->instruction_execute ($nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction[0], $actionname,  $variables, $exit);
+				if (is_string($instResult))
+					$value .= $instResult;
 			}
-		} catch ( \Exception $e ) {
-			$value = '';
-			$catchxml = $instruction_xmlnode->xpath ( './Catch' );
+		}
+		catch ( GenericException $e ) {
+			$exceptionName = $e->name;
+			//print_object(get_class($e));
+			//print_object($e->name);
 			
-			// If 'Catch' does not exist, rethrown the exception....
-			if (! $catchxml)
+			$KUINK_TRACE[] = 'Exception detected '.$e->__toString(); 
+			
+			if ($exceptionName != '' && $exceptionName != null) {
+				//This is a typed exception 
+				
+				//try to catch this exception directly
+				$catchxml = $instruction_xmlnode->xpath('./Catch[@exception="'.$exceptionName.'"]');
+				//There's a match?
+				if (!$catchxml || count($catchxml) == 0) {
+					//If no then try to find a general catch
+					$catchxml = $instruction_xmlnode->xpath('./Catch[not(@exception)]');
+				} else {
+					$KUINK_TRACE[] = 'Direct Catch '.$exceptionName;
+				}
+			} else {
+				//old behaviour
+				$catchxml = $instruction_xmlnode->xpath('./Catch');
+			}
+			
+			//If 'Catch' does not exist, rethrown the exception....
+			if (!$catchxml || count($catchxml) == 0) {
+				$KUINK_TRACE[] = 'Exception not catched';
 				throw $e;
-				
-				// Add the exception message to variables
-			$variables ['EXCEPTION'] ['message'] = ( string ) $e->getMessage ();
-			
-			$msgVar = ( string ) $this->get_inst_attr ( $catchxml [0], 'msg', $variables, false );
-			if ($msgVar != '')
-				$variables [$msgVar] = $e->getMessage ();
-			
-			$instructions = $catchxml [0]->children ();
-			// var_dump($instructions);
-			$value = '';
-			foreach ( $instructions as $new_instruction ) {
-				// print('NEW INST::');
-				// var_dump($new_instruction);
-				
-				$value .= $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction [0], $actionname, $variables, $exit );
 			}
-			// Remove the exception message from variables
-			unset ( $variables ['EXCEPTION'] );
+			$KUINK_TRACE[] = 'Default Catch';
+
+			//Add the exception message to variables
+			//Set the temporary EXCEPTION variable
+			$variables['EXCEPTION']['name'] = $exceptionName;
+			$variables['EXCEPTION']['message'] = (string)$e->__toString();
+
+            $msgVar = (string)$this->get_inst_attr($catchxml[0], 'msg', $variables, false);
+            if ( $msgVar != '')
+              $variables[ $msgVar ] = $e->getMessage();
+
+			$instructions = $catchxml[0]->children();
+			$value = '';
+			foreach ($instructions as $new_instruction ) {
+				$value .= $this->instruction_execute ($nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction[0], $actionname,  $variables, $exit);
+			}
+			//Clean the last exception
+			unset($variables['EXCEPTION']);
+		}
+		catch (\Exception $e) {
+			$KUINK_TRACE[] = 'Exception: '.$e->getMessage();			
+			//print_object(get_class($e));
+			//print_object($e->getPrevious());
+			
+			$catchxml = $instruction_xmlnode->xpath('./Catch');
+			if (!$catchxml || count($catchxml) == 0) {
+				$KUINK_TRACE[] = 'Exception not catched';
+				throw $e;
+			}
+			$msgVar = (string)$this->get_inst_attr($catchxml[0], 'msg', $variables, false);
+			if ( $msgVar != '')
+				$variables[ $msgVar ] = $e->getMessage();
+			
+			$instructions = $catchxml[0]->children();
+			$value = '';
+			foreach ($instructions as $new_instruction ) {
+				$value .= $this->instruction_execute ($nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction[0], $actionname,  $variables, $exit);
+			}
 		}
 		return $value;
 	}
+
 	
 	/**
 	 * Gets a variable value
@@ -2376,7 +2586,9 @@ class Runtime {
 		while ( $condition ) {
 			$instructions = $instruction_xmlnode->children ();
 			foreach ( $instructions as $new_instruction ) {
-				$value .= $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction [0], $actionname, $variables, $exit );
+				$result = $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction [0], $actionname, $variables, $exit );
+				if (!is_array($result))
+					$value .= $result;
 			}
 			$variables [$var] = $variables [$var] + $step;
 			$condition = $eval->e ( $conditionExpr, $variables, TRUE );
@@ -2419,7 +2631,9 @@ class Runtime {
 		while ( $condition ) {
 			$instructions = $instruction_xmlnode->children ();
 			foreach ( $instructions as $new_instruction ) {
-				$value .= $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction [0], $actionname, $variables, $exit );
+				$result = $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $new_instruction [0], $actionname, $variables, $exit ); 
+				if (!is_array($result))
+					$value .= $result;
 			}
 			$condition = $eval->e ( $conditionExpr, $variables, TRUE );
 		}
@@ -2786,7 +3000,8 @@ class Runtime {
 		 * $url = new \moodle_url($baseurl);
 		 * redirect($url->__toString() . '&'.UrlParam::EVENT.'='.$eventname, '', 0);
 		 */
-		return $null;
+		//kuink_mydebug('Raise Event', $eventname);
+		return null;
 	}
 	function inst_print($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
 		$newLine = ( string ) $this->get_inst_attr ( $instruction_xmlnode, 'newline', $variables, false, 'false' );
@@ -3149,7 +3364,7 @@ class Runtime {
 							} else if ($value [$i] != '"')
 								$splitedValue .= $value [$i];
 						}
-						var_dump ( $splited );
+						//var_dump ( $splited );
 						$value = $splited;
 						
 						/*
@@ -3278,7 +3493,7 @@ class Runtime {
 				// var_dump($paramname);
 				// var_dump($value);
 			
-			if (is_array ( $value ) || is_object ( $value ))
+				if (is_array($value) || is_object($value) || ($value==NULL) )
 				$params [$paramname] = $value;
 			else
 				$params [$paramname] = ( string ) $value;
@@ -3296,7 +3511,7 @@ class Runtime {
 		
 		// Adding the _pk parameter
 		// var_dump($pks);
-		$params ['_pk'] = implode ( ',', $pks );
+		$params ['_pk'] = isset($pks) ? implode ( ',', $pks ) : null;
 		
 		// var_dump($dataAccessNid);
 		// var_dump($nodeconfiguration);
@@ -3312,7 +3527,6 @@ class Runtime {
 				$params ['_id_creator'] = $variables ['USER'] ['id'];
 				$params ['_creation'] = $dateTime->Now ();
 				$params ['_creation_ip'] = $variables ['USER'] ['ip'];
-				;
 			}
 			
 			if ($dataAccessNid == 'insert' || $dataAccessNid == 'update' || $dataAccessNid == 'execute') {
@@ -3321,8 +3535,9 @@ class Runtime {
 				$params ['_modification_ip'] = $variables ['USER'] ['ip'];
 			}
 		}
-		
+		$method = (string)$instruction_xmlnode['method'];
 		$dataAccess = new \Kuink\Core\DataAccess ( $dataAccessNid, $customappname, $master_process_name, $dataSourceName );
+		$dataAccess->setUser($variables['USER']);
 		$resultset = $dataAccess->execute ( $params );
 		
 		// var_dump($resultset);
@@ -3349,6 +3564,41 @@ class Runtime {
 		
 		return $value;
 	}
+	
+	function inst_accessControlList( &$nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  &$variables, &$exit )
+	{
+		global $SESSION;
+	
+		//get the id_acl
+		if ($instruction_xmlnode->count() > 0)
+		{
+			$newinstruction_xmlnode = $instruction_xmlnode->children();
+			$idAcl = (string)$this->instruction_execute ($nodeconfiguration, $nodexml, $action_xmlnode, $newinstruction_xmlnode[0], $actionname,  $variables, $exit);
+		}
+		else
+			$idAcl = (string)$instruction_xmlnode[0];
+	
+		$this->buildAllCapabilities($idAcl,null,true);
+		
+		$roles = $nodeconfiguration[NodeConfKey::ROLES];
+		$rolesAcl = $this->getAllRolesAcl($idAcl);
+		//print_object($rolesAcl);
+		foreach ($rolesAcl as $roleKey=>$roleValue)
+			$roles[$roleKey] = 1;
+
+		//$roles[$value] = 1;
+		$nodeconfiguration[NodeConfKey::ROLES] = $roles;
+		$this->nodeconfiguration[NodeConfKey::ROLES] = $roles;
+		//print_object($nodeconfiguration[NodeConfKey::ROLES]);
+		
+		//$variables['ROLES'] = $this->nodeconfiguration[NodeConfKey::ROLES];
+		$variables['CAPABILITIES'] = $this->nodeconfiguration[NodeConfKey::CAPABILITIES];
+		$variables['ROLES'] = $this->nodeconfiguration[NodeConfKey::ROLES];
+		$nodeconfiguration = $this->nodeconfiguration;
+
+		return $idAcl;
+	}	
+	
 	function inst_role(&$nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
 		global $SESSION;
 		
@@ -3374,11 +3624,11 @@ class Runtime {
 			if ($value == '') { // clear all
 			                  // $node_roles = $this->getNodeRoles($roles, $this->node_xml);
 			                  // TODO:: remove the dynamic roles
-				
-				foreach ( $currentRoles as $roleToDelete => $valueToDelete ) {
-					unset ( $roles [$roleToDelete] );
-					unset ( $currentStackRoles [$roleToDelete] );
-				}
+				if (isset($currentRoles) && is_array($currentRoles))
+					foreach ( $currentRoles as $roleToDelete => $valueToDelete ) {
+						unset ( $roles [$roleToDelete] );
+						unset ( $currentStackRoles [$roleToDelete] );
+					}
 				ProcessOrchestrator::setNodeRoles ( $currentStackRoles );
 				// unset($_SESSION['KUINK_ROLES'][$custumapp_name.$process_name]);
 			} else { // clear just this role
@@ -3431,128 +3681,7 @@ class Runtime {
 		
 		$varname = substr ( $string, 1 );
 	}
-	function inst_var_OLD($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
-		// TODO:: This function needs urgent refactoring
-		global $KUINK_TRACE;
-		
-		// check if this is a set or a get
-		$set = (($instruction_xmlnode->count () > 0) || ($instruction_xmlnode [0] != ''));
-		
-		$varname = $this->get_inst_attr ( $instruction_xmlnode, 'name', $variables, true );
-		$sessiontype = $this->get_inst_attr ( $instruction_xmlnode, 'session', $variables, false );
-		$clear = $this->get_inst_attr ( $instruction_xmlnode, 'clear', $variables, false );
-		$key = $this->get_inst_attr ( $instruction_xmlnode, 'key', $variables, false );
-		$sum = $this->get_inst_attr ( $instruction_xmlnode, 'sum', $variables, false );
-		
-		$processVar = $this->get_inst_attr ( $instruction_xmlnode, 'process', $variables, false, 'false' );
-		
-		// dumping variable data to debug
-		$dump = $this->get_inst_attr ( $instruction_xmlnode, 'dump', $variables, false, 'false' );
-		if ($dump == 'true') {
-			$layout = \Kuink\UI\Layout\Layout::getInstance ();
-			if ($sessiontype == 'true') {
-				global $SESSION;
-				$dumpdata = $_SESSION ['KUINK_CONTEXT'] ['VARIABLES'] [$varname];
-				$layout->addHtml ( '<pre class="prettyprint linenums">' . $varname . '::' . ( string ) var_export ( $dumpdata, true ) . '</pre>', 'debugMessages' );
-			}
-			if ($processVar == 'true') {
-				$dumpdata = ProcessOrchestrator::getProcessVariable ( $varname );
-				$layout->addHtml ( '<pre class="prettyprint linenums">' . $varname . '::' . ( string ) var_export ( $dumpdata, true ) . '</pre>', 'debugMessages' );
-			} else {
-				$layout->addHtml ( '<pre class="prettyprint linenums">' . $varname . '::' . ( string ) var_export ( $variables [$varname], true ) . '</pre>', 'debugMessages' );
-			}
-		}
-		
-		$KUINK_TRACE [] = $varname;
-		
-		if ($sum != '') {
-			$variables [$varname] += ( int ) $sum;
-		}
-		
-		// Do we want to clear a variable?
-		if (strtoupper ( $clear ) == 'TRUE') {
-			// Clear the variable and exit
-			if (strtoupper ( $sessiontype ) == 'TRUE')
-				$this->inst_clearsessionvar ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-			else if (strtoupper ( $processVar ) == 'TRUE')
-				ProcessOrchestrator::unsetProcessVariable ( $varname );
-			else
-				$this->inst_clearvar ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-			
-			return;
-		}
-		
-		// Are we retrieving a key from an array variable?
-		if ($key != '' && ! $set && $sessiontype != 'true' && $processVar != 'true') {
-			$variable = isset ( $variables [$varname] ) ? $variables [$varname] : null;
-			// var_dump($variable);
-			if ($variable == null)
-				return null;
-			else {
-				// print(count($variable));
-				// var_dump($variable);
-				$value = '';
-				if (gettype ( $variable ) == 'array') {
-					if (count ( $variable ) == 1) {
-						reset ( $variable );
-						$aux = current ( $variable );
-						// print( gettype($aux) );
-						// var_dump($aux);
-						if (gettype ( $aux ) == 'object')
-							$variable = ( array ) $aux;
-					}
-				} else
-					$variable = ( array ) $variable;
-				
-				$value = isset ( $variable [$key] ) ? $variable [$key] : ''; // ( gettype($variable)== 'array') ? $variable[$key] : $variable->$key;
-				return $value;
-			}
-		}
-		
-		// Is this a process variable
-		if (strtoupper ( $processVar ) == 'TRUE') {
-			$value = $this->inst_var_process ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-			return $value;
-		}
-		
-		// Is this a session variable?
-		if (strtoupper ( $sessiontype ) == "TRUE") {
-			$value = $this->inst_var_session ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit, $key );
-			return $value;
-		}
-		// var_dump( $instruction_xmlnode );
-		
-		// Local Variable Handling
-		// Are we setting a value or retrieving?
-		if ($set) {
-			if ($instruction_xmlnode->count () > 0) {
-				$newinstruction_xmlnode = $instruction_xmlnode->children ();
-				$value = $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $newinstruction_xmlnode [0], $actionname, $variables, $exit );
-				// var_dump($value);
-				// //kuink_mydebug('TEM sim senhor', "$value");
-			} else
-				$value = ( string ) $instruction_xmlnode [0];
-			
-			if (isset ( $instruction_xmlnode ['key'] )) {
-				if ($key != '') {
-					// die("entrou");
-					$var = $variables [$varname];
-					$var [$key] = (is_array ( $value )) ? $value : ( string ) $value;
-					$variables [$varname] = $var;
-				} else {
-					// Add an array entry
-					$var = $variables [$varname];
-					$var [] = (is_array ( $value )) ? $value : ( string ) $value;
-					$variables [$varname] = $var;
-				}
-			} else
-				$variables [$varname] = $value;
-		}
-		// kuink_mydebug($varname, "$value" );
-		// var_dump( $variables['var_'.$varname] );
-		
-		return isset ( $variables [$varname] ) ? $variables [$varname] : null;
-	}
+	
 	function inst_var($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
 		global $SESSION;
 		
@@ -3562,7 +3691,7 @@ class Runtime {
 		$dump = $this->get_inst_attr ( $instruction_xmlnode, 'dump', $variables, false, 'false' );
 		$key = $this->get_inst_attr ( $instruction_xmlnode, 'key', $variables, false );
 		$keyIsSet = isset ( $instruction_xmlnode ['key'] ); // We must know if the key is set or not besides its value
-		$setValue = isset ( $instruction_xmlnode ['value'] ) ? $instruction_xmlnode ['value'] : '';
+		$setValue = isset ( $instruction_xmlnode ['value'] ) ? (string)$instruction_xmlnode ['value'] : null;
 		$set = (($instruction_xmlnode->count () > 0) || ($instruction_xmlnode [0] != ''));
 		
 		$session = $this->get_inst_attr ( $instruction_xmlnode, 'session', $variables, false, 'false' ); // Session variable
@@ -3571,12 +3700,6 @@ class Runtime {
 		// Clear the variable
 		if ($clear == 'true') {
 			if ($session == 'true') {
-				/*
-				 * if ($key != '')
-				 * unset($_SESSION['KUINK_CONTEXT']['VARIABLES'][$varname][$key]);
-				 * else
-				 * unset($_SESSION['KUINK_CONTEXT']['VARIABLES'][$varname]);
-				 */
 				ProcessOrchestrator::unsetSessionVariable ( $varname, $key );
 			} else if ($process == 'true') {
 				ProcessOrchestrator::unsetProcessVariable ( $varname, $key );
@@ -3618,14 +3741,11 @@ class Runtime {
 				// $value = ($key == '') ? $variable : $variable[$key];
 			$value = '';
 			switch ($key) {
-				case '' :
-					$value = $variables [$varname];
-					break;
-				case '__first' :
-					$value = array_values ( $variables [$varname] ) [0];
-					break;
+				case '' : $value = isset($variables [$varname]) ? $variables [$varname] : ''; break;
+				case '__first' : $value = array_values ( $variables [$varname] ) [0]; break;
+				case '__length' : $value = count ( $variables [$varname] ); break;
 				default :
-					$value = $variables [$varname] [$key];
+				$value = $variables [$varname] [$key];
 			}
 		}
 		
@@ -3654,27 +3774,30 @@ class Runtime {
 		if ($dump == 'true') {
 			$this->dumpVariable ( $varname, $value );
 		}
-		// Setting the value in the variable
-		if ($session == 'true') {
-			ProcessOrchestrator::setSessionVariable ( $varname, $key, $value );
-		} else if ($process == 'true') {
-			ProcessOrchestrator::setProcessVariable ( $varname, $key, $value );
-		} else { // local variable
-			if ($keyIsSet && $key != '') {
-				$var = $variables [$varname];
-				$var [$key] = (is_array ( $value ) || $value == null) ? $value : ( string ) $value;
-				$variables [$varname] = $var;
-			} else if ($keyIsSet && $key == '') {
-				// Add an array entry
-				$var = $variables [$varname];
-				$var [] = (is_array ( $value )) ? $value : ( string ) $value;
-				$variables [$varname] = $var;
-			} else
-				$variables [$varname] = $value;
+
+		//Only set the value if this is a set...
+		if ($set || $setValue != '' || $sum <> 0) {
+			//Setting the value in the variable
+			if ( $session == 'true' ) {
+				ProcessOrchestrator::setSessionVariable($varname, $key, $value);
+			} else if ($process == 'true') {
+				ProcessOrchestrator::setProcessVariable($varname, $key, $value);
+			} else { //local variable
+				$varExists = isset($variables[$varname]);
+				if ($keyIsSet && $key != '') {
+						$var = ($varExists) ? $variables[$varname] : array();
+						$var[$key]= (is_array($value) || $value == null) ? $value : (string)$value;
+						$variables[$varname] = $var;
+				} else if ($keyIsSet && $key == '') {
+						//Add an array entry
+						$var = ($varExists) ? $variables[$varname] : array();
+						$var[]= (is_array($value)) ? $value : (string)$value;
+						$variables[$varname] = $var;
+				} else
+					$variables[$varname] = $value;
+			}
 		}
-		
 		// Allways return the variable value
-		
 		return $value;
 	}
 	function dumpVariable($var, $value) {
@@ -3870,9 +3993,7 @@ class Runtime {
 	</style>
 	';
 		foreach ( $this->current_controls as $control ) {
-			// neon_mydebugxml( $control->name, '');
 			$controlHtml = $control->getHtml ();
-			// neon_mydebugxml( $control->name, $controlHtml);
 			// $controlHtml='';
 			$html .= $controlHtml;
 		}
@@ -3954,13 +4075,13 @@ class Runtime {
 		
 		$config = $nodeconfiguration [NodeConfKey::CONFIG];
 		
-		$base_upload = $config ['neonUploadFolderBase'];
+		$base_upload = $KUINK_CFG->uploadRoot;
 		$upload_dir = $base_upload . '/' . $path;
 		
 		// Handle dupplication of slashes in configurations
 		$upload_dir = str_replace ( '//', '/', $upload_dir );
 		
-		$myFile = $KUINK_CFG->dataroot . '/' . $upload_dir . $filename;
+		$myFile = $KUINK_CFG->dataRoot . '/' . $upload_dir . $filename;
 		// print($myFile);
 		
 		/*
@@ -3972,13 +4093,13 @@ class Runtime {
 		 */
 		
 		// Create the path if the directory doesn't exist
-		if (! is_dir ( $KUINK_CFG->dataroot . '/' . $upload_dir )) {
+		if (! is_dir ( $KUINK_CFG->dataRoot . '/' . $upload_dir )) {
 			$dir_parts = explode ( '/', $upload_dir );
 			$sub_dirs = '/';
 			foreach ( $dir_parts as $dir ) {
-				// kuink_mydebug('Creating...', $KUINK_CFG->dataroot.$sub_dirs.$dir);
-				if (! is_dir ( $KUINK_CFG->dataroot . $sub_dirs . $dir ))
-					mkdir ( $KUINK_CFG->dataroot . $sub_dirs . $dir );
+				// kuink_mydebug('Creating...', $KUINK_CFG->dataRoot.$sub_dirs.$dir);
+				if (! is_dir ( $KUINK_CFG->dataRoot . $sub_dirs . $dir ))
+					mkdir ( $KUINK_CFG->dataRoot . $sub_dirs . $dir );
 				$sub_dirs .= $dir . '/';
 			}
 		}
@@ -4042,6 +4163,7 @@ class Runtime {
 		
 		// if no path is supplied go to tmp file
 		$path = $this->get_inst_attr ( $instruction_xmlnode, 'path', $variables, false, 'tmp/' );
+
 		// handle dupplication of /
 		$path .= '/';
 		
@@ -4167,22 +4289,22 @@ class Runtime {
 		
 		$config = $nodeconfiguration [NodeConfKey::CONFIG];
 		
-		$base_upload = $config ['neonUploadFolderBase'];
+		$base_upload = $KUINK_CFG->uploadRoot;
 		$upload_dir = $base_upload . '/' . $path;
 		
 		// Handle dupplication of slashes in configurations
 		$upload_dir = str_replace ( '//', '/', $upload_dir );
 		
-		$myFile = $KUINK_CFG->dataroot . '/' . $upload_dir . $filename;
+		$myFile = $upload_dir . $filename;
 		
 		// Create the path if the directory doesn't exist
-		if (! is_dir ( $KUINK_CFG->dataroot . '/' . $upload_dir )) {
+		if (! is_dir ( $upload_dir )) {
 			$dir_parts = explode ( '/', $upload_dir );
 			$sub_dirs = '/';
 			foreach ( $dir_parts as $dir ) {
 				
-				if (! is_dir ( $KUINK_CFG->dataroot . $sub_dirs . $dir ))
-					mkdir ( $KUINK_CFG->dataroot . $sub_dirs . $dir );
+				if (! is_dir ( $sub_dirs . $dir ))
+					mkdir ( $sub_dirs . $dir );
 				$sub_dirs .= $dir . '/';
 			}
 		}
@@ -4198,13 +4320,11 @@ class Runtime {
 		
 		$utils = new \UtilsLib ( $this->nodeconfiguration, \Kuink\Core\MessageManager::getInstance () );
 		$file_guid = $utils->GuidClean ( null );
-		
+		$filelib = new \FileLib ( $this->nodeconfiguration, \Kuink\Core\MessageManager::getInstance () );
 		if ($register == 'true') {
 			// register the file in the database
-			global $USER;
-			
 			$original_name = $filename;
-			$path = $upload_dir;
+			//$path = $upload_dir;
 			$name = $filename;
 			$size = filesize ( $myFile );
 			$ext = 'pdf';
@@ -4212,7 +4332,6 @@ class Runtime {
 			$id_user = ( string ) $variables ['USER'] ['id'];
 			$desc = '';
 			
-			$filelib = new \FileLib ( $this->nodeconfiguration, \Kuink\Core\MessageManager::getInstance () );
 			$id_file = $filelib->register ( $original_name, $path, $name, $size, $ext, $mime, $id_user, $desc, $file_guid );
 		}
 		

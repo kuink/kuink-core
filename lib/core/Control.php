@@ -61,8 +61,9 @@ abstract class Control {
 		$this->skeleton = ( string ) $this->getProperty ( $this->name, 'skeleton', false, '' );
 		$this->skin = ( string ) $this->getProperty ( $this->name, 'skin', false, '' );
 		$this->position = ( string ) $this->getProperty ( $this->name, 'position', false, '' );
-		$this->guid = uniqid ();
+		$this->guid = 'k'.uniqid(); //allways start with a letter
 		$this->refreshing = false;
+		$this->bind_data = array();
 	}
 	function setRefreshing() {
 		$this->refreshing = true;
@@ -154,14 +155,15 @@ abstract class Control {
 	 */
 	function render($params) {
 		$layout = \Kuink\UI\Layout\Layout::getInstance ();
+		$idContext = \Kuink\Core\ProcessOrchestrator::getContextId();
 		// Add the guid to the render
+		$params ['_idContext'] = $idContext;		
 		$params ['_guid'] = $this->guid;
 		$params ['_name'] = $this->name;
 		$params ['_type'] = $this->type;
 		$params ['_position'] = $this->position;
 		$params ['_skin'] = $this->skin;
-		$params ['_skin'] = $this->skeleton;
-		
+		$params ['_skeleton'] = $this->skeleton;
 		$layout->addControl ( $this->type, $params, $this->skeleton, $this->skin, $this->position );
 	}
 	
@@ -252,33 +254,29 @@ abstract class Control {
 	 * @param (string) $datasourcename        	
 	 * @param (string) $bindid        	
 	 * @param (string) $bindvalue        	
+	 * @param (array)  $data //The data to expand to datasource parameters
 	 */
-	function loadDataSource($datasourcename, $bindid, $bindvalue) {
+	function loadDataSource($datasourcename, $bindid, $bindvalue, $data=null) {
 		// only load the datasource if the datasource is not loaded yet
-		// kuink_mydebug('Datasource', $datasourcename);
-		// kuink_mydebug('BindId', $bindid);
-		// kuink_mydebug('BindValue', $bindvalue);
+		//var_dump($data);
+		$datasourcename = trim($datasourcename);
 		if (! isset ( $this->datasources [$datasourcename] )) {
-			// kuink_mydebug('Loading...', $datasourcename);
+			//kuink_mydebug('Loading...', $datasourcename.(string)count($data));
 			$pos = strpos ( $datasourcename, 'table:' );
-			if ($pos === 0 && ! $this->datasources [$datasourcename]) {
+			if ($pos === 0) {
 				// Get the options from the table only one time
 				$table = str_replace ( 'table:', '', $datasourcename );
 				$appName = ( string ) $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION];
-				$databaseName = \Kuink\Core\DatabaseManager::applicationDefaultDB ( $appName );
-				$datasource = new \Kuink\Core\DataSource ( null, 'framework,generic,getAll', 'framework', 'generic', $databaseName, $appName );
 				$fields = $bindid . ',' . $bindvalue;
-				$pars = array (
-						'table' => $table,
-						'fields' => $fields 
-				);
-				$selectoptions = $datasource->execute ( $pars );
-				
+				$dataAccess = new \Kuink\Core\DataAccess ( 'getAll', 'framework', 'config' );
+				$params ['_entity'] = $table;
+				$params ['_attributes'] = $fields;
+				$selectoptions = $dataAccess->execute ( $params );				
 				// Add this datasource to be filled in the next if
 				$this->datasources [$datasourcename] = $selectoptions;
 			}
 			$pos = strpos ( $datasourcename, 'call:' );
-			if ($pos === 0 && ! $this->datasources [$datasourcename]) {
+			if ($pos === 0 && !isset($this->datasources [$datasourcename])) {
 				// Get the options from the table only one time
 				
 				$library = str_replace ( 'call:', '', $datasourcename );
@@ -309,13 +307,18 @@ abstract class Control {
 						$paramCompleteParts = explode ( '=', $paramComplete );
 						if (count ( $paramCompleteParts ) != 2)
 							throw new \Exception ( 'Invalid param format must be name=value and received ' . $paramComplete );
-						$callParams [trim ( $paramCompleteParts [0] )] = trim ( str_replace ( "'", '', $paramCompleteParts [1] ) );
+						//Expand the parameter values
+						$eval = new \Kuink\Core\EvalExpr ();
+						$expandedValue = $eval->e ( $paramCompleteParts [1], $data, false, true, false ); // Eval
+						$callParams [trim ( $paramCompleteParts [0] )] = trim ( str_replace ( "'", '', $expandedValue ) );
 					}
 				}
-				
+				//var_dump($callParams);
 				$parts = explode ( ',', $library );
-				if (count ( $parts ) != 4)
-					throw new \Exception ( 'Invalid lirary,function name: ' . $datasourcename . count ( $parts ) );
+				if (count ( $parts ) != 4) {
+					var_dump($datasourcename);					
+					throw new \Exception ( 'Invalid lirary,function name: ' . $datasourcename .' - '. count ( $parts ) );
+				}
 				$node = new \Kuink\Core\Node ( $parts [0], $parts [1], $parts [2] );
 				$runtime = new \Kuink\Core\Runtime ( $node, 'lib', null );
 				
@@ -349,36 +352,55 @@ abstract class Control {
 		
 		return $value;
 	}
-	function callFormatter($formatter_name, $value, $formatter_params = null, $formatter_params_expand_data = null) {
-		// kuink_mydebug($formatter_name, $value);
-		// Expand the formatter params data
-		$this->expandFormatterParams ( $formatter_params_expand_data, $formatter_params );
+
+	function callFormatter($formatter_name, $value, $formatter_params = null, $formatter_params_expand_data = null)
+	{
+		//neon_mydebug($formatter_name, $value);
+		//Expand the formatter params data
 		
-		// If there is a datasource expand it
-		if (isset ( $formatter_params ['datasource'] )) {
-			$datasource = ( string ) $formatter_params ['datasource'];
-			if (isset ( $this->datasources [$datasource] ))
-				$formatter_params ['datasource'] = $this->datasources [$datasource];
-			else
-				throw new \Exception ( 'Datasource ' . $datasource . ' not found.' );
+		//Check if ther's a condition and evaluate 
+		$condition = isset($formatter_params['condition']) ? (string)$formatter_params['condition'] : '';
+		
+		if ($condition != '') {
+			//Evaluate the condition
+			$conditionResult = true;
+			$eval = new \Kuink\Core\EvalExpr();
+			try {
+				$variables = [];
+				$variables['value'] = $value;
+				$conditionResult = $eval->e( $condition, $variables, TRUE);
+				//print_object($conditionResult);
+				 
+			} catch ( \Exception $e) {
+				print_object('Exception: eval');
+				die();
+			}
+			
+		if (!$conditionResult)    		
+				return $value;
 		}
 		
-		// kuink_mydebug($formatter_name, $value);
-		$params = array ();
-		$params [0] = $formatter_name;
-		$params [1] = (isset ( $formatter_params ['method'] )) ? ( string ) $formatter_params ['method'] : 'format';
-		$params [2] = $value;
-		$params [3] = $formatter_params;
-		
-		$formatter = new \FormatterLib ( $this->nodeconfiguration, null );
-		
-		// var_dump( $formatter );
-		
-		// var_dump( $params );
-		$result = $formatter->format ( $params );
-		
-		// kuink_mydebug($formatter_name.'.'.$value, $result);
-		
+		 $this->expandFormatterParams($formatter_params_expand_data, $formatter_params);
+		 
+		//If there is a datasource expand it
+		if (isset($formatter_params['datasource'])) {
+			$datasource = (string)$formatter_params['datasource'];
+			if (isset($this->datasources[ $datasource ]))
+				$formatter_params['datasource'] = $this->datasources[ $datasource ];
+			else
+				throw new \Exception('Datasource '.$datasource.' not found.');
+		}
+
+		$params = array();
+		$params[0] = $formatter_name;
+		$params[1] = ( isset($formatter_params['method'])) ? (string)$formatter_params['method'] : 'format';
+		$params[2] = $value;
+		$params[3] = $formatter_params;
+
+		$formatter = new \FormatterLib($this->nodeconfiguration, null);
+
+		$result = $formatter->format( $params );
+
 		return $result;
 	}
 	
@@ -392,7 +414,7 @@ abstract class Control {
 	 */
 	function expandFormatterParams($data, &$params) {
 		foreach ( $params as $key => $value ) {
-			if ($value [0] == '$') {
+			if ((isset($value [0])) && ($value [0] == '$')) {
 				// It's a field name
 				$field = substr ( $value, 1, strlen ( $value ) - 1 );
 				

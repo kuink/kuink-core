@@ -16,7 +16,12 @@
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 class DateTimeLib {
 	private $nodeconfiguration;
-	function DateTimeLib($nodeconfiguration, $msg_manager) {
+	
+	private function setDefaultTimezone() {
+		date_default_timezone_set ( 'UTC' );		
+	}
+	
+	function __construct($nodeconfiguration, $msg_manager) {
 		$this->nodeconfiguration = $nodeconfiguration;
 		return;
 	}
@@ -82,7 +87,7 @@ class DateTimeLib {
 	 * return time();
 	 * }
 	 */
-	function Now($params) {
+	function Now($params=null) {
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		
 		// compatibility mode
@@ -154,6 +159,7 @@ class DateTimeLib {
 		return 0;
 	}
 	function getWeekDay($params) {
+  	$this->setDefaultTimezone();		
 		$value = isset ( $params [0] ) ? $params [0] : false;
 		return ($value) ? date ( "w", $value ) : date ( "w" );
 	}

@@ -58,6 +58,28 @@ class Image extends Formatter {
 		
 		return $html;
 	}
+
+	function customSmall( $value, $params=null ) {
+		if (empty($value))
+			return '-';
+	
+			$path = (string)$this->getParam($params, 'path', true);
+    	$ext = (string)$this->getParam($params, 'ext', false, '');
+    	$filename = (string) $this->getParam($params, 'file', false, $value);
+    	if ($ext != '')
+    		$filename = $filename.'.'.$ext;
+    
+				$width = (string)$this->getParam($params, 'width', false, '');
+				if ($width != '')
+					$width = ' width: '.$width.';';
+				$maxWidth = (string)$this->getParam($params, 'max-width', false, '');
+				if ($maxWidth != '')
+					$maxWidth = ' max-width: '.$maxWidth.';';
+				$html = '<img src="stream.php?type='.$path.'&guid='.$filename.'" style="padding: 2px;background-color: #fff;border: 1px solid #ccc;border: 1px solid rgba(0, 0, 0, 0.2);-webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);-moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);height:auto;'.$width.$maxWidth.'"/>';
+	
+    	return $html;
+	}
+
 }
 
 ?>

@@ -59,6 +59,7 @@ class Badge extends Formatter {
 		$variables ['value'] = $value;
 		$variables ['max'] = $max;
 		$variables ['field'] = $field;
+		$palleteName = '';
 		
 		// var_dump( $params );
 		foreach ( $params as $condition => $style ) {
@@ -76,7 +77,7 @@ class Badge extends Formatter {
 		}
 		
 		$decimals = ( int ) $this->getParam ( $params, 'decimals', false, 0 );
-		$perc = ($value != 0) ? ( float ) (( int ) $value / ($max - $min)) * 100.0 : 0;
+		$perc = (($value != 0) && ($max - $min != 0)) ? ( float ) (( int ) $value / ($max - $min)) * 100.0 : 0;
 		$showValue = ( string ) $this->getParam ( $params, 'showvalue', false, 'true' );
 		
 		$displayValue = '&nbsp;';

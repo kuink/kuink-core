@@ -432,6 +432,7 @@ class Reflection {
 		$nodePermissions = array ();
 		$permissionRolesXml = $nodeXml->xpath ( './Permissions//Role' );
 		// var_dump( $permissionRolesXml );
+		$nodePermissionRoles = array();
 		foreach ( $permissionRolesXml as $role )
 			$nodePermissionRoles [] = ( string ) $role ['name'];
 		$nodePermissionCapabilities = array ();
@@ -459,7 +460,7 @@ class Reflection {
 			$actDoc = isset ( $action ['doc'] ) ? ( string ) $action ['doc'] : '';
 			$docXml = $action->xpath ( 'Doc' );
 			if (isset ( $docXml ))
-				$actDoc .= ( string ) $docXml [0];
+				$actDoc .= isset($docXml [0]) ? ( string ) $docXml [0] : '';
 			$permissions = self::getNodePermissions ( $action );
 			$nodeActions [] = array (
 					'name' => ( string ) $action ['name'],
@@ -492,20 +493,21 @@ class Reflection {
 			$fxOutput = array ();
 			$fxOutputSignature = '<strong>Returns</strong> (' . $returnsType . ') - ';
 			$fxOutputSignature .= $returnsDoc . '<br/><br/>';
-			foreach ( $external as $outParam ) {
-				$extType = isset ( $outParam ['type'] ) ? ( string ) $outParam ['type'] : 'text';
-				;
-				$extName = isset ( $outParam ['name'] ) ? ( string ) $outParam ['name'] : '';
-				;
-				$extDoc = isset ( $outParam ['doc'] ) ? ( string ) $outParam ['doc'] : 'undefined';
-				;
-				$fxOutputSignature .= $extType . ' <strong>' . $extName . '</strong> - ' . $extDoc . '<br/>';
-				$fxOutput [] = array (
-						'name' => $extName,
-						'type' => $extType,
-						'doc' => $extDoc 
-				);
-			}
+			if (is_array($external))
+				foreach ( $external as $outParam ) {
+					$extType = isset ( $outParam ['type'] ) ? ( string ) $outParam ['type'] : 'text';
+					;
+					$extName = isset ( $outParam ['name'] ) ? ( string ) $outParam ['name'] : '';
+					;
+					$extDoc = isset ( $outParam ['doc'] ) ? ( string ) $outParam ['doc'] : 'undefined';
+					;
+					$fxOutputSignature .= $extType . ' <strong>' . $extName . '</strong> - ' . $extDoc . '<br/>';
+					$fxOutput [] = array (
+							'name' => $extName,
+							'type' => $extType,
+							'doc' => $extDoc 
+					);
+				}
 			
 			// Errors
 			$errorsXml = $fx->xpath ( 'Errors/Error' );
@@ -535,7 +537,7 @@ class Reflection {
 			$fxDoc = isset ( $fx ['doc'] ) ? ( string ) $fx ['doc'] : '';
 			$docXml = $fx->xpath ( 'Doc' );
 			if (isset ( $docXml ))
-				$fxDoc .= ( string ) $docXml [0];
+				$fxDoc .= isset($docXml [0]) ? ( string ) $docXml [0] : '';
 				
 				// Get function metadata
 			$functionParams = self::getFunctionParams ( $nodeXml, ( string ) $fx ['name'] );
@@ -669,22 +671,25 @@ class Reflection {
 	 */
 	static private function directoryContents($directory) {
 		// open this directory
-		$myDirectory = opendir ( $directory );
-		
-		// get each entry
-		while ( $entryName = readdir ( $myDirectory ) ) {
-			if ($entryName != '.' and $entryName != '..')
-				$dirArray [] = $entryName;
+		$dirArray = array();
+		if (is_dir($directory)) {
+			$myDirectory = opendir ( $directory );
+			
+			// get each entry
+			while ( $entryName = readdir ( $myDirectory ) ) {
+				if ($entryName != '.' and $entryName != '..')
+					$dirArray [] = $entryName;
+			}
+			
+			// close directory
+			closedir ( $myDirectory );
+			
+			// sort 'em
+			sort ( $dirArray );
+			
+			// remove self
+			// unset( $dirArray[0] );
 		}
-		
-		// close directory
-		closedir ( $myDirectory );
-		
-		// sort 'em
-		sort ( $dirArray );
-		
-		// remove self
-		// unset( $dirArray[0] );
 		
 		return $dirArray;
 	}

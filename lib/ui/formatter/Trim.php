@@ -26,7 +26,7 @@ class Trim extends Formatter {
 		$formattedValue = substr ( $value, 0, $length );
 		
 		if ($completeWord == 'true') {
-			if ($value [$length] != ' ') {
+			if (isset($value [$length]) && $value [$length] != ' ') {
 				$i = $length;
 				$len = strlen ( $value );
 				while ( ($i < $len) && ($value [$i] != ' ') ) {

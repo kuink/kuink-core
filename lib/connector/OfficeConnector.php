@@ -23,7 +23,7 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 		
 		if (! $this->conn) {
 			$this->conn = new \clsTinyButStrong (); // new instance of TBS
-			$this->conn->Plugin ( TBS_INSTALL, OPENTBS_PLUGIN ); // load the OpenTBS plugin
+			$this->conn->Plugin(TBS_INSTALL, OPENTBS_PLUGIN); // load the OpenTBS plugin
 			
 			$this->fileName = ( string ) $this->dataSource->getParam ( 'filename', false, '' );
 			$this->idFile = ( string ) $this->dataSource->getParam ( 'idFile', false, '' );
@@ -42,7 +42,8 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 				
 				if (count ( $fileRecord ) == 0)
 					throw new \Exception ( 'Invalid file ' . $this->idFile );
-				$template = $KUINK_CFG->dataRoot . '/' . $fileRecord ['path'] . '/' . $fileRecord ['name'];
+				$template = $KUINK_CFG->uploadRoot . '/' . $fileRecord ['path'] . '/' . $fileRecord ['name'];
+				//print_object($template);
 			}
 			
 			TraceManager::add ( 'Loading template:' . $template, TraceCategory::CONNECTOR, __CLASS__ );
@@ -90,6 +91,18 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 		return '';
 	}
 	
+	function setText($params) {
+		$this->connect ();
+		
+		$block = array();
+		foreach ( $params as $propName => $propValue )
+			$block[$propName]= $propValue;
+		$data = array();
+		$data[] = $block;
+		$this->conn->MergeBlock('document', $data);
+		return '';
+	}	
+	
 	/**
 	 * Save the file with changed data
 	 * 
@@ -115,8 +128,8 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 			if (count ( $fileRecord ) == 0)
 				throw new \Exception ( 'Invalid file ' . $this->idFile );
 			$newName = str_replace ( '.', date ( 'Y-m-d-h-i' ), $fileRecord ['name'] );
-			$outputFileName = $KUINK_CFG->dataRoot . '/' . $fileRecord ['path'] . '/' . $newName;
-			$originalFileName = $KUINK_CFG->dataRoot . '/' . $fileRecord ['path'] . '/' . $fileRecord ['name'];
+			$outputFileName = $KUINK_CFG->uploadRoot . '/' . $fileRecord ['path'] . '/' . $newName;
+			$originalFileName = $KUINK_CFG->uploadRoot . '/' . $fileRecord ['path'] . '/' . $fileRecord ['name'];
 			
 			// save the file with a different name, delete the previous file, replace the file with the updated one
 			$this->conn->Show ( OPENTBS_FILE, $outputFileName ); // Also merges all [onshow] automatic fields.
@@ -144,6 +157,10 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 		ob_clean ();
 		$this->conn->Show ( OPENTBS_DOWNLOAD, $outputFileName ); // Also merges all [onshow] automatic fields.
 		exit ();
+	}
+
+	public function getSchemaName($params) {
+		return null;
 	}
 }
 

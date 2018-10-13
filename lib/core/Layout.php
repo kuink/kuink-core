@@ -52,6 +52,10 @@ class Layout {
 	}
 	public function setTheme($theme) {
 		$this->theme = $theme;
+		$this->layoutAdapter->setTheme($theme);		
+	}
+	public function getTheme(){
+		return $this->layoutAdapter->getTheme();
 	}
 	public function setAppTemplate($appTemplate) {
 		$this->layoutAdapter->setAppTemplate ( $appTemplate );
@@ -127,7 +131,7 @@ class Layout {
 		// kuink_mydebug( 'HEY', __DIR__.'/../../theme/'.$this->theme.'/ui/control/'.$template_name );
 		
 		$output = $smarty->fetch ( __DIR__ . '/../../theme/' . $this->theme . '/ui/control/' . $template_name );
-		
+		//var_dump( __DIR__ . '/../../theme/' . $this->theme . '/ui/control/' . $template_name);
 		$this->layoutAdapter->addHtml ( $output, $position );
 		// $LAYOUT->addHtml($output, $this->position);
 		
@@ -158,6 +162,9 @@ class Layout {
 	}
 	public function setBreadCrumb($breadcrumbEntries) {
 		$this->layoutAdapter->setBreadCrumb ( $breadcrumbEntries );
+	}
+	public function setRefresh($actionUrl){
+		$this->layoutAdapter->setRefresh($actionUrl);
 	}
 }
 

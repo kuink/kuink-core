@@ -26,7 +26,7 @@ class MoodleConnector extends \Kuink\Core\DataSourceConnector {
 		$this->server = $this->dataSource->getParam ( 'server', true );
 		$this->port = $this->dataSource->getParam ( 'port', true );
 		$server = $this->dataSource->getParam ( 'server', true );
-		var_dump ( $server );
+		//var_dump ( $server );
 		$responseType = $this->dataSource->getParam ( 'responseType', true );
 		if ($responseType != '')
 			$this->responseType = $responseType;
@@ -133,6 +133,11 @@ class MoodleConnector extends \Kuink\Core\DataSourceConnector {
 		// kuink_mydebug(__CLASS__, __METHOD__);
 		global $KUINK_TRACE;
 	}
+
+	public function getSchemaName($params) {
+		return null;
+	}
+	
 }
 
 // Helper classes
@@ -722,6 +727,7 @@ class curl_cache {
 			}
 		}
 	}
+
 }
 
 ?>

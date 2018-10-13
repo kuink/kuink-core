@@ -62,14 +62,11 @@ class VarInstruction extends \Kuink\Core\Instruction {
 			
 			$value = '';
 			switch ($key) {
-				case '' :
-					$value = $instManager->variables [$varname];
-					break;
-				case '__first' :
-					$value = array_values ( $instManager->variables [$varname] ) [0];
-					break;
+				case '' : $value = isset($instManager->variables [$varname]) ? $instManager->variables [$varname] : ''; break;
+				case '__first' : $value=array_values($instManager->variables[$varname])[0]; break;
+				case '__length' :$value=count($instManager->$variables[$varname]);break;			
 				default :
-					$value = $instManager->variables [$varname] [$key];
+				$value = $instManager->variables [$varname] [$key];
 			}
 		}
 		
@@ -94,23 +91,27 @@ class VarInstruction extends \Kuink\Core\Instruction {
 			self::dumpVariable ( $varname, $value );
 		}
 		
-		// Setting the value in the variable
-		if ($session == 'true') {
-			ProcessOrchestrator::setSessionVariable ( $varname, $key, $value );
-		} else if ($process == 'true') {
-			ProcessOrchestrator::setProcessVariable ( $varname, $key, $value );
-		} else { // local variable
-			if ($keyIsSet && $key != '') {
-				$var = $instManager->variables [$varname];
-				$var [$key] = (is_array ( $value )) ? $value : ( string ) $value;
-				$instManager->variables [$varname] = $var;
-			} else if ($keyIsSet && $key == '') {
-				// Add an array entry
-				$var = $instManager->variables [$varname];
-				$var [] = (is_array ( $value )) ? $value : ( string ) $value;
-				$instManager->variables [$varname] = $var;
-			} else
-				$instManager->variables [$varname] = $value;
+		
+		//Only set the value if this is a set...
+		if ($set || $setValue != '' || $sum <> 0) {		
+			// Setting the value in the variable
+			if ($session == 'true') {
+				ProcessOrchestrator::setSessionVariable ( $varname, $key, $value );
+			} else if ($process == 'true') {
+				ProcessOrchestrator::setProcessVariable ( $varname, $key, $value );
+			} else { // local variable
+				if ($keyIsSet && $key != '') {
+					$var = $instManager->variables [$varname];
+					$var [$key] = (is_array ( $value )) ? $value : ( string ) $value;
+					$instManager->variables [$varname] = $var;
+				} else if ($keyIsSet && $key == '') {
+					// Add an array entry
+					$var = $instManager->variables [$varname];
+					$var [] = (is_array ( $value )) ? $value : ( string ) $value;
+					$instManager->variables [$varname] = $var;
+				} else
+					$instManager->variables [$varname] = $value;
+			}
 		}
 		
 		// Allways return the variable value

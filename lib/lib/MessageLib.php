@@ -17,7 +17,7 @@
 class MessageLib {
 	var $nodeconfiguration;
 	var $msg_manager;
-	function MessageLib($nodeconfiguration, $msg_manager) {
+	function __construct($nodeconfiguration, $msg_manager) {
 		$this->nodeconfiguration = $nodeconfiguration;
 		$this->msg_manager = $msg_manager;
 		return;
@@ -36,7 +36,7 @@ class MessageLib {
 		$headers->addHeaderLine ( 'Mime-Version', '1.0' );
 		$headers->addHeaderLine ( 'Charset', $params ['charset'] );
 		
-		if ($params ['confirm_reading'] == '1') {
+		if (isset($params ['confirm_reading']) && ($params ['confirm_reading'] == '1')) {
 			$headers->addHeaderLine ( 'X-Confirm-Reading-To', $params ['from_email'] );
 			$headers->addHeaderLine ( 'Disposition-Notification-To', $params ['from_email'] );
 			$headers->addHeaderLine ( 'Disposition', 'automatic-action/MDN-sent-automatically; displayed' );
@@ -60,12 +60,12 @@ class MessageLib {
 				$mailAux->addCc ( $cc );
 		}
 		
-		if ($params ['bcc'] != '') {
+		if (isset($params ['bcc']) && ($params ['bcc'] != '')) {
 			foreach ( $params ['bcc'] as $name => $bcc )
 				$mailAux->addBcc ( $bcc );
 		}
 		
-		if ($params ['reply_to'] != '') {
+		if (isset($params ['reply_to']) && ($params ['reply_to'] != '')) {
 			foreach ( $params ['reply_to'] as $name => $replyTo )
 				$mailAux->addReplyTo ( $replyTo );
 		}
@@ -77,6 +77,7 @@ class MessageLib {
 		return json_encode ( $mailAux->getHeaders ()->toArray () );
 	}
 	function sendMessage($params) {
+		global $KUINK_CFG;
 		// print_object($params);
 		$msg = new Zend\Mail\Message ();
 		
@@ -87,7 +88,7 @@ class MessageLib {
 		$charset = $_headers->Charset;
 		
 		$headers = new Zend\Mail\Headers ();
-		$headers->setEncoding ( $params ['charset'] );
+		$headers->setEncoding ( isset($params ['charset']) ? $params ['charset']: null );
 		foreach ( $_headers as $key => $header ) {
 			$headers->addHeaderLine ( $key, mb_convert_encoding ( $header, $charset ) );
 		}
@@ -99,8 +100,10 @@ class MessageLib {
 		$params ['body'] = mb_convert_encoding ( $params ['body'], $charset );
 		$msg->setBody ( $params ['body'] );
 		$msg->setHeaders ( $headers );
-		$transport = new Zend\Mail\Transport\Sendmail ();
-		$transport->send ( $msg );
+		if ($KUINK_CFG->enableEmailSending) {
+			$transport = new Zend\Mail\Transport\Sendmail ();
+			$transport->send ( $msg );
+		}
 		return 0;
 	}
 }

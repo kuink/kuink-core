@@ -24,23 +24,26 @@ class DataSourceManager {
 		$dataAccess = new \Kuink\Core\DataAccess ( 'getAll', 'framework', 'datasource', '' );
 		$params ['_entity'] = 'fw_datasource';
 		$params ['id_company'] = $idCompany;
-		
+
 		$resultset = $dataAccess->execute ( $params );
-		foreach ( $resultset as $datasource )
+	
+		foreach ( $resultset as $datasource ){
 			self::addDataSourceXmlDefinition ( $datasource ['xml_definition'], DataSourceContext::DB );
-		
-		// var_dump($KUINK_DATASOURCES);
+		}
+	
+		//var_dump($KUINK_DATASOURCES);
 		
 		// Setup company specific datasources
 	}
-	static public function setupFrameworkDS($application) {
+	static public function setupFrameworkDS($application) {		
 		$fw = $application->getFrameworkXml ();
+
 		$dataSources = $fw->xpath ( '/Framework/DataSources/DataSource' );
 		
 		// setup dataSources
 		foreach ( $dataSources as $dataSource )
 			self::addDataSourceXml ( $dataSource, DataSourceContext::FRAMEWORK );
-		
+			
 		return;
 	}
 	static public function setupApplicationDS($application) {
@@ -82,6 +85,29 @@ class DataSourceManager {
 		
 		return;
 	}
+	
+	static private function buildParams($dsParamsXml)
+	{
+		$dsParams = array();
+		foreach( $dsParamsXml as $dsParamXml ) {
+			$paramName = (string)$dsParamXml['name'];
+			$paramValue = trim((string)$dsParamXml[0]);
+			
+			if ($paramValue != '')
+				$dsParams[$paramName] = $paramValue;
+			else {
+				//This is a parameter matrioska so build it
+				$dsChildParamsXml = $dsParamXml->xpath('./Param');
+				$buildedParams = self::buildParams($dsChildParamsXml);
+				if (count($buildedParams) == 0)
+					$dsParams[$paramName] = ''; //The matrioska is empty
+				else 
+					$dsParams[$paramName] = $buildedParams;
+			}
+		}
+		return $dsParams; 
+	}
+	
 	static public function addDataSourceXml($dataSource, $context) {
 		global $KUINK_CFG;
 		$dsName = ( string ) $dataSource ['name'];
@@ -116,13 +142,10 @@ class DataSourceManager {
 				$dsBypass = 0;
 		}
 		
-		// print_object($dsName.'::'.$dsBypass);
-		$dsParams = array ();
-		$dsParamsXml = $dataSource->xpath ( './Param' );
-		foreach ( $dsParamsXml as $dsParamXml ) {
-			$dsParams [( string ) $dsParamXml ['name']] = ( string ) $dsParamXml [0];
-		}
-		// $ds = new DataSourceClass( $dsName, $dsConnector, $dsParams, $dsBypass );
+		$dsParamsXml = $dataSource->xpath('./Param');
+        
+		$dsParams = self::buildParams($dsParamsXml);
+        
 		self::addDataSource ( $dsName, $dsConnector, $context, $dsParams, $dsBypass );
 		
 		return;
@@ -174,9 +197,11 @@ class DataSourceManager {
 	}
 	static public function beginTransaction() {
 		global $KUINK_DATASOURCES;
-		
-		foreach ( $KUINK_DATASOURCES as $ds )
+		//print_object($KUINK_DATASOURCES);
+		foreach ( $KUINK_DATASOURCES as $ds ) {
+			//print_object($ds->name);
 			$ds->beginTransaction ();
+		}
 	}
 	static public function commitTransaction() {
 		global $KUINK_DATASOURCES;
@@ -186,9 +211,9 @@ class DataSourceManager {
 	}
 	static public function rollbackTransaction() {
 		global $KUINK_DATASOURCES;
-		
-		foreach ( $KUINK_DATASOURCES as $ds )
+		foreach ( $KUINK_DATASOURCES as $ds ) {
 			$ds->rollbackTransaction ();
+		}
 	}
 }
 

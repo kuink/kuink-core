@@ -14,6 +14,8 @@ class DataSourceClass {
 	var $context;
 	var $connector; // the connector object
 	var $transactionStarted;
+	var $user; //current user making the request
+	
 	function __construct($name, $connector, $context, $params = null, $bypass = 0) {
 		$this->name = $name;
 		$this->params = $params;
@@ -23,6 +25,10 @@ class DataSourceClass {
 		
 		$this->connector = Factory::getDataSourceConnector ( $connector, $this );
 	}
+  function setUser($user) {
+  	$this->user = $user;
+  	$this->connector->setUser($user);
+  }
 	function getParam($paramName, $required, $default = '') {
 		if ($required && ! isset ( $this->params [$paramName] ))
 			throw new \Exception ( "DataSource $this->name requires parameter $paramName" );

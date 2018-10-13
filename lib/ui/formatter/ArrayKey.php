@@ -18,8 +18,8 @@ namespace Kuink\UI\Formatter;
 
 class ArrayKey extends Formatter {
 	function format($value, $params = null) {
-		$key = $this->getParam ( $params, 'key', true );
 		
+		$key = $this->getParam ( $params, 'key', true );
 		$formatedString = '';
 		// print_object(count($value));
 		// print_object(count($value, COUNT_RECURSIVE));
@@ -32,7 +32,7 @@ class ArrayKey extends Formatter {
 		} else {
 			$formatedString = $value [$key];
 		}
-		
+
 		return ( string ) $formatedString;
 	}
 }
