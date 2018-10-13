@@ -28,7 +28,7 @@ class GridDefaults {
 	const FREEZE = 'true';
 	const VIEW = GridViewType::GRID;
 	const PAGEABLE = 'false';
-	const EXPORTABLE = 'false';
+	const EXPORTABLE = 'true';
 	const COLLAPSIBLE = 'false';
 	const PAGING_ACTION = '';
 	const VISIBLE = 'true';
@@ -867,7 +867,7 @@ class Grid extends Control {
 			$setLib = new \SetLib();			
 			foreach ( $this->bind_data as $data ) {
 				$unsortedData = $utilsLib->pivotTable(array((array) $data, $this->pivotlines, $this->pivotcols, $this->pivotdata));
-				//print_object($unsortedData);
+				//zprint_object($unsortedData);
 				if (trim($this->pivotsort != '')) {
 					$mergedData = array_merge(array($unsortedData), $pivotSort);
 					$sortedData = $setLib->SortBy($mergedData);

@@ -110,94 +110,101 @@ class FileLib {
 		
 		// normalizar os ficheiros
 		foreach ( $_FILES as $tipo => $file ) {
+			//ignore if filename and filetype are empty
 			$filename = $file ['name'];
 			$filesize = $file ['size'];
-			$valid_extensions_arr = explode ( ',', $valid_extensions );
-			$error = false;
-			// kuink_mydebug('filename', $filename);
+			$filetype = $file ['type'];
 			
-			if ($file ['error'] != 0 && $showErrors) {
-				$KUINK_TRACE[] = 'FileLib::Upload ERROR - '.$file['error'];
-				$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Erro no upload do ficheiro.' );
-			}
-			
-			if ($file ['error'] == 4  && $showErrors) {
-				if ($mandatory == 'true')
-					$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'O ficheiro é obrigatório.' );
-				return null;
-			}
-			//var_dump($filename);
-			//
-			if ($filename != '') {
-				// Extract file extension
-				$file_ext = explode ( '.', $filename );
-				$file_ext = strtolower ( $file_ext [count ( $file_ext ) - 1] );
-				
-				// nome normalizado para guardar na base de dados {tipo}_{num_aluno}_{increment}.{ext}
-				$full_path_original = $upload_dir . '/' . $filename;
-				
-				$i = 0; // incremento. O primeiro ficheiro é 0
-				      
-				// nome do ficheiro normalizado
-				$db_filename = $param_filename . '.' . $file_ext;
-				
-				// caminho completo do ficheiro com o nome normalizado
-				$full_path_normalizado = $upload_dir . "/" . $db_filename;
-				
-				if (! in_array ( $file_ext, $valid_extensions_arr ) && ($valid_extensions != '')) {
-					unlink ( $full_path_original );
-					$error = true;
-					// print('Ficheiro com a extensão errada. Extensões válidas: '.$valid_extensions);
-					$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Ficheiro com a extensão errada. Extensões válidas: ' . $valid_extensions );
-					continue;
-				}
-				
-				if ((($filesize > $maxUploadSize) && ($maxUploadSize != 0)) || $file ['error'] == 2) {
-					$error = true;
-					unlink ( $full_path_original );
-					if ($showErrors)
-						$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Ficheiro com tamanho superior ao permitido.' );
-					// print('Ficheiro com tamanho superior ao permitido.');
-					// ERRO: Ficheiro com tamanho superior
-					continue;
-				}
-				
+			//kuink_mydebug('filename', $filename);			
+			if ($filename != '' && $filetype != '') {
+				$valid_extensions_arr = explode ( ',', $valid_extensions );
+				$error = false;
 				if ($file ['error'] != 0 && $showErrors) {
-					$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Erro a fazer upload do ficheiro (' . $file ['error'] . ').' );
-					continue;
+					$KUINK_TRACE[] = 'FileLib::Upload ERROR - '.$file['error'];
+					$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Erro no upload do ficheiro.' );
 				}
 				
-				//var_dump($db_filename);
-
-				
-				if (! $error) {
-					//kuink_mydebug('dest filename', $upload_dir);
-
-					//create the directory if not exists
-					if (!file_exists( $upload_dir))
-						mkdir( $upload_dir, 0777, true);
+				if ($file ['error'] == 4  && $showErrors) {
+					if ($mandatory == 'true')
+						$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'O ficheiro é obrigatório.' );
+					return null;
+				}
+				//var_dump($filename);
+				//
+				if ($filename != '') {
+					// Extract file extension
+					$file_ext = explode ( '.', $filename );
+					$file_ext = strtolower ( $file_ext [count ( $file_ext ) - 1] );
 					
-					//move the file
-					move_uploaded_file($file['tmp_name'], $full_path_normalizado);
+					// nome normalizado para guardar na base de dados {tipo}_{num_aluno}_{increment}.{ext}
+					$full_path_original = $upload_dir . '/' . $filename;
 					
-					// Altera o nome para o nome normalizado GUID
-					$full_path_original = str_replace ( " ", "\ ", $full_path_original );
+					$i = 0; // incremento. O primeiro ficheiro é 0
+								
+					// nome do ficheiro normalizado
+					$db_filename = $param_filename . '.' . $file_ext;
+					
+					// caminho completo do ficheiro com o nome normalizado
+					$full_path_normalizado = $upload_dir . "/" . $db_filename;
+					
+					if (! in_array ( $file_ext, $valid_extensions_arr ) && ($valid_extensions != '')) {
+						unlink ( $full_path_original );
+						$error = true;
+						// print('Ficheiro com a extensão errada. Extensões válidas: '.$valid_extensions);
+						$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Ficheiro com a extensão errada. Extensões válidas: ' . $valid_extensions );
+						continue;
+					}
+					
+					if ((($filesize > $maxUploadSize) && ($maxUploadSize != 0)) || $file ['error'] == 2) {
+						$error = true;
+						unlink ( $full_path_original );
+						if ($showErrors)
+							$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Ficheiro com tamanho superior ao permitido.' );
+						// print('Ficheiro com tamanho superior ao permitido.');
+						// ERRO: Ficheiro com tamanho superior
+						continue;
+					}
+					
+					if ($file ['error'] != 0 && $showErrors) {
+						$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'Erro a fazer upload do ficheiro (' . $file ['error'] . ').' );
+						continue;
+					}
+					
+					//var_dump($db_filename);
+
+					//kuink_mydebug('filename', $filename);			
+					//kuink_mydebug('no Error', '');			
+					if (! $error) {
+						//kuink_mydebug('dest filename', $upload_dir);
+
+						//create the directory if not exists
+						if (!file_exists( $upload_dir))
+							mkdir( $upload_dir, 0777, true);
 						
-					//kuink_mydebug('$full_path_original',$full_path_original);
-					rename ( $full_path_original, $full_path_normalizado );
-					
-					//var_dump($full_path_normalizado);
-					// Grava o ficheiro na base de dados na tabela ficheiro
-					
-					$original_name = ($original_name == '') ? $filename : $original_name;
-					$path = $upload_dir;
-					$name = $param_filename . '.' . $file_ext;
-					$size = $filesize;
-					$ext = $file_ext;
-					$mime = ( string ) $file ['type'];
-					$id_user = $iduser;
-					//$record = $this->register ( $original_name, $path, $name, $size, $ext, $mime, $id_user, $desc );
-					$record = $this->register ( $original_name, $upload_folder, $name, $size, $ext, $mime, $id_user, $desc );
+						//move the file
+						move_uploaded_file($file['tmp_name'], $full_path_normalizado);
+						
+						// Altera o nome para o nome normalizado GUID
+						$full_path_original = str_replace ( " ", "\ ", $full_path_original );
+							
+						//kuink_mydebug('$full_path_original',$full_path_original);
+						rename ( $full_path_original, $full_path_normalizado );
+						
+						//var_dump($full_path_normalizado);
+						// Grava o ficheiro na base de dados na tabela ficheiro
+						
+						$original_name = ($original_name == '') ? $filename : $original_name;
+						$path = $upload_dir;
+						$name = $param_filename . '.' . $file_ext;
+						$size = $filesize;
+						$ext = $file_ext;
+						$mime = ( string ) $file ['type'];
+						$id_user = $iduser;
+						//$record = $this->register ( $original_name, $path, $name, $size, $ext, $mime, $id_user, $desc );
+						$record = $this->register ( $original_name, $upload_folder, $name, $size, $ext, $mime, $id_user, $desc );
+					}
+				} else {
+					$KUINK_TRACE[] = 'FileLib::Upload empty filename revceived. Doing nothing.';					
 				}
 			}
 		}
@@ -644,9 +651,9 @@ class FileLib {
 		$base = $KUINK_CFG->appRoot . 'apps/';
 		$base = str_replace ( '//', '/', $base );		
 		$pathName = realpath ( $base . $path );
-		$pos = strpos ( $pathName . '/', $base );
-		if ($pos === FALSE)
-			throw new \Exception ( 'No permission to access ' . $pathName );
+		//$pos = strpos ( $pathName . '/', $base );
+		//if ($pos === FALSE)
+	  //	throw new \Exception ( 'No permission to access ' . $pathName );
 		$contents = $this->directorySubDirs ( $pathName );
 
 		return $contents;
@@ -662,9 +669,9 @@ class FileLib {
 		
 		$base = $KUINK_CFG->appRoot . 'apps/';
 		$pathName = realpath ( $base . $path );
-		$pos = strpos ( $pathName . '/', $base );
-		if ($pos === FALSE)
-			throw new \Exception ( 'No permission to access ' . $pathName );
+		//$pos = strpos ( $pathName . '/', $base );
+		//if ($pos === FALSE)
+		//	throw new \Exception ( 'No permission to access ' . $pathName );
 		
 		$contents = $this->directoryFiles ( $pathName );
 		return $contents;
@@ -788,9 +795,9 @@ class FileLib {
 		
 		$base = $KUINK_CFG->appRoot . 'apps/';
 		$pathName = realpath ( $base . $path );
-		$pos = strpos ( $pathName . '/', $base );
-		if ($pos === FALSE)
-			throw new \Exception ( 'No permission to access ' . $pathName );
+		//$pos = strpos ( $pathName . '/', $base );
+		//if ($pos === FALSE)
+		//	throw new \Exception ( 'No permission to access ' . $pathName );
 		
 		$contents = file_get_contents ( $pathName );
 		return $contents;

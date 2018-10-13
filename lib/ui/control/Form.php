@@ -619,31 +619,13 @@ class Form extends Control {
 				}
 		else {
 			// Check if we can get datasource from a table
-			$this->loadDataSource ( $datasourcename, $bindid, $bindvalue );
-			
-			// var_dump( $this->datasources[$datasourcename] );
-			
-			if ($this->datasources [$datasourcename] != null) {
-				$selectoptions = $this->datasources [$datasourcename];
-				foreach ( $selectoptions as $selectoption ) {
-					if ((gettype ( $selectoption ) == 'array'))
-						$id = isset($selectoption [$bindid]) ? $selectoption [$bindid] : null;	
-					else
-						$id = isset($selectoption->$bindid) ? $selectoption->$bindid : null;
-					if ((gettype ( $selectoption ) == 'array'))
-						$name = isset($selectoption [$bindid]) ? $selectoption [$bindvalue] : null;	
-					else
-						$name = isset($selectoption->$bindid) ? $selectoption->$bindvalue : null;
-						
-					$fieldOptions [$id] = $name;
-				}
-			} else {
-				// Get from POST
-				$fieldname='';
-				$elem = isset($_POST [$fieldname]) ? $_POST [$fieldname] : null;
-				if ($elem)
-					$fieldOptions [$id] = '';
-			}
+			//kuink_mydebug('Loading datasources: '.$datasourcename);
+
+			// Get from POST
+			$fieldname='';
+			$elem = isset($_POST [$fieldname]) ? $_POST [$fieldname] : null;
+			if ($elem)
+				$fieldOptions [$id] = '';
 		}
 		return $fieldOptions;
 	}
@@ -926,7 +908,9 @@ class Form extends Control {
 				$this->static_bind [$id] = $datasourcename . ',' . $bindid . ',' . $bindvalue;
 			$this->static_fields [$id] = true;
 			
-			if ($options != null) {
+			
+			//options will return allways the empty option se if count(options) > 1 states that there are options
+			if (count($options) > 1) {
 				
 				$datasource = array ();
 				foreach ( $options as $key => $value )
@@ -939,6 +923,8 @@ class Form extends Control {
 				$this->datasources [$datasourcename] = $datasource;
 				$this->static_bind [$id] = $datasourcename;
 			}
+			//kuink_mydebug('datasource', $this->static_bind [$id].'::'.count($options));
+			
 		}
 		
 		if ($type == FieldType::INT)
@@ -1157,7 +1143,7 @@ class Form extends Control {
 				$this->setContextVariable ( $this->name . '_contextData', $newStoredData );
 			}
 		
-		// print_object( $this->bind_data );
+		//var_dump( $this->bind_data );
 		// print_object( $this->static_bind );
 		// print_object( $this->datasources );
 		// print_object( $this->dynamic_fields);
@@ -1189,79 +1175,118 @@ class Form extends Control {
 			$this->buildDynamicFields ( $formField, '_infer' );
 		}
 		
-		$data = array ();
-		// neon_mydebug('INICIO','*************************************');
-		if (isset ( $this->bind_data ))
-			foreach ( $this->bind_data as $bind_data ) {
-				$bind_data = ( array ) $bind_data;
-				$bind_data_original = array();				
-				foreach ( $bind_data as $key => $value ) {
-					// If this is a static bind, then expand the value from the datasource
-					$static_bind = isset ( $this->static_bind [( string ) $key] ) ? $this->static_bind [( string ) $key] : '';
-					// neon_mydebug($key,$value.'::'.$static_bind);
-					
-					if ($static_bind != '') {
-						// neon_mydebug( $static_bind );
-						$source = explode ( ',', $static_bind );
-						$datasourcename = ( string ) $source [0];
-						$bindid = isset ( $source [1] ) ? ( string ) $source [1] : 'id';
-						$bindvalue = isset ( $source [2] ) ? ( string ) $source [2] : 'name';
-						// neon_mydebug('datasource',$datasourcename.'.'.$bindid.'.'.$bindvalue.' - '.$value);
-						$this->loadDataSource ( $datasourcename, $bindid, $bindvalue );
-						if (isset ( $this->datasources [$datasourcename] )) {
-							$datasource = $this->datasources [$datasourcename];
-							
-							// print_object( $datasource );
-							$datasource_value = isset ( $datasource [$value] ) ? ( array ) $datasource [$value] : array ();
-							// neon_mydebug($key.'.'.$value.'.', $datasource_value);
-							// if (empty($datasource_value))
-							$new_value = $this->datasourceFindValue ( $datasource, $bindid, $bindvalue, $value ); // print_object($datasource_value);
-							                                                                                   // else
-							                                                                                   // $new_value = (string)$datasource_value[$bindvalue];
-							                                                                                   // neon_mydebug( $key, $value.'::'.htmlentities(utf8_decode($new_value)) );
-							                                                                                   
-							// print_object($datasource);
-							if ($new_value != '')
-								$bind_data [$key] = $new_value;
-							else
-								$bind_data [$key] = $value;
-							// $bindable_value = $datasource[];
-							// neon_mydebug('Binding...'.$key, $bind_data[$key]);
-						}
-					} elseif (isset ( $this->static_fields [( string ) $key] )) {
-						// print_object($this->static_fields);
-						// $bind_data[$key] = htmlentities(utf8_decode($value));
-						$bind_data [$key] = $value;
-					} else {
-						// neon_mydebug($key,$value.'::'.$static_bind);
-						$bind_data [$key] = $value;
-					}
-					//Save the value before applying the formatters
-					$bind_data_original[$key] = $value;
-					
-					// Check if there is a formatter
-					// print_object( $this->fieldFormatter );
-					$formatter_data = isset($this->fieldFormatter [( string ) $key]) ? $this->fieldFormatter [( string ) $key] : null;
-					if ($formatter_data) {
-						foreach ( $formatter_data as $f_name => $f_attributes ) {
-							$attributes = null;
-							foreach ( $f_attributes as $akey => $avalue ) {
-								$attributes [( string ) $akey] = ( string ) $avalue;
-							}
-							
-							$new_value = ( string ) $this->callFormatter ( $f_name, $value, $attributes, $bind_data );
-							
-							// neon_mydebug($key, $new_value);
-							// $bind_data[$key] = htmlentities(utf8_decode($new_value));
-							$bind_data [$key] = $new_value;
-						}
-					}
-				}
-				
-				// print_object($bind_data);
-				$this->dataBound = array_merge ( $this->dataBound, $bind_data );
-				$this->dataBoundWithoutFormatter = array_merge($this->dataBoundWithoutFormatter,$bind_data_original);				
+		//merge all bind_data in one array overriding values from the order
+		$bind_data = array();
+		foreach ( $this->bind_data as $data ) {
+			$data = ( array ) $data;
+			$bind_data = array_merge($bind_data,$data);
+		}
+		$bind_data_original = $bind_data;
+
+		//Load all datasources and rebuild options
+		//build all the datasources at this time, because we have data so datasource parameters can be expanded
+		foreach ($this->fields as $index=>$field) {
+			$attributes = $field['attributes'];
+			$datasourcename = ( string ) $attributes [FieldProperty::DATASOURCE];
+			$bindid = ( string ) $attributes [FieldProperty::BINDID];
+			$bindvalue = ( string ) $attributes [FieldProperty::BINDVALUE];
+			$datasourceParams = ( string ) $attributes [FieldProperty::DATASOURCE_PARAMS];
+			
+			if ($datasourcename != '') {
+				if ($datasourceParams != '')
+					$datasourcename = $datasourcename.'('.$datasourceParams.')';
+				//kuink_mydebug('loading datasource', $datasourcename);
+				$this->loadDataSource($datasourcename, $bindid, $bindvalue, $bind_data);
+
+				$fieldOptions = array ();
+				$fieldOptions [''] = ''; //Add empty option		
+				$selectoptions = $this->datasources [$datasourcename];
+				foreach ( $selectoptions as $selectoption ) {
+					if ((gettype ( $selectoption ) == 'array'))
+						$id = isset($selectoption [$bindid]) ? $selectoption [$bindid] : null;	
+					else
+						$id = isset($selectoption->$bindid) ? $selectoption->$bindid : null;
+					if ((gettype ( $selectoption ) == 'array'))
+						$name = isset($selectoption [$bindid]) ? $selectoption [$bindvalue] : null;	
+					else
+						$name = isset($selectoption->$bindid) ? $selectoption->$bindvalue : null;
+					$fieldOptions [$id] = $name;
+				}				
+				//Update field with options
+				$field['options'] = $fieldOptions;
+				$this->fields[$index] = $field;
 			}
+		}
+
+		foreach ( $bind_data as $key => $value ) {
+			// If this is a static bind, then expand the value from the datasource
+			
+			//Check to see if we have to load the datasource again because 
+
+			$static_bind = isset ( $this->static_bind [( string ) $key] ) ? $this->static_bind [( string ) $key] : '';
+			//kuink_mydebug($key,$value.'::'.$static_bind);
+			
+			if ($static_bind != '') {
+				//kuink_mydebug( $static_bind );
+				$source = explode ( ',', $static_bind );
+				$datasourcename = ( string ) $source [0];
+				$bindid = isset ( $source [1] ) ? ( string ) $source [1] : 'id';
+				$bindvalue = isset ( $source [2] ) ? ( string ) $source [2] : 'name';
+				//kuink_mydebug('datasource',$datasourcename.'.'.$bindid.'.'.$bindvalue.' - '.$value);
+				$this->loadDataSource ( $datasourcename, $bindid, $bindvalue);
+				//var_dump($bind_data);
+				if (isset ( $this->datasources [$datasourcename] )) {
+					$datasource = $this->datasources [$datasourcename];
+					//kuink_mydebug('datasource', $datasource);
+					// print_object( $datasource );
+					$datasource_value = isset ( $datasource [$value] ) ? ( array ) $datasource [$value] : array ();
+					// if (empty($datasource_value))
+					$new_value = $this->datasourceFindValue ( $datasource, $bindid, $bindvalue, $value ); // print_object($datasource_value);
+																																															// else
+																																															// $new_value = (string)$datasource_value[$bindvalue];
+																																															// neon_mydebug( $key, $value.'::'.htmlentities(utf8_decode($new_value)) );
+					//kuink_mydebug($key.'.'.$value.'.', $new_value);
+					if ($new_value != '')
+						$bind_data [$key] = $new_value;
+					else
+						$bind_data [$key] = $value;
+					// $bindable_value = $datasource[];
+					// neon_mydebug('Binding...'.$key, $bind_data[$key]);
+				}
+			} elseif (isset ( $this->static_fields [( string ) $key] )) {
+				// print_object($this->static_fields);
+				// $bind_data[$key] = htmlentities(utf8_decode($value));
+				$bind_data [$key] = $value;
+			} else {
+				// neon_mydebug($key,$value.'::'.$static_bind);
+				$bind_data [$key] = $value;
+			}
+			//Save the value before applying the formatters
+			//$bind_data_original[$key] = $value;
+			
+			// Check if there is a formatter
+			// print_object( $this->fieldFormatter );
+			$formatter_data = isset($this->fieldFormatter [( string ) $key]) ? $this->fieldFormatter [( string ) $key] : null;
+			if ($formatter_data) {
+				foreach ( $formatter_data as $f_name => $f_attributes ) {
+					$attributes = null;
+					foreach ( $f_attributes as $akey => $avalue ) {
+						$attributes [( string ) $akey] = ( string ) $avalue;
+					}
+					
+					$new_value = ( string ) $this->callFormatter ( $f_name, $value, $attributes, $bind_data );
+					
+					// neon_mydebug($key, $new_value);
+					// $bind_data[$key] = htmlentities(utf8_decode($new_value));
+					$bind_data [$key] = $new_value;
+				}
+			}
+		}
+		
+		// print_object($bind_data);
+		$this->dataBound = array_merge ( $this->dataBound, $bind_data );
+		$this->dataBoundWithoutFormatter = array_merge($this->dataBoundWithoutFormatter,$bind_data_original);				
+
 	}
 	
 	/**

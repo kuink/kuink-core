@@ -254,15 +254,14 @@ abstract class Control {
 	 * @param (string) $datasourcename        	
 	 * @param (string) $bindid        	
 	 * @param (string) $bindvalue        	
+	 * @param (array)  $data //The data to expand to datasource parameters
 	 */
-	function loadDataSource($datasourcename, $bindid, $bindvalue) {
+	function loadDataSource($datasourcename, $bindid, $bindvalue, $data=null) {
 		// only load the datasource if the datasource is not loaded yet
-		// kuink_mydebug('Datasource', $datasourcename);
-		// kuink_mydebug('BindId', $bindid);
-		// kuink_mydebug('BindValue', $bindvalue);
+		//var_dump($data);
 		$datasourcename = trim($datasourcename);
 		if (! isset ( $this->datasources [$datasourcename] )) {
-			//kuink_mydebug('Loading...', $datasourcename);
+			//kuink_mydebug('Loading...', $datasourcename.(string)count($data));
 			$pos = strpos ( $datasourcename, 'table:' );
 			if ($pos === 0) {
 				// Get the options from the table only one time
@@ -308,13 +307,18 @@ abstract class Control {
 						$paramCompleteParts = explode ( '=', $paramComplete );
 						if (count ( $paramCompleteParts ) != 2)
 							throw new \Exception ( 'Invalid param format must be name=value and received ' . $paramComplete );
-						$callParams [trim ( $paramCompleteParts [0] )] = trim ( str_replace ( "'", '', $paramCompleteParts [1] ) );
+						//Expand the parameter values
+						$eval = new \Kuink\Core\EvalExpr ();
+						$expandedValue = $eval->e ( $paramCompleteParts [1], $data, false, true, false ); // Eval
+						$callParams [trim ( $paramCompleteParts [0] )] = trim ( str_replace ( "'", '', $expandedValue ) );
 					}
 				}
-				
+				//var_dump($callParams);
 				$parts = explode ( ',', $library );
-				if (count ( $parts ) != 4)
-					throw new \Exception ( 'Invalid lirary,function name: ' . $datasourcename . count ( $parts ) );
+				if (count ( $parts ) != 4) {
+					var_dump($datasourcename);					
+					throw new \Exception ( 'Invalid lirary,function name: ' . $datasourcename .' - '. count ( $parts ) );
+				}
 				$node = new \Kuink\Core\Node ( $parts [0], $parts [1], $parts [2] );
 				$runtime = new \Kuink\Core\Runtime ( $node, 'lib', null );
 				

@@ -3745,7 +3745,7 @@ class Runtime {
 				case '__first' : $value = array_values ( $variables [$varname] ) [0]; break;
 				case '__length' : $value = count ( $variables [$varname] ); break;
 				default :
-					$value = isset($variables[$varname][$key]) ? $variables[$varname][$key] : '';
+				$value = $variables [$varname] [$key];
 			}
 		}
 		
