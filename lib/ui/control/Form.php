@@ -795,6 +795,7 @@ class Form extends Control {
 		
 		$visible = $attributes [FieldProperty::VISIBLE];
 		$datasourcename = ( string ) $attributes [FieldProperty::DATASOURCE];
+		$datasourceparams = ( string ) $attributes [FieldProperty::DATASOURCE_PARAMS];
 		$bindid = ( string ) $attributes [FieldProperty::BINDID];
 		$bindvalue = ( string ) $attributes [FieldProperty::BINDVALUE];
 		$skeleton = $attributes [FieldProperty::SKELETON];
@@ -905,7 +906,8 @@ class Form extends Control {
 			if ($datasourcename != '')
 				// Store this field to be bind when setting the data
 				// This is usefull to when the bind as the id but we want to show the bind value
-				$this->static_bind [$id] = $datasourcename . ',' . $bindid . ',' . $bindvalue;
+				$datasourceparams = ($datasourceparams != '') ? '('.$datsourceparams.')': $datsourceparams;
+				$this->static_bind [$id] = $datasourcename.$datasourceparams . '|' . $bindid . '|' . $bindvalue;
 			$this->static_fields [$id] = true;
 			
 			
@@ -1201,17 +1203,18 @@ class Form extends Control {
 				$fieldOptions = array ();
 				$fieldOptions [''] = ''; //Add empty option		
 				$selectoptions = $this->datasources [$datasourcename];
-				foreach ( $selectoptions as $selectoption ) {
-					if ((gettype ( $selectoption ) == 'array'))
-						$id = isset($selectoption [$bindid]) ? $selectoption [$bindid] : null;	
-					else
-						$id = isset($selectoption->$bindid) ? $selectoption->$bindid : null;
-					if ((gettype ( $selectoption ) == 'array'))
-						$name = isset($selectoption [$bindid]) ? $selectoption [$bindvalue] : null;	
-					else
-						$name = isset($selectoption->$bindid) ? $selectoption->$bindvalue : null;
-					$fieldOptions [$id] = $name;
-				}				
+				if (is_array($selectoptions))
+					foreach ( $selectoptions as $selectoption ) {
+						if ((gettype ( $selectoption ) == 'array'))
+							$id = isset($selectoption [$bindid]) ? $selectoption [$bindid] : null;	
+						else
+							$id = isset($selectoption->$bindid) ? $selectoption->$bindid : null;
+						if ((gettype ( $selectoption ) == 'array'))
+							$name = isset($selectoption [$bindid]) ? $selectoption [$bindvalue] : null;	
+						else
+							$name = isset($selectoption->$bindid) ? $selectoption->$bindvalue : null;
+						$fieldOptions [$id] = $name;
+					}				
 				//Update field with options
 				$field['options'] = $fieldOptions;
 				$this->fields[$index] = $field;
@@ -1228,7 +1231,7 @@ class Form extends Control {
 			
 			if ($static_bind != '') {
 				//kuink_mydebug( $static_bind );
-				$source = explode ( ',', $static_bind );
+				$source = explode ( '|', $static_bind );
 				$datasourcename = ( string ) $source [0];
 				$bindid = isset ( $source [1] ) ? ( string ) $source [1] : 'id';
 				$bindvalue = isset ( $source [2] ) ? ( string ) $source [2] : 'name';

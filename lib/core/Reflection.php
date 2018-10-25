@@ -563,7 +563,8 @@ class Reflection {
 			$paramsSign = implode ( ', ', $fxParamsSignature );
 			$call ['call'] .= '</Call>';
 			
-			$call ['kuink'] = '<Textarea readonly="true" style="width:90%; height:100%; border:none "><Call library="' . $application . ',' . $process . ',api" function="' . ( string ) $fx ['name'] . '">' . "\n";
+			//$call ['kuink'] = '<Textarea readonly="true" style="width:90%; height:100%; border:none "><Call library="' . $application . ',' . $process . ',api" function="' . ( string ) $fx ['name'] . '">' . "\n";
+			$call ['fw'] = '<Call library="' . $application . ',' . $process . ',api" function="' . ( string ) $fx ['name'] . '">' . "\n";
 			foreach ( $functionParams as $fxParam ) {
 				/*
 				 * $required = $fxParam['required'];
@@ -576,12 +577,12 @@ class Reflection {
 				 * $fxParamDoc = isset($fxParam['doc']) ? (string)$fxParam['doc'] : 'undefined';
 				 * $fxParamsSignatureCompressed .= $paramSign .' - '.$fxParamDoc.($required=='true'?' <em>(required)</em>':'').'<br/>';
 				 */
-				$call ['kuink'] .= '<Param name="' . ( string ) $fxParam ['name'] . '"></Param>' . "\n";
+				$call ['fw'] .= '	<Param name="' . ( string ) $fxParam ['name'] . '"></Param>' . "\n";
 			}
 			$paramsSign = implode ( ', ', $fxParamsSignature );
-			$call ['kuink'] .= '</Call></Textarea>';
+			$call ['fw'] .= '</Call>';
 			
-			$call ['kuink'] = $call ['kuink']; // htmlentities( $call['kuink'] );////
+			$call ['fw'] = '<pre>'.htmlentities( $call['fw'] ).'</pre>';////
 			$library = $application . ',' . $process . ',' . $node;
 			$fullQualifiedName = $library . ',' . ( string ) $fx ['name'];
 			

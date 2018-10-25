@@ -263,8 +263,9 @@ class Grid extends Control {
 		// kuink_mydebug('construct...','');
 		parent::__construct ( $nodeconfiguration, $xml_definition );
 		
-		$this->dynamicColumns = array ();
-		
+		$this->dynamicColumns = array();
+		$this->tablecolumns = array();
+		$this->tablecolnotvisible = array();
 		$this->pagesize = $this->getPageSize (null);
 		
 		$this->export = isset ( $_GET ['export'] ) ? true : false;
@@ -880,9 +881,20 @@ class Grid extends Control {
 		// var_dump($this->bind_data[0]);
 		// Check if this GRID is to infer or not
 		if ($this->infer == 'true') {
+			foreach ($this->bind_data as $data) {
+				$record = (array) reset($data);
+				foreach ($record as $key => $value) {
+						if (!in_array($key, $this->tablecolumns) && !in_array($key, $this->tablecolnotvisible)) { // && (strpos($key, '__infer_') > 0)
+								$this->tableinfercolumns[] = $key;
+								$this->tablecolumns[] = $key;
+								$this->tableheaders[] = $key;
+						}
+				}
+		}
+			/*
 			// Build the grid columns
 			// var_dump($this->tablecolumns);
-			if (is_array($this->bind_data) || is_object($this->bind_data))
+			if (is_array($this->bind_data) || is_object($this->bind_data)) {
 				foreach ( $this->bind_data as $data ) {
 					$record = ( array ) reset ( $data );
 					foreach ( $record as $key => $value ) {
@@ -893,6 +905,8 @@ class Grid extends Control {
 						}
 					}
 				}
+			}
+			var_dump($this->tablecolumns);*/
 		}
 		$this->total = 0;
 		if (is_array($this->bind_data) || is_object($this->bind_data))
@@ -1015,7 +1029,7 @@ class Grid extends Control {
 							$inferIndex = array_search ( $arrayKeys [0], $this->tablecolumns );
 						} else
 							$inferIndex = array_search ( '__infer', $this->tablecolumns );
-						$tableColFormatter = $this->tablecolformatter [$inferIndex];
+						$tableColFormatter = isset($this->tablecolformatter [$inferIndex]) ? $this->tablecolformatter [$inferIndex] : null;
 						// die();//kuink_mydebug($column,$inferIndex);
 					}
 					
@@ -1360,11 +1374,11 @@ class Grid extends Control {
 		$html = '
 		&nbsp;
 		<table cellpadding="2" border="1" width="100%" >
-
+				<thead>
 				<tr>
 				' . $cols . '
 				</tr>
-
+				</thead>
 
 				' . $rows . '
 

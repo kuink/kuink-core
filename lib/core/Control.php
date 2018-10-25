@@ -258,7 +258,7 @@ abstract class Control {
 	 */
 	function loadDataSource($datasourcename, $bindid, $bindvalue, $data=null) {
 		// only load the datasource if the datasource is not loaded yet
-		//var_dump($data);
+		//var_dump($datasourcename);
 		$datasourcename = trim($datasourcename);
 		if (! isset ( $this->datasources [$datasourcename] )) {
 			//kuink_mydebug('Loading...', $datasourcename.(string)count($data));

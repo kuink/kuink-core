@@ -107,6 +107,10 @@ class EvalExpr {
 		return;
 	}
 	
+	//Checks if a number is octal
+	function is_octal($x) {
+    return is_numeric($x) && (strlen($x) > 1) && $x[0] == '0';
+	}	
 	/**
 	 * Gets a variable value
 	 * 
@@ -146,12 +150,11 @@ class EvalExpr {
 		if (is_string ( $return ))
 			$return = addslashes ( $return );
 		
-		if (! is_numeric ( $return ) && $stringIsolation && ($return !== null))
+		if ((! is_numeric ( $return ) && $stringIsolation && ($return !== null)) || ($this->is_octal("$return")))
 			$return = "'" . (is_array($return) ? '__array' : (string)$return) . "'";
 		else if ($return === null)
 			$return = 'null';
-			
-			// kuink_mydebug($name.'->'.$key.'('.$varType.')', $return);
+		//kuink_mydebug($name.'->'.$key.'('.$varType.')', $return);
 		return $return;
 	}
 	
