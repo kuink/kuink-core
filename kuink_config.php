@@ -35,10 +35,12 @@ if (empty ( $KUINK_BRIDGE_CFG->loginHttps )) {
 // Initialize the contextid if it isn't set yet, important for api's
 $contextId = \Kuink\Core\ProcessOrchestrator::getContextId ();
 
+$KUINK_CFG->bridge = $KUINK_BRIDGE_CFG->bridge;
 $KUINK_CFG->wwwRoot = $wwwroot;
 $KUINK_CFG->dirRoot = $KUINK_BRIDGE_CFG->dirRoot;
 $KUINK_CFG->kuinkRoot = $KUINK_BRIDGE_CFG->kuinkRoot; // 'mod/kuink/';
-$KUINK_CFG->themeRoot = 'kuink-core/';
+//$KUINK_CFG->themeRoot = 'kuink-core/';
+$KUINK_CFG->themeRoot = ''; //defaults to the bridge... let the bridge control the theme
 $KUINK_CFG->apiUrl = $KUINK_CFG->kuinkRoot.'/api.php?idcontext=' . $contextId;
 $KUINK_CFG->streamUrl = $KUINK_CFG->wwwRoot.'stream.php';
 $KUINK_CFG->streamFileUrl = $KUINK_CFG->streamUrl.'?type=file&guid=';

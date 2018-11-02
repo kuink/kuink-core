@@ -413,17 +413,18 @@ class ProcessOrchestrator {
 		$currentNode = self::getCurrentNode ( $contextId );
 		$currentProcessGuid = $currentNode->processGuid;
 		
-		if ($key == '')
-			unset ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] );
-		else {
+		if (isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId])) {
+			if ($key == '')
+				unset ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] );
+			else {
+				
+				unset ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] [$key] );
+				// var_dump($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->processVars[$currentProcessGuid][$variable]);
+			}
 			
-			unset ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] [$key] );
-			// var_dump($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->processVars[$currentProcessGuid][$variable]);
+			if (count ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] ) == 0)
+				unset ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] );
 		}
-		
-		if (count ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] ) == 0)
-			unset ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] );
-			
 			// var_dump("CLEAR");
 			// var_dump($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->processVars[$currentProcessGuid][$variable]);
 		return;

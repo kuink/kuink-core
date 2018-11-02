@@ -25,7 +25,7 @@ class Smarty extends \Smarty {
 	private $positionsHtml = array ();
 	private $menuItems = array ();
 	function __construct($themeName = "default") {
-		GLOBAL $KUINK_CFG;
+		global $KUINK_CFG;
 		parent::__construct ();
 		$this->setTemplateDir ( dirname ( __FILE__ ) . '/../../../theme/' . $themeName . '/template/' );
 		$this->setCompileDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache_compiled/' );
@@ -59,10 +59,14 @@ class Smarty extends \Smarty {
 	}
 
 	public function setTheme($themeName) {
-		$this->setTemplateDir(dirname(__FILE__).'/../../../theme/'.$themeName.'/template/');
-		$this->setCompileDir(dirname(__FILE__).'/../../../theme/theme_cache_compiled/');
-		$this->setCacheDir(dirname(__FILE__).'/../../../theme/theme_cache/');
+		global $KUINK_CFG;
+		$this->setTemplateDir(dirname(__FILE__).'/../../../../'.$KUINK_CFG->bridge.'/theme/'.$themeName.'/template/');
+		$this->setCompileDir(dirname(__FILE__).'/../../../../'.$KUINK_CFG->bridge.'/theme/'.$themeName.'/theme_cache_compiled/');
+		$this->setCacheDir(dirname(__FILE__).'/../../../../'.$KUINK_CFG->bridge.'/theme/'.$themeName.'/theme_cache/');
 		
+		//var_dump($this->getTemplateDir());
+		//die();
+
 		$this->themeName = $themeName;
 		$this->assign( 'THEME', $themeName );
 		//print_object('Setting theme '. $themeName);
@@ -261,6 +265,34 @@ class Smarty extends \Smarty {
 		@unlink ( $file );
 		return $returnData;
 	}
+
+	public function addControl($type, $params, $skeleton = null, $skin, $position) {
+		global $KUINK_CFG;
+		$smarty = \Kuink\Core\Factory::getLayoutAdapter ( "Smarty" );
+		
+		$smarty_params = array ();
+		$smarty_params ['skin'] = $skin;
+		
+		foreach ( $params as $key => $value )
+			$smarty_params [$key] = $value;
+		
+		$smarty->assign ( $smarty_params );
+		
+		$template_name = ($skeleton == '') ? $type . '.tpl' : $type . '_' . $skeleton . '.tpl';
+		// kuink_mydebug( 'HEY', __DIR__.'/../../theme/'.$this->theme.'/ui/control/'.$template_name );
+		
+		//$output = $smarty->fetch ( __DIR__ . '/../../theme/' . $this->theme . '/ui/control/' . $template_name );
+		$output = $smarty->fetch ( __DIR__ . '/../../../../'.$KUINK_CFG->bridge.'/theme/' . $this->themeName . '/ui/control/' . $template_name );
+		
+		//var_dump( __DIR__ . '/../../theme/' . $this->theme . '/ui/control/' . $template_name);
+		$this->addHtml ( $output, $position );
+		// $LAYOUT->addHtml($output, $this->position);
+		
+		// print( $output );
+		
+		// print('THEME::'.$this->theme.' HELLO '.$this->type.'Control::skeleton,'.$this->skeleton.'::skin,'.$this->skin.'::position,'.$this->position);
+	}
+
 }
 
 ?>

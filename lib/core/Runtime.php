@@ -148,7 +148,7 @@ class Runtime {
 		// die();
 		//print_r($currentNode->params);
 		$this->params = isset($currentNode->params) ? $currentNode->params : null;
-		if (isset($params))
+		if (isset($params) && is_array($params))
 			foreach ( $params as $key => $value )
 				$this->params [$key] = $value;
 				

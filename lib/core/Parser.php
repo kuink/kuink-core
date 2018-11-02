@@ -109,7 +109,8 @@ class EvalExpr {
 	
 	//Checks if a number is octal
 	function is_octal($x) {
-    return is_numeric($x) && (strlen($x) > 1) && $x[0] == '0';
+		//If is a number and starts by 0 and it's not a float/double/real, then is octal
+    return is_numeric($x) && (strlen($x) > 1) && $x[0] == '0' && (strpos($x, '.')=== FALSE);
 	}	
 	/**
 	 * Gets a variable value

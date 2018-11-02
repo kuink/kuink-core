@@ -116,29 +116,11 @@ class Layout {
 	public function addHtml($output, $position) {
 		$this->layoutAdapter->addHtml ( $output, $position );
 	}
+
 	public function addControl($type, $params, $skeleton = null, $skin, $position) {
-		$smarty = \Kuink\Core\Factory::getLayoutAdapter ( "Smarty" );
-		
-		$smarty_params = array ();
-		$smarty_params ['skin'] = $skin;
-		
-		foreach ( $params as $key => $value )
-			$smarty_params [$key] = $value;
-		
-		$smarty->assign ( $smarty_params );
-		
-		$template_name = ($skeleton == '') ? $type . '.tpl' : $type . '_' . $skeleton . '.tpl';
-		// kuink_mydebug( 'HEY', __DIR__.'/../../theme/'.$this->theme.'/ui/control/'.$template_name );
-		
-		$output = $smarty->fetch ( __DIR__ . '/../../theme/' . $this->theme . '/ui/control/' . $template_name );
-		//var_dump( __DIR__ . '/../../theme/' . $this->theme . '/ui/control/' . $template_name);
-		$this->layoutAdapter->addHtml ( $output, $position );
-		// $LAYOUT->addHtml($output, $this->position);
-		
-		// print( $output );
-		
-		// print('THEME::'.$this->theme.' HELLO '.$this->type.'Control::skeleton,'.$this->skeleton.'::skin,'.$this->skin.'::position,'.$this->position);
+		$this->layoutAdapter->addControl($type, $params, $skeleton = null, $skin, $position);
 	}
+
 	public function addUserMessages($messages) {
 		$this->layoutAdapter->addUserMessages ( $messages );
 	}
