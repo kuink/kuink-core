@@ -59,6 +59,14 @@ class InstructionManager {
 				'\\Kuink\\Core\\Instruction\\' . $instructionName . 'Instruction',
 				$methodName 
 		);
+		if (!is_callable($fn)) {
+			//Try to load a legacy library
+			$fn = array (
+				'\\Kuink\\Core\\Instruction\\LegacyLibraryInstruction',
+				$methodName 
+			);			
+		}
+
 		$value = call_user_func ( $fn, $this, $instructionXmlNode );
 		
 		return $value;

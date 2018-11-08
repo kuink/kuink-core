@@ -1185,12 +1185,12 @@ class Runtime {
 			$action_name = isset ( $_GET ['action'] ) ? ( string ) $_GET ['action'] : '';
 			
 			$object = $variables [$grid_name];
-			$object->export ( $export_type );
-			
-			unset ( $_GET ['export'] );
-			unset ( $_GET ['exporttype'] );
-			// var_dump($_GET);
-			// return $this->action_execute($nodeconfiguration, $nodexml, $action_xmlnode, $action_name, $variables);
+			if (isset($object)) {
+				$object->export ( $export_type );
+				
+				unset ( $_GET ['export'] );
+				unset ( $_GET ['exporttype'] );
+			} //Else, if the object does not exist, then continue, maybe it's in a custom control
 		}
 		
 		// If this is a screen and don't force exit in action, display it!!
@@ -1548,12 +1548,6 @@ class Runtime {
 			case 'RaiseEvent' :
 				$result = $this->inst_raiseevent ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
-			case 'Null' :
-				$result = null;
-				break;
-			case 'NewLine' :
-				$result = '<br/>';
-				break;
 			
 			case 'Log' :
 				$result = $this->inst_log ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
@@ -1564,10 +1558,6 @@ class Runtime {
 			case 'Eval' :
 				// Custom code execution
 				$result = $this->inst_eval ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'Doc' :
-				// Documentation... do nothing
-				$result = null;
 				break;
 			case 'Permissions' :
 				$result = $this->inst_permissions ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
@@ -1600,43 +1590,43 @@ class Runtime {
 			case 'Expr' :
 				$result = $this->inst_expr ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
-			Case 'Eq' :
-				$result = $this->inst_eq ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			Case 'NEq' :
-				$result = $this->inst_neq ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			Case 'Lt' :
-				$result = $this->inst_lt ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			Case 'Lte' :
-				$result = $this->inst_lte ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			Case 'Gt' :
-				$result = $this->inst_gt ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			Case 'Gte' :
-				$result = $this->inst_gte ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			Case 'Not' :
-				$result = $this->inst_not ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			Case 'And' :
-				$result = $this->inst_and ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			Case 'Or' :
-				$result = $this->inst_or ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			Case 'Exit' :
+			//Case 'Eq' :
+			//	$result = $this->inst_eq ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
+			//Case 'NEq' :
+			//	$result = $this->inst_neq ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
+			//Case 'Lt' :
+			//	$result = $this->inst_lt ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
+			//Case 'Lte' :
+			//	$result = $this->inst_lte ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
+			//Case 'Gt' :
+			//	$result = $this->inst_gt ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
+			//Case 'Gte' :
+			//	$result = $this->inst_gte ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
+			//Case 'Not' :
+			//	$result = $this->inst_not ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
+			//Case 'And' :
+			//	$result = $this->inst_and ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
+			//Case 'Or' :
+			//	$result = $this->inst_or ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
+			case 'Exit' :
 				$exit = true;
 				$result = null;
 				break;
-			Case 'Lang' :
+			case 'Lang' :
 				$result = $this->inst_Lang ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
-			Case 'Return' :
+			case 'Return' :
 				$result = $this->inst_return ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-			Case 'Errors' :
+			case 'Errors' :
 				$result = $this->inst_errors ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
 			case 'DoPDF' :
@@ -1654,9 +1644,11 @@ class Runtime {
 			case 'Xml' :
 				$result = $this->inst_xml ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
+			/*
 			case 'Int' :
 				$result = $this->inst_int ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
+			*/
 			case 'Guid' :
 				$result = $this->inst_guid ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
@@ -1687,9 +1679,13 @@ class Runtime {
 			case 'String.stripslashes' :
 			case 'String.firstWord' :
 			case 'String.lastWord' :
+			case 'List' :
+			case 'List.add' :
+			case 'List.remove' :
+			case 'List.clear' :
+			case 'List.toSet' :
+			case 'List.fromSet' :
 			case 'Math.round' :
-			// $result = $this->inst_string( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname, $variables, $exit );
-			// break;
 			case 'ListToSet' :
 			case 'SetToList' :
 			case 'SetToJson' :
@@ -1704,11 +1700,22 @@ class Runtime {
 			case 'Commit' :
 			case 'RollBack' :
 			case 'Dummy' :
-            case 'Auth.setLoggedUser' :
-                $result = $this->genericInstExecute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
-                break;
+			case 'Auth.setLoggedUser' :
 			case 'Uuid' :
-				// case 'Var':
+			case 'Int' :
+			case 'Int.parse' :
+			case 'Null' : 
+			case 'NewLine' : 
+			case 'Doc' :	
+			case 'Eq' :											
+			case 'NEq' :
+			case 'Gt' :				
+			case 'Gte' :							
+			case 'Lt' :							
+			case 'Lte' :	
+			case 'Not' :	
+			case 'And' :
+			case 'Or' :
 				$result = $this->genericInstExecute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
 				break;
 			default :
@@ -3153,6 +3160,8 @@ class Runtime {
 		}
 		return ( string ) $content;
 	}
+
+	/*
 	function inst_int($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
 		$parse = ( string ) $this->get_inst_attr ( $instruction_xmlnode, 'parse', $variables, false, 'false' );
 		// $content= $instruction_xmlnode[0];
@@ -3167,7 +3176,8 @@ class Runtime {
 			$content = $eval->e ( $content, $variables, FALSE, FALSE, FALSE ); // Eval and return a value without ''
 		}
 		return ( int ) $content;
-	}
+	}	*/
+
 	function inst_sleep($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
 		$interval = ( int ) $this->get_inst_attr ( $instruction_xmlnode, 'interval', $variables, false, 'false' );
 		sleep ( $interval );
