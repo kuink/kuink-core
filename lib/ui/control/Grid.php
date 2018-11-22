@@ -882,13 +882,15 @@ class Grid extends Control {
 		// Check if this GRID is to infer or not
 		if ($this->infer == 'true') {
 			foreach ($this->bind_data as $data) {
-				$record = (array) reset($data);
-				foreach ($record as $key => $value) {
-						if (!in_array($key, $this->tablecolumns) && !in_array($key, $this->tablecolnotvisible)) { // && (strpos($key, '__infer_') > 0)
-								$this->tableinfercolumns[] = $key;
-								$this->tablecolumns[] = $key;
-								$this->tableheaders[] = $key;
-						}
+				if (is_array($data)) {
+					$record = (array) reset($data);
+					foreach ($record as $key => $value) {
+							if (!in_array($key, $this->tablecolumns) && !in_array($key, $this->tablecolnotvisible)) { // && (strpos($key, '__infer_') > 0)
+									$this->tableinfercolumns[] = $key;
+									$this->tablecolumns[] = $key;
+									$this->tableheaders[] = $key;
+							}
+					}
 				}
 		}
 			/*

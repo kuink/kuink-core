@@ -34,7 +34,7 @@ abstract class Instruction {
 			throw new \Exception ( 'Instruction "' . $inst_name . '" needs attribute "' . $attrName . '" which was not supplied.' );
 		}
 		$attr_value = ( string ) $instruction [$attrName];
-		$type = $attr_value [0];
+		$type = isset($attr_value [0]) ? $attr_value [0] : '';
 		$var_name = substr ( $attr_value, 1, strlen ( $attr_value ) - 1 );
 		
 		if ($type == '$' || $type == '#' || $type == '@') {

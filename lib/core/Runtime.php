@@ -729,14 +729,15 @@ class Runtime {
 			// var_dump($this->nodeconfiguration);
 			$html .= '<pre class="pre-scrollable">';
 			// var_dump( $KUINK_TRACE );
-			foreach ( $KUINK_MANUAL_TRACE as $key => $value ) {
-				$dump = '';
-				if (is_string($value))
-					$dump = $value;
-				else
-					$dump = var_export($value, true);				
-				$html .= $dump; //'<p>' . $key . ' => ' . $dump . '</p>';
-			}
+			if (isset($KUINK_MANUAL_TRACE))
+				foreach ( $KUINK_MANUAL_TRACE as $key => $value ) {
+					$dump = '';
+					if (is_string($value))
+						$dump = $value;
+					else
+						$dump = var_export($value, true);				
+					$html .= $dump; //'<p>' . $key . ' => ' . $dump . '</p>';
+				}
 			$html .= '</pre></div>';
 			
 			$html .= '<br/>Process Stack » ';
@@ -1638,9 +1639,10 @@ class Runtime {
 			case 'DoPDFByTemplate' :
 				$result = $this->inst_dopdfByTemplate ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
+			/*
 			case 'Trace' :
 				$result = $this->inst_trace ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break; */
 			case 'Xml' :
 				$result = $this->inst_xml ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
@@ -1649,18 +1651,20 @@ class Runtime {
 				$result = $this->inst_int ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
 			*/
-			case 'Guid' :
+			/*case 'Guid' :
 				$result = $this->inst_guid ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'Now' :
+				break;*/
+			/*case 'Now' :
 				$result = $this->inst_now ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			// case 'DataSource':
 			// $result = $this->inst_datasource( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname, $variables, $exit );
 			// break;
+			/*
 			case 'Sleep' :
 				$result = $this->inst_sleep ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
+				*/
 			case 'Template' :
 				$result = $this->inst_template ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
@@ -1702,8 +1706,10 @@ class Runtime {
 			case 'Dummy' :
 			case 'Auth.setLoggedUser' :
 			case 'Uuid' :
+			case 'Guid' :
 			case 'Int' :
 			case 'Int.parse' :
+			case 'Now' :			
 			case 'Null' : 
 			case 'NewLine' : 
 			case 'Doc' :	
@@ -1716,6 +1722,10 @@ class Runtime {
 			case 'Not' :	
 			case 'And' :
 			case 'Or' :
+			case 'Sleep' :
+			case 'Set.pop' :
+			case 'Set.reverse' :
+			case 'Trace' :
 				$result = $this->genericInstExecute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
 				break;
 			default :
@@ -2434,7 +2444,8 @@ class Runtime {
 			
 			$eval_instructions = $eval_instructions_xml [0]->children ();
 			foreach ( $eval_instructions as $eval_instruction ) {
-				$eval_value .= $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $eval_instruction [0], $actionname, $variables, $exit );
+				$result = $this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $eval_instruction [0], $actionname, $variables, $exit );
+				$eval_value .= (is_array($result) || is_object($result)) ? '' : $result;
 			}
 		}
 		return $eval_value;
@@ -2933,12 +2944,14 @@ class Runtime {
 		return null;
 	}
 	function inst_set($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
-		$newset = array ();
+		$newSet = array ();
 		// var_dump($instruction_xmlnode);
 		// $content= $instruction_xmlnode[0];
 		foreach ( $instruction_xmlnode->children () as $element ) {
 			// $elementname = $element['name'];
-			$elementname = $this->get_inst_attr ( $element, 'name', $variables, true );
+			$elementName = $this->get_inst_attr ( $element, 'name', $variables, false, '' );
+			$elementKey = $this->get_inst_attr ( $element, 'key', $variables, false, '' );
+			$key = ($elementKey != '') ? $elementKey: $elementName;
 			// print('ELEMENT::'.$elementname);
 			if ($element->count () > 0) {
 				$newinstruction_xmlnode = $element->children ();
@@ -2946,15 +2959,15 @@ class Runtime {
 			} else {
 				$value = $element;
 			}
-			
-			$newset [$elementname] = is_array ( $value ) ? $value : ( string ) $value;
+			if ($key != '')
+				$newSet [$key] = $value; //is_array ( $value ) ? $value : ( string ) $value;
+			else
+				$newSet [] = $value; //is_array ( $value ) ? $value : ( string ) $value;
 		}
 		
-		// var_dump( $content );
-		// var_dump( $newset );
-		
-		return $newset;
+		return $newSet;
 	}
+
 	function inst_clearvar($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
 		$varname = ( string ) $instruction_xmlnode ['name'];
 		

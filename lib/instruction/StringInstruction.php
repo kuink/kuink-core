@@ -16,7 +16,6 @@ class StringInstruction extends \Kuink\Core\Instruction {
 	 */
 	static public function execute($instManager, $instructionXmlNode) {
 		$parse = ( string ) self::getAttribute ( $instructionXmlNode, 'parse', $instManager->variables, false, 'false' );
-		
 		if ($parse == 'true')
 			return self::parse ( $instManager, $instructionXmlNode );
 		else {
@@ -33,14 +32,29 @@ class StringInstruction extends \Kuink\Core\Instruction {
 		
 		return ( string ) $content;
 	}
+
 	static public function explode($instManager, $instructionXmlNode) {
+		$trim = ( string ) self::getAttribute ( $instructionXmlNode, 'trim', $instManager->variables, false, '' );
+		$ltrim = ( string ) self::getAttribute ( $instructionXmlNode, 'ltrim', $instManager->variables, false, '' );
+		$rtrim = ( string ) self::getAttribute ( $instructionXmlNode, 'rtrim', $instManager->variables, false, '' );
 		$params = $instManager->getParams ( $instructionXmlNode );
 		$sep = ( string ) $params [0];
 		$str = ( string ) $params [1];
 		
 		$set = explode ( $sep, $str );
+
+		$trimmedSet = array();
+		foreach ($set as $value) {
+			if ($trim != '')
+				$value = trim($value, $trim);
+			if ($ltrim != '')
+				$value = ltrim($value, $ltrim);
+			if ($rtrim != '')
+				$value = rtrim($value, $rtrim);
+			$trimmedSet[] = $value;
+		}
 		
-		return $set;
+		return $trimmedSet;
 	}
 	static public function implode($instManager, $instructionXmlNode) {
 		$params = $instManager->getParams ( $instructionXmlNode );

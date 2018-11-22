@@ -43,7 +43,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			$options = $this->dataSource->getParam ( 'options', false );
 			
 			$dsn = "$type:host=$server;dbname=$database;$options";
-			// print_object($dsn);
+			//print_object($dsn);
 			
 			// Get the connection to the database
 			$this->db = new \PDO ( $dsn, $user, $passwd );

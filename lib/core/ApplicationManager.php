@@ -50,7 +50,7 @@ class ApplicationManager {
 	public function getApplicationAttribute($application, $attribute) {
 		// if (!isset($this->applications[$application]))
 		// throw new \Exception('Application '.$application.' not registered in fw_application');
-		return $this->applications [$application] [$attribute];
+		return isset($this->applications [$application] [$attribute]) ? $this->applications [$application] [$attribute] : null;
 	}
 }
 

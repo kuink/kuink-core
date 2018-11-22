@@ -21,13 +21,16 @@ class VarInstruction extends \Kuink\Core\Instruction {
 		$clear = self::getAttribute ( $instructionXmlNode, 'clear', $instManager->variables, false, 'false' );
 		$sum = self::getAttribute ( $instructionXmlNode, 'sum', $instManager->variables, false, 0 );
 		$dump = self::getAttribute ( $instructionXmlNode, 'dump', $instManager->variables, false, 'false' );
-		$key = self::getAttribute ( $instructionXmlNode, 'key', $instManager->variables, false );
-		$keyIsSet = isset ( $instructionXmlNode ['key'] ); // We must know if the key is set or not besides its value
 		$setValue = isset ( $instructionXmlNode ['value'] ) ? $instructionXmlNode ['value'] : '';
 		$set = (($instructionXmlNode->count () > 0) || ($instructionXmlNode [0] != ''));
 		$session = self::getAttribute ( $instructionXmlNode, 'session', $instManager->variables, false, 'false' ); // Session variable
 		$process = self::getAttribute ( $instructionXmlNode, 'process', $instManager->variables, false, 'false' ); // Process Variable
-		                                                                                                        
+
+		$key = self::getAttribute ( $instructionXmlNode, 'key', $instManager->variables, false );
+		$keyIsSet = isset ( $instructionXmlNode ['key'] ); // We must know if the key is set or not besides its value
+		$keys = explode('->', $key);
+		$keys = array_reverse($keys);
+
 		// Clear the variable
 		if ($clear == 'true') {
 			if ($session == 'true') {
@@ -66,12 +69,12 @@ class VarInstruction extends \Kuink\Core\Instruction {
 				case '__first' : $value=array_values($instManager->variables[$varname])[0]; break;
 				case '__length' :$value=count($instManager->$variables[$varname]);break;			
 				default :
-				$value = $instManager->variables [$varname] [$key];
+					$value = isset($instManager->variables [$varname]) ? self::getVarKeyInDepth($instManager, $instManager->variables[$varname], $keys) : ''; //isset($instManager->variables [$varname] [$key]) ? $instManager->variables [$varname] [$key] : null;
 			}
 		}
 		
 		if ($set) {
-			$value = ( string ) $instManager->executeInnerInstruction ( $instructionXmlNode );
+			$value = $instManager->executeInnerInstruction ( $instructionXmlNode );
 		} else if ($setValue != '') {
 			// Parse the value!!
 			$eval = new \Kuink\Core\EvalExpr ();
@@ -88,9 +91,9 @@ class VarInstruction extends \Kuink\Core\Instruction {
 		
 		// Dumping variable
 		if ($dump == 'true') {
-			self::dumpVariable ( $varname, $value );
+			$dumpVarName = ($key != '') ? $varname.'['.$key.']' : $varname;
+			self::dumpVariable ( $dumpVarName, $value );
 		}
-		
 		
 		//Only set the value if this is a set...
 		if ($set || $setValue != '' || $sum <> 0) {		
@@ -100,23 +103,71 @@ class VarInstruction extends \Kuink\Core\Instruction {
 			} else if ($process == 'true') {
 				ProcessOrchestrator::setProcessVariable ( $varname, $key, $value );
 			} else { // local variable
-				if ($keyIsSet && $key != '') {
-					$var = $instManager->variables [$varname];
-					$var [$key] = (is_array ( $value )) ? $value : ( string ) $value;
-					$instManager->variables [$varname] = $var;
-				} else if ($keyIsSet && $key == '') {
-					// Add an array entry
-					$var = $instManager->variables [$varname];
-					$var [] = (is_array ( $value )) ? $value : ( string ) $value;
-					$instManager->variables [$varname] = $var;
-				} else
-					$instManager->variables [$varname] = $value;
+				//Get the original variable
+				$var = isset($instManager->variables[$varname]) ? $instManager->variables [$varname] : null; 
+				if ($key != '')
+					$instManager->variables[$varname] = self::setVarKeyInDepth($instManager, $var, $keys, $value);
+				else {
+					if ($keyIsSet && $key == '')
+						$instManager->variables[$varname][] = $value;
+					else
+						$instManager->variables[$varname] = $value;
+				}
 			}
 		}
 		
 		// Allways return the variable value
 		return $value;
 	}
+
+	//Sets a key in an array with depth defined in keys
+	static public function setVarKeyInDepth($instManager, $variable, $keys, $value) {
+		$key = (string)array_pop($keys);//isset($keys[0]) ? $keys[0] : null;
+		$key = trim($key);
+		//Expand variable in key if it starts by [$ | # |@]
+		$type = $key[0];
+		if ($type == '$' || $type == '#' || $type == '@') {
+			$eval = new \Kuink\Core\EvalExpr ();
+			$key = $eval->e ( $key, $instManager->variables, FALSE, TRUE, FALSE ); // Eval and return a value without ''
+		}		
+
+		if (count($keys) == 0) {
+			if ($key == '__new') 
+				$variable[] = $value;
+			else	
+				$variable[$key] = $value;
+			return $variable;
+		}	else {
+			if (($key == '__new') || (!isset($variable[$key]))) {
+				$new = array();
+				$result = self::setVarKeyInDepth($instManager, $new, $keys, $value);
+				if ($key == '__new')
+					$variable[] = $result;
+				else
+					$variable[$key] = $result;
+			}
+			else	
+				$variable[$key] = self::setVarKeyInDepth($instManager, $variable[$key], $keys, $value);
+			return $variable;
+		}
+	}
+
+	//Gets a key in an array with depth defined in keys
+	static public function getVarKeyInDepth($instManager, $variable, $keys) {
+		$key = (string)array_pop($keys);//isset($keys[0]) ? $keys[0] : null;
+		$key = trim($key);
+		//Expand variable in key if it starts by [$ | # |@]
+		$type = $key[0];
+		if ($type == '$' || $type == '#' || $type == '@') {
+			$eval = new \Kuink\Core\EvalExpr ();
+			$key = $eval->e ( $key, $instManager->variables, FALSE, TRUE, FALSE ); // Eval and return a value without ''
+		}		
+
+		if ((count($keys) == 0) || (!isset($variable[$key])))
+			return isset($variable[$key]) ? $variable[$key] : null;
+		else
+				return self::getVarKeyInDepth($instManager, $variable[$key], $keys);
+	}	
 }
 
 ?>
