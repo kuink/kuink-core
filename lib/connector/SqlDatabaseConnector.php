@@ -50,7 +50,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 				case 'sqlsrv':
 					$dsn = "$type:server=$server;database=$database;";
 					$options = array();//;array('Authentication'=>'SqlPassword');
-					$this->db = new \PDO ("sqlsrv:server=AC-SERVER\\IBF2014,49460;database=PRAXIS-CSCMARIA;", 'gecol', '1GeColQualquer', $options);
+					$this->db = new \PDO ("sqlsrv:server=$server;database=$database;", $user, $passwd, $options);
 					$this->db->setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION ); 
 					break;
 				default:
@@ -71,8 +71,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 private function encloseIdentifier($identifier) {
 	$enclose = '';
 	if (!isset($this->type))
-		$this->type = $this->dataSource->getParam ('type', true );
-	//kuink_mydebug('type', $this->type.'::'.$identifier);		
+		$this->type = $this->dataSource->getParam ('type', true );		
 	switch ($this->type) {
 		case 'mysql':
 			$enclose = "`$identifier`";
