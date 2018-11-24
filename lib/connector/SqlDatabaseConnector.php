@@ -31,27 +31,62 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	
 	var $db; // The PDO object containing the connection
 	var $lastAffectedRows; // The affected rows of last statement
+	var $type; //The driver type, is very used
 	
 	function connect() {
 		// kuink_mydebug(__CLASS__, __METHOD__);
 		if (! $this->db) {
-			$type = $this->dataSource->getParam ( 'type', true );
-			$server = $this->dataSource->getParam ( 'server', true );
-			$database = $this->dataSource->getParam ( 'database', true );
-			$user = $this->dataSource->getParam ( 'user', true );
-			$passwd = $this->dataSource->getParam ( 'passwd', true );
-			$options = $this->dataSource->getParam ( 'options', false );
+			$type = $this->dataSource->getParam ('type', true );
+			$server = $this->dataSource->getParam ('server', true );
+			$database = $this->dataSource->getParam ('database', true );
+			$user = $this->dataSource->getParam ('user', true );
+			$passwd = $this->dataSource->getParam ('passwd', true );
+			$options = $this->dataSource->getParam ('options', false );
+
+			$this->type = $type;
 			
-			$dsn = "$type:host=$server;dbname=$database;$options";
-			//print_object($dsn);
-			
-			// Get the connection to the database
-			$this->db = new \PDO ( $dsn, $user, $passwd );
-			$this->db->exec ( "set names utf8" ); //TODO: Handle the utf8 problem
-			$this->db->exec("SET SESSION group_concat_max_len = 1000000"); //TODO: Move this to datasource configuration			
+			//Connect with specific drivers
+			switch ($type) {
+				case 'sqlsrv':
+					$dsn = "$type:server=$server;database=$database;";
+					$options = array();//;array('Authentication'=>'SqlPassword');
+					$this->db = new \PDO ("sqlsrv:server=AC-SERVER\\IBF2014,49460;database=PRAXIS-CSCMARIA;", 'gecol', '1GeColQualquer', $options);
+					$this->db->setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION ); 
+					break;
+				default:
+					//This is the default dsn
+					$dsn = "$type:host=$server;dbname=$database;$options";
+					// Get the connection to the database
+					$this->db = new \PDO ( $dsn, $user, $passwd );
+					$this->db->exec ( "set names utf8" ); //TODO: Handle the utf8 problem
+					$this->db->exec("SET SESSION group_concat_max_len = 1000000"); //TODO: Move this to datasource configuration			
+					break;
+			}
+	
 		}
 	}
-	
+/***
+ * Depending on the database type, identifiers must be enclosed in different ways 
+ */
+private function encloseIdentifier($identifier) {
+	$enclose = '';
+	if (!isset($this->type))
+		$this->type = $this->dataSource->getParam ('type', true );
+	//kuink_mydebug('type', $this->type.'::'.$identifier);		
+	switch ($this->type) {
+		case 'mysql':
+			$enclose = "`$identifier`";
+			break;
+		case 'sqlsrv':
+			$enclose = "[$identifier]";
+			break;
+		default:
+			$enclose = $identifier;
+			break;
+	}
+	return $enclose;
+}
+
 	/**
 	 * This will receive the params of the statement and will transform
 	 * the preparedStatementXml into a PDO ready string
@@ -126,6 +161,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	 */
 	function handleMultilang($params, $type) {
 		// Handle MULTILANG
+		//kuink_mydebug('Multilang');
 		$multilangFieldsArray = array ();
 		if (isset ( $params ['_multilang_fields'] )) {
 			// Create the sql statement to update the lang keys
@@ -251,14 +287,16 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			$aclPermissions = str_replace(',', "','", $aclPermissions);
 			$aclPermissions = str_replace(' ', "", $aclPermissions);
 			$aclPermissions = "'".$aclPermissions."'";
-			
+			//kuink_mydebug('SQL:', $sql);
+			//kuink_mydebug('ACL:', $aclPermissions);
 			//Try to load the record with the permissions
 			$record = $this->load($params);
 			$canDelete = (count($record) > 0);
+			//kuink_mydebugObj('Obj:',$record);
 			//var_dump($canDelete);
 			//var_dump($params);
 		}
-  	 
+  	//kuink_mydebug('SQL:', $sql); 
 		if ($canDelete)
 			$this->executeSql($sql, $params);
 
@@ -529,6 +567,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		}
 		
 		$KUINK_TRACE [] = $sql;
+		//kuink_mydebug('SQL:', $sql);
 		
 		$records = $this->executeSql ( $sql, $params );
 		if ($pageNum != 0 || $pageSize != 0) {
@@ -619,14 +658,15 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		foreach ( $params as $key => $value ) {
 			if ($count > 0)
 				$where .= ' AND ';
-			$where .= '`' . $key . '` = ' . ':' . $key . ' ';
+			$where .= $encloseIdentifier($key) . ' = ' . ':' . $key . ' ';
 			$count ++;
 		}
 		
+		$entity = $this->encloseIdentifier($entity);
 		if ($acl == 'true')  	
-			$sql = "SELECT id_acl FROM `$entity` $where";
+			$sql = "SELECT id_acl FROM $entity $where";
 		else 
-			$sql = "SELECT count(*) FROM `$entity` $where";
+			$sql = "SELECT count(*) FROM $entity $where";
 		
 		if ($acl == 'true') {
 			$aclPermissions = str_replace(',', "','", $aclPermissions);
@@ -672,7 +712,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			if (! $ignoreNulls || ($value != '')) {
 				if ($count > 0)
 					$whereClauses .= ' AND ';
-				$whereClauses .= '`' . $key . '` = ' . ':' . $key . ' ';
+				$whereClauses .= $this->encloseIdentifier($key). ' = ' . ':' . $key . ' ';
 				$count ++;
 			}
 		}
@@ -691,7 +731,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		// Handle Multilang
 		$multilang = '';
 		if ($lang != '') {
-			$multilang = ' LEFT OUTER JOIN '.$entity.'_lang l ON (l.id = e.id AND l.lang =\''.$lang.'\')';
+			$multilang = ' LEFT OUTER JOIN '.$this->encloseIdentifier($entity.'_lang').' l ON (l.id = e.id AND l.lang =\''.$lang.'\')';
 		}
 		
 		// concatenate e. to all attributes
@@ -706,9 +746,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		}
 		
   	if ($acl == 'true')
-  		$sql = "SELECT $attributes FROM `$entity` e $multilang $where $sort"; //put the limit in the outer query not in inner query
+  		$sql = 'SELECT '.$attributes.' FROM '.$this->encloseIdentifier($entity).' e '.$multilang.' '.$where.' '. $sort; //put the limit in the outer query not in inner query
   	else
-  		$sql = "SELECT $attributes FROM `$entity` e $multilang $where $sort $limit";
+  		$sql = 'SELECT '.$attributes.' FROM '.$this->encloseIdentifier($entity).' e '.$multilang.' '.$where.' '.$sort.' '.$limit;
   	
   	if ($acl == 'true') {
   		$aclPermissions = str_replace(',', "','", $aclPermissions);
@@ -718,11 +758,13 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   		$sql = "SELECT _aclBase.* FROM (".$sql.") _aclBase 
   				WHERE _aclBase.id_acl IN 
   					(SELECT _aclc.id_acl FROM _fw_access_control_list_capability _aclc
-  					 WHERE _aclc.id_acl = _aclBase.id_acl AND _aclc.code IN (".$aclPermissions.") AND _aclc.id_person='".$this->user['id']."') ".$limit;
+						 WHERE _aclc.id_acl = _aclBase.id_acl AND _aclc.code IN (".$aclPermissions.") AND _aclc.id_person='".$this->user['id']."') ".$limit;
+			//kuink_mydebug('SQL:',$sql);
   	}
 
   	return $sql;
 	}
+
 	private function getPreparedStatementInsert($params) {
 		$entity = $this->getParam ( $params, '_entity', true );
   	$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
@@ -746,15 +788,16 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 				$fields .= ', ';
 				$values .= ', ';
 			}
-			$fields .= '`' . $key . '`';
+			$fields .= $this->encloseIdentifier($key);
 			$values .= ':' . $key;
 			$count ++;
 		}
 		
-		$sql = "INSERT INTO $entity ($fields) VALUES ($values)";
+		$sql = 'INSERT INTO '.$this->encloseIdentifier($entity).' ('.$fields.') VALUES ('.$values.')';
 		
 		return $sql;
 	}
+
 	private function getPreparedStatementDelete($params) {
 		$entity = $this->getParam ( $params, '_entity', true );
   	$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
@@ -775,12 +818,14 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		foreach ( $params as $key => $value ) {
 			if ($count > 0)
 				$where .= ' AND ';
-			$where .= '`' . $key . '` = ' . ':' . $key . ' ';
+			$where .=  $this->encloseIdentifier($key) . ' = ' . ':' . $key . ' ';
 			// $where .= $key.' = ? ';
 			$count ++;
 		}
 		
-		$sql = "DELETE FROM `$entity` WHERE $where";
+		$entity = $this->encloseIdentifier($entity);
+		$sql = "DELETE FROM $entity WHERE $where";
+		//kuink_mydebug('SQL:', $sql);
 		
 		return $sql;
 	}
@@ -812,7 +857,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 				$where .= ' AND ';
 			$onlyPks[$field] = isset($params[$field]) ? $params[$field] : null; 
 			unset ( $params [$field] );
-			$where .= '`' . $field . '` = ' . ':' . $field . ' ';
+			$where .= $this->encloseIdentifier($field) . ' = ' . ':' . $field . ' ';
 			$count ++;
 		}
 		
@@ -824,7 +869,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			
 			if ($count > 0)
 				$set .= ', ';
-			$set .= '`' . $key . '` = ' . ':' . $key . ' ';
+			$set .= $this->encloseIdentifier($key) . ' = ' . ':' . $key . ' ';
 			$count ++;
 		}
 		
@@ -837,12 +882,13 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   		$record = $this->load($onlyPks);
   		//print_object($record);
   		$canUpdate = (count($record) > 0);
-  	}
-  	
+		}
+		
+  	$entity = $this->encloseIdentifier($entity);
   	if ($canUpdate)
-  		$sql = "UPDATE `$entity` SET $set WHERE $where";
+  		$sql = "UPDATE $entity SET $set WHERE $where";
   	else
-  		$sql = "UPDATE `$entity` SET $set WHERE 1=0"; //Do nothing
+  		$sql = "UPDATE $entity SET $set WHERE 1=0"; //Do nothing
 
 		
 		return $sql;
@@ -1677,12 +1723,12 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			$sqlStatement = '';
 			// print_object($entity);
 			if ($dropTablesBeforeCreate == 'true') {
-				$sqlStatement .= 'SET FOREIGN_KEY_CHECKS = 0; DROP TABLE IF EXISTS `' . $entity ['name'] . '`; ';
+				$sqlStatement .= 'SET FOREIGN_KEY_CHECKS = 0; DROP TABLE IF EXISTS ' . $this->encloseIdentifier($entity ['name']) . '; ';
 			}
 			if ($entity ['change'] == DDChanges::ADD) {
-				$sqlStatement .= 'CREATE TABLE IF NOT EXISTS `' . $entity ['name'] . '` (';
+				$sqlStatement .= 'CREATE TABLE IF NOT EXISTS ' . $this->encloseIdentifier($entity ['name']) . ' (';
 			} else if ($entity ['change'] == DDChanges::CHANGE) {
-				$sqlStatement .= 'ALTER TABLE `' . $entity ['name'] . '` ';
+				$sqlStatement .= 'ALTER TABLE ' . $this->encloseIdentifier($entity ['name']) . ' ';
 			}
 			$sqlAttributesArray = array ();
 			$sqlPrimaryKeysArray = array ();
@@ -1690,9 +1736,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			
 			foreach ( $entity ['attributes'] as $attribute ) {
 				$sqlAttribute = '';
-				$sqlAttribute .= '`' . $attribute ['name'] . '`';
+				$sqlAttribute .= $this->encloseIdentifier($attribute ['name']);
 				if ($attribute ['newName'] != '')
-					$sqlAttribute .= ' `' . $attribute ['newName'] . '`'; // If this is set then this attribute is to be renamed to this newName
+					$sqlAttribute .= ' ' . $this->encloseIdentifier($attribute ['newName']); // If this is set then this attribute is to be renamed to this newName
 				$sqlAttribute .= ' ' . $attribute ['_physType'] . ' ';
 				if (($attribute ['_physSize'] != ''))
 					$sqlAttribute .= ' (' . $attribute ['_physSize'] . ')';
@@ -1775,7 +1821,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			
 			// Add unique indexes
 			foreach ( $sqlUniquesArray as $uk ) {
-				$sqlStatement = 'CREATE UNIQUE INDEX `ix_' . $uk . '` ON `' . $entity ['name'] . '` ( `' . $uk . '`);';
+				$sqlStatement = 'CREATE UNIQUE INDEX '.$this->encloseIdentifier('ix_' . $uk) . ' ON ' . $this->encloseIdentifier($entity ['name']) . ' ( ' . $this->encloseIdentifier($uk) . ');';
 				$sqlStatementsArray [$entity ['name'] . ':ix_' . $uk] = $sqlStatement;
 			}
 			
@@ -1787,7 +1833,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		// Add the foreign keys indexes after the table creations to avoid invalid references
 		if ($createForeignKeyIndexes == 'true') {
 			foreach ( $sqlForeignKeysArray as $fk ) {
-				$sqlStatement = 'CREATE INDEX `ix_' . $fk ['attribute'] . '` ON `' . $fk ['entity'] . '` ( `' . $fk ['attribute'] . '`);';
+				$sqlStatement = 'CREATE INDEX ' . $this->encloseIdentifier('ix_'.$fk ['attribute']) . ' ON ' . $this->encloseIdentifier($fk ['entity']) . ' ( ' . $this->encloseIdentifier($fk ['attribute']) . ');';
 				$sqlStatementsArray [$fk ['entity'] . ':ix_' . $fk ['attribute']] = $sqlStatement;
 			}
 		}
@@ -1795,7 +1841,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			foreach ( $sqlForeignKeysArray as $fk ) {
 				// ALTER TABLE Orders ADD CONSTRAINT fk_PerOrders FOREIGN KEY (P_Id) REFERENCES Persons(P_Id)
 				
-				$sqlStatement = 'ALTER TABLE  `' . $fk ['entity'] . '` ADD CONSTRAINT `fk_' . $fk ['entity'] . '_' . $fk ['attribute'] . '` FOREIGN KEY(`' . $fk ['attribute'] . '`) REFERENCES `' . $fk ['refentity'] . '`( `' . $fk ['refattr'] . '`);';
+				$sqlStatement = 'ALTER TABLE  ' . $this->encloseIdentifier($fk ['entity']) . ' ADD CONSTRAINT ' .$this->encloseIdentifier( 'fk_'.$fk ['entity'] . '_' . $fk ['attribute']) . ' FOREIGN KEY(' . $this->encloseIdentifier($fk ['attribute']) . ') REFERENCES ' . $this->encloseIdentifier($fk ['refentity']) . '( ' . $this->encloseIdentifier($fk ['refattr']) . ');';
 				$sqlStatementsArray [$fk ['entity'] . ':fk_' . $fk ['attribute']] = $sqlStatement;
 			}
 		}

@@ -19,10 +19,9 @@ class SetInstruction extends \Kuink\Core\Instruction {
 		foreach ( $instructionXmlNode->children () as $element ) {
 			$elementName = self::getAttribute ( $element, 'name', $instManager->variables, false, '' ); 
 			$elementKey = self::getAttribute ( $element, 'key', $instManager->variables, false, '' ); 
-			$key = ($elementKey != '') ? $elementKey: $elementName;
+			$key = ($elementKey != '') ? $elementKey: $elementName;	
 			if ($element->count () > 0) {
-				$newinstructionXmlNode = $element->children ();
-				$value = $instManager->executeInnerInstruction ( $newinstructionXmlNode[0] );
+				$value = $instManager->executeInnerInstruction ( $element );
 			} else {
 				$value = (string)$element;
 			}
@@ -31,7 +30,7 @@ class SetInstruction extends \Kuink\Core\Instruction {
 			else
 				$newSet [] = $value;
 		}
-		
+	
 		return $newSet;
 	}
 

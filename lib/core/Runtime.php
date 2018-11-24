@@ -1496,9 +1496,9 @@ class Runtime {
 			case 'AddControl' :
 				$result = $this->inst_addControl ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
-			case 'Set' :
-				$result = $this->inst_set ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+			//case 'Set' :
+			//	$result = $this->inst_set ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
 			case 'ForEach' :
 				$result = $this->inst_foreach ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
@@ -1622,9 +1622,9 @@ class Runtime {
 				$exit = true;
 				$result = null;
 				break;
-			case 'Lang' :
-				$result = $this->inst_Lang ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+			//case 'Lang' :
+			//	$result = $this->inst_Lang ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
 			case 'Return' :
 				$result = $this->inst_return ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 			case 'Errors' :
@@ -1723,8 +1723,10 @@ class Runtime {
 			case 'And' :
 			case 'Or' :
 			case 'Sleep' :
+			case 'Set' :
 			case 'Set.pop' :
 			case 'Set.reverse' :
+			case 'Lang' :
 			case 'Trace' :
 				$result = $this->genericInstExecute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
 				break;
