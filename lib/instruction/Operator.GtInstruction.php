@@ -3,11 +3,11 @@
 namespace Kuink\Core\Instruction;
 
 /**
- * Lt Instruction
+ * Gt Instruction
  *
  * @author paulo.tavares
  */
-class LtInstruction extends \Kuink\Core\Instruction {
+class GtInstruction extends \Kuink\Core\Instruction {
 	
 	/**
 	 * Test if first param is less then all others
@@ -28,10 +28,10 @@ class LtInstruction extends \Kuink\Core\Instruction {
 				$first = false;
 			}
 			else 
-				if (!($firstValue < $value))
-					return false;
+				if (!($firstValue > $value))
+					return 0;
 		}
-		return true;		
+		return 1;		
 	}
 }
 

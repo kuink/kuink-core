@@ -23,9 +23,9 @@ class EqInstruction extends \Kuink\Core\Instruction {
 		foreach ( $params as $value ) {
 			$lit = (string) $value;
 			if ($lit != $firstValue)
-				return false;
+				return 0;
 		}
-		return true;		
+		return 1;		
 	}
 }
 

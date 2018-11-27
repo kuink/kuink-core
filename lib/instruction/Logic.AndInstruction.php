@@ -3,14 +3,14 @@
 namespace Kuink\Core\Instruction;
 
 /**
- * Gte Instruction
+ * And Instruction
  *
  * @author paulo.tavares
  */
-class GteInstruction extends \Kuink\Core\Instruction {
+class AndInstruction extends \Kuink\Core\Instruction {
 	
 	/**
-	 * Test if first param is less then all others
+	 * Performs an AND logical operator in all params
 	 *
 	 * @see \Kuink\Core\DataSourceConnector::connect()
 	 */
@@ -18,20 +18,13 @@ class GteInstruction extends \Kuink\Core\Instruction {
 		// Get all the params
 		$params = $instManager->getParams ( $instructionXmlNode );
 
-		$first = true;
-		$firstValue = null;
-		
 		//Verify if params are less than the first
 		foreach ( $params as $value ) {
-			if ($first){
-				$firstValue = $value;
-				$first = false;
-			}
-			else 
-				if (!($firstValue >= $value))
-					return false;
+			$lit = (bool)$value;
+			if ($lit === false)
+				return 0;
 		}
-		return true;		
+		return 1;		
 	}
 }
 

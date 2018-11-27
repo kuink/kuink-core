@@ -52,6 +52,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 					$options = array();//;array('Authentication'=>'SqlPassword');
 					$this->db = new \PDO ("sqlsrv:server=$server;database=$database;", $user, $passwd, $options);
 					$this->db->setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION ); 
+					$this->db->exec ( "SET NOCOUNT ON;" );
 					break;
 				default:
 					//This is the default dsn
@@ -234,8 +235,10 @@ private function encloseIdentifier($identifier) {
 		$KUINK_TRACE [] = __METHOD__;
 		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
 		//$KUINK_TRACE [] = $params;
+
+		//kuink_mydebug('Sql', $sql);
 		
-		$this->executeSql ( $sql, $params );
+		$this->executeSql ( $sql, $params, false, true, true );
 		
 		return $this->lastAffectedRows;
 	}
@@ -580,7 +583,11 @@ private function encloseIdentifier($identifier) {
 		
 		return $output;
 	}
-	private function executeSql($sql, $params, $ignoreNulls = false, $allowEmptyParams = true) {
+
+	/***
+	 * $notSelect - For Sql Server error on update without $query->nextRowset();
+	 */
+	private function executeSql($sql, $params, $ignoreNulls = false, $allowEmptyParams = true, $notSelect=false) {
 		global $KUINK_TRACE;
 		
 		// print_object($sql);
@@ -609,15 +616,23 @@ private function encloseIdentifier($identifier) {
 		// Here we have some parameters
 		$query = $this->db->prepare ( $sql );
 		//print($sql.'<br/>');
-
 		$query->execute ( $params );
 		
 		//var_dump($sql);
 		//var_dump(count($params));
-		
+
+		// print_object($sql);
+		if (($this->type == 'sqlsrv') && $notSelect) {
+			$query->nextRowset();
+		}
+
+		$records = $query->fetchAll ( \PDO::FETCH_ASSOC );
 		
 		// Handle the errors
 		$errorInfo = $query->errorInfo ();
+		//if ($this->type == 'sqlsrv')
+		//	kuink_mydebugObj('ErrorInfo', $errorInfo);
+
 		if ($errorInfo [0] != 0) {
 			$KUINK_TRACE [] = 'Database error';
 			$KUINK_TRACE [] = $sql;
@@ -626,12 +641,11 @@ private function encloseIdentifier($identifier) {
 			$KUINK_TRACE [] = $errorInfo [2];
 			throw new \Exception ( 'Internal database error' );
 		}
-		// print_object($sql);
-		$records = $query->fetchAll ( \PDO::FETCH_ASSOC );
 		// print_object($records);
 		$this->lastAffectedRows = $query->rowCount ();
 		return $records;
 	}
+
 	private function getPreparedStatementSelectCount($params) {
 		$entity = $this->getParam ( $params, '_entity', true );
 		$attributes = $this->getParam ( $params, '_attributes', false, '*' );

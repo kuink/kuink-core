@@ -1,5 +1,6 @@
 <?php
 
+
 // This file is part of Kuink Application Framework
 //
 // Kuink Application Framework is free software: you can redistribute it and/or modify
@@ -106,6 +107,7 @@ class Runtime {
 	var $nodeconfiguration;
 	var $type;
 	var $node_xml;
+	var $nodeManager; // The object that loaded the node
 	var $display; // Display the control or return just the html?
 	var $event_raised; // Raised an event?
 	var $event_raised_name; // Name of the event that is raised
@@ -413,6 +415,7 @@ class Runtime {
 				$nodeManager = new NodeManager ( $this->app_name, $this->process_name, $this->type, $this->node_name );
 				$nodeManager->load ( true, true ); // validate the xml
 			}
+			$this->nodeManager = $nodeManager;
 			
 			// Get node attributes
 			// Set event params if they exist, in the EVENT_PARAMS general variable
@@ -1481,27 +1484,21 @@ class Runtime {
 					$result = $this->inst_var ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
 			
-			case 'ActionValue' :
-				$result = $this->inst_actionvalue ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'Execute' :
-				$result = $this->inst_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'DataAccess' :
-				$result = $this->inst_dataAccess ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'Call' :
+			//case 'ActionValue' :
+			//	$result = $this->inst_actionvalue ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
+			/*case 'Call' :
 				$result = $this->inst_call ( $nodeconfiguration, $nodexml, $instruction_xmlnode, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			case 'AddControl' :
 				$result = $this->inst_addControl ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
 			//case 'Set' :
 			//	$result = $this->inst_set ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 			//	break;
-			case 'ForEach' :
+			/*case 'ForEach' :
 				$result = $this->inst_foreach ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			case 'While' :
 				$result = $this->inst_while ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
@@ -1511,9 +1508,9 @@ class Runtime {
 			case 'For' :
 				$result = $this->inst_for ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
-			case 'Try' :
+			/*case 'Try' :
 				$result = $this->inst_try ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			case 'Redirect' :
 				$result = $this->inst_redirect ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
@@ -1521,38 +1518,37 @@ class Runtime {
 			case 'NativeCode' :
 				$result = $this->inst_nativecode ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
-			case 'GetParam' :
+			/*case 'GetParam' :
 				$result = $this->inst_gethtmlparam ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			
-			case 'UserMessage' :
+				break;*/
+			/*case 'UserMessage' :
 				$result = $this->inst_usermessage ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'Exception' :
+				break;*/
+			/*case 'Exception' :
 				$result = $this->inst_exception ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'Mail' :
+				break;*/
+			/*case 'Mail' :
 				$result = $this->inst_mail ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'GetObjectProperty' :
+				break;*/
+			/*case 'GetObjectProperty' :
 				$result = $this->inst_getobjectproperty ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'Config' :
+				break;*/
+			/*case 'Config' :
 				$result = $this->inst_getconfig ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'Print' :
+				break;*/
+			/*case 'Print' :
 				$result = $this->inst_print ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'IsNull' :
-				$result = $this->inst_isnull ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
+			//case 'IsNull' :
+			//	$result = $this->inst_isnull ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
 			case 'RaiseEvent' :
 				$result = $this->inst_raiseevent ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
 			
-			case 'Log' :
+			/*case 'Log' :
 				$result = $this->inst_log ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			case 'Action' :
 				$result = $this->inst_doaction ( $nodeconfiguration, $nodexml, $instruction_xmlnode, $instructionname, $variables, $exit );
 				break;
@@ -1568,29 +1564,25 @@ class Runtime {
 			case 'AccessControlList':
 				$result = $this->inst_accessControlList( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  $variables, $exit );
 				break;
-			case 'AccessControlList':
-				$result = $this->inst_accessControlList( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  $variables, $exit );
-				break;
 			case 'Role' :
 				$result = $this->inst_role ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
 			case 'Capability' :
 				$result = $this->inst_capability ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
-			case 'RegisterAPI' :
-				$result = $this->inst_registerapi ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+			//case 'RegisterAPI' :
+			//	$result = $this->inst_registerapi ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
 			
-			case 'Empty' :
+			/*case 'Empty' :
 				$result = $this->inst_empty ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				// var_dump($result);
-				break;
-			case 'If' :
+				break;*/
+			/*case 'If' :
 				$result = $this->inst_if ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'Expr' :
-				$result = $this->inst_expr ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
+			//case 'Expr' :
+			//	$result = $this->inst_expr ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			//	break;
 			//Case 'Eq' :
 			//	$result = $this->inst_eq ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 			//	break;
@@ -1618,18 +1610,18 @@ class Runtime {
 			//Case 'Or' :
 			//	$result = $this->inst_or ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 			//	break;
-			case 'Exit' :
+			/*case 'Exit' :
 				$exit = true;
 				$result = null;
-				break;
+				break;*/
 			//case 'Lang' :
 			//	$result = $this->inst_Lang ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 			//	break;
-			case 'Return' :
-				$result = $this->inst_return ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-			case 'Errors' :
+			//case 'Return' :
+			//	$result = $this->inst_return ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+			/*case 'Errors' :
 				$result = $this->inst_errors ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			case 'DoPDF' :
 				$result = $this->inst_dopdf ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
@@ -1643,9 +1635,9 @@ class Runtime {
 			case 'Trace' :
 				$result = $this->inst_trace ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break; */
-			case 'Xml' :
+			/*case 'Xml' :
 				$result = $this->inst_xml ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			/*
 			case 'Int' :
 				$result = $this->inst_int ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
@@ -1668,12 +1660,23 @@ class Runtime {
 			case 'Template' :
 				$result = $this->inst_template ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
-			case 'Script' :
+			/*case 'Script' :
 				$result = $this->inst_script ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			case 'Transaction' :
 				$result = $this->inst_transaction ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
+			
+			/*case 'Execute' :
+				$result = $this->inst_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+				break;*/
+			/*case 'DataAccess' :
+				$result = $this->inst_dataAccess ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
+				break;*/
+			case 'DataAccess' :
+			case 'Execute' :				
+			case 'Exit' :					
+			case 'UserMessage' :
 			case 'String' :
 			case 'String.parse' :
 			case 'String.concatenate' :
@@ -1721,6 +1724,7 @@ class Runtime {
 			case 'Lte' :	
 			case 'Not' :	
 			case 'And' :
+			case 'IsNull' :
 			case 'Or' :
 			case 'Sleep' :
 			case 'Set' :
@@ -1728,6 +1732,26 @@ class Runtime {
 			case 'Set.reverse' :
 			case 'Lang' :
 			case 'Trace' :
+			case 'RegisterAPI' :
+			case 'ActionValue' :
+			case 'Expr' :	
+			case 'Return' :	
+			case 'Xml' :
+			case 'If' :		
+			case 'ForEach' :
+			case 'Try' :
+			case 'Exception' :
+			case 'Call' :
+			case 'Control' :
+			case 'Config' :	
+			case 'GetObjectProperty' :
+			case 'Empty' :
+			case 'Print' :
+			case 'GetParam' :		
+			case 'Script' :
+			case 'Errors' :
+			case 'Mail' :
+			case 'Log' :			
 				$result = $this->genericInstExecute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
 				break;
 			default :
@@ -2148,7 +2172,6 @@ class Runtime {
 				'exception' 
 		) ))
 			throw new \Exception ( 'UserMessage: invalid type-' . $type . ' :: try type= "error" | "warning" | "information" | "success" | "Exception" ' );
-			
 			// Execute inner instructions
 		$newinstruction_xmlnode = $instruction_xmlnode->children ();
 		if (count ( $newinstruction_xmlnode ) > 0)
@@ -2414,6 +2437,7 @@ class Runtime {
 		}
 		return true;
 	}
+	
 	function inst_eval($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
 		// Eval instruction can have several childs with string instructions to execute.
 		// We need to execute all the instructions first, and then execute their value because the value are other instructions to execute.
@@ -2452,6 +2476,7 @@ class Runtime {
 		}
 		return $eval_value;
 	}
+
 	function inst_try( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  &$variables, &$exit )
 	{
 		global $KUINK_TRACE;
@@ -2701,7 +2726,6 @@ class Runtime {
 			// Execute only the 'Then' instructions
 			// print('Execute only the Then instructions');
 			$thenxml = $instruction_xmlnode->xpath ( './Then' );
-			
 			if (! $thenxml)
 				throw new \Exception ( "Instruction: $instructionname. No 'Then' block supplied to the instruction." );
 			
@@ -3246,11 +3270,12 @@ class Runtime {
 		return $result;
 	}
 	function genericInstExecute($nodeConfiguration, $nodeXml, $actionXmlNode, $instructionXmlNode, $actionName, &$variables, &$exit) {
-		$instManager = new \Kuink\Core\InstructionManager ( $this, null, $nodeConfiguration, $variables );
+		$instManager = new \Kuink\Core\InstructionManager ( $this, $this->nodeManager, $nodeConfiguration, $variables);
 		$result = $instManager->execute ( $instructionXmlNode );
 		
 		// Update the variables
 		$variables = $instManager->variables;
+		$exit = $instManager->exit;
 		
 		return $result;
 	}

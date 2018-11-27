@@ -41,6 +41,10 @@ class InstructionManager {
 		$this->variables = $variables;
 		$this->nodeManager = $nodeManager;
 		$this->nodeConfiguration = $nodeConfiguration;
+
+		//kuink_mydebugObj('NodeXml', $this->nodeXml);
+		//print_object($this->nodeXml);
+		//kuink_mydebugObj('ActionXml', $this->actionXml);
 	}
 	public function execute($instructionXmlNode) {
 		// var_dump($instructionXmlNode);
@@ -86,6 +90,38 @@ class InstructionManager {
 		
 		return $result;
 	}
+
+	/*
+	 * Executes all instruction inside
+	 */
+	public function executeInnerInstructions($instructionXmlNode) {
+		// var_dump( $instructionXmlNode->count() );
+		$result = null;
+		$instructions = $instructionXmlNode[0];
+
+		if ($instructions->count() > 0) {
+			foreach ($instructions as $newInstructionXmlNode) {
+				$result = $this->executeInstruction( $newInstructionXmlNode[0] );
+			}
+		} else
+			$result = (string)$instructions [0];
+		
+		return $result;
+	}
+
+
+	/*
+	 * Executes an insruction directly the instruction
+	 */
+	public function executeInstruction($instructionXmlNode) {		
+		$result = $this->execute ( $instructionXmlNode );
+		
+		return $result;
+	}
+
+
+
+
 	public function getParams($instructionXmlNode) {
 		$paramsXml = $instructionXmlNode->xpath ( './Param' );
 		$params = array ();
@@ -108,6 +144,7 @@ class InstructionManager {
 		
 		return ($params);
 	}
+
 	public function getAttribute($instruction, $attrName, $mandatory = 'false', $default = '') {
 		if (! $mandatory && ! isset ( $instruction [$attrName] ))
 			return $default;
@@ -118,7 +155,7 @@ class InstructionManager {
 		}
 		$attr_value = ( string ) $instruction [$attrName];
 		$type = $attr_value [0];
-		$var_name = substr ( $attr_value, 1, strlen ( $attr_value ) - 1 );
+		//$var_name = substr ( $attr_value, 1, strlen ( $attr_value ) - 1 );
 		
 		if ($type == '$' || $type == '#' || $type == '@') {
 			$eval = new \Kuink\Core\EvalExpr ();
@@ -127,6 +164,7 @@ class InstructionManager {
 			$value = $attr_value;
 		return ($value == '') ? $default : $value;
 	}
+
 	public function getVariable($name, $key=null) {
 		if ($key == null || $key == '')
 			return $this->variables [$name];

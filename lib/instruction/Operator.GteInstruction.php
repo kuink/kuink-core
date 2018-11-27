@@ -3,11 +3,11 @@
 namespace Kuink\Core\Instruction;
 
 /**
- * Gt Instruction
+ * Gte Instruction
  *
  * @author paulo.tavares
  */
-class GtInstruction extends \Kuink\Core\Instruction {
+class GteInstruction extends \Kuink\Core\Instruction {
 	
 	/**
 	 * Test if first param is less then all others
@@ -28,10 +28,10 @@ class GtInstruction extends \Kuink\Core\Instruction {
 				$first = false;
 			}
 			else 
-				if (!($firstValue > $value))
-					return false;
+				if (!($firstValue >= $value))
+					return 0;
 		}
-		return true;		
+		return 1;		
 	}
 }
 
