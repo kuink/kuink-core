@@ -57,8 +57,15 @@
       "lib/tools/securimage/securimage.php",
       "lib/tools/googleClientAPI/vendor/autoload.php",
       "lib/tools/tbs_us/tbs_class.php",
-      "lib/tools/tbs_us/tbs_plugin_opentbs.php",
-      "lib/tools/smarty/autoloader.php"
-    ]
+      "lib/tools/tbs_us/tbs_plugin_opentbs.php"
+    ],
+    "psr-4": {
+      "Kuink\\Core\\Instruction\\": "lib/instruction"
+    }
+  },
+  "require": {
+    "ext-simplexml": "*",
+    "ext-json": "*",
+    "ext-libxml": "*"
   }
 }
