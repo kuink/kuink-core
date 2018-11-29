@@ -74,7 +74,7 @@ class VarInstruction extends \Kuink\Core\Instruction {
 		}
 		
 		if ($set) {
-			$value = $instManager->executeInnerInstruction ( $instructionXmlNode );
+			$value = $instManager->executeInnerInstruction ( $instructionXmlNode, true ); //If there's an inner value directly get it as string
 		} else if ($setValue != '') {
 			// Parse the value!!
 			$eval = new \Kuink\Core\EvalExpr ();

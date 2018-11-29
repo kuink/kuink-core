@@ -1490,34 +1490,34 @@ class Runtime {
 			/*case 'Call' :
 				$result = $this->inst_call ( $nodeconfiguration, $nodexml, $instruction_xmlnode, $instructionname, $variables, $exit );
 				break;*/
-			case 'AddControl' :
+			/*case 'AddControl' :
 				$result = $this->inst_addControl ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			//case 'Set' :
 			//	$result = $this->inst_set ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 			//	break;
 			/*case 'ForEach' :
 				$result = $this->inst_foreach ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;*/
-			case 'While' :
+			/*case 'While' :
 				$result = $this->inst_while ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'Repeat' :
+				break;*/
+			/*case 'Repeat' :
 				$result = $this->inst_repeat ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'For' :
+				break;*/
+			/*case 'For' :
 				$result = $this->inst_for ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			/*case 'Try' :
 				$result = $this->inst_try ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;*/
-			case 'Redirect' :
+			/*case 'Redirect' :
 				$result = $this->inst_redirect ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			
-			case 'NativeCode' :
+			/*case 'NativeCode' :
 				$result = $this->inst_nativecode ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			/*case 'GetParam' :
 				$result = $this->inst_gethtmlparam ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;*/
@@ -1542,34 +1542,33 @@ class Runtime {
 			//case 'IsNull' :
 			//	$result = $this->inst_isnull ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 			//	break;
-			case 'RaiseEvent' :
+			/*case 'RaiseEvent' :
 				$result = $this->inst_raiseevent ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			
+				break;*/
 			/*case 'Log' :
 				$result = $this->inst_log ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;*/
-			case 'Action' :
+			/*case 'Action' :
 				$result = $this->inst_doaction ( $nodeconfiguration, $nodexml, $instruction_xmlnode, $instructionname, $variables, $exit );
-				break;
-			case 'Eval' :
+				break;*/
+			/*case 'Eval' :
 				// Custom code execution
 				$result = $this->inst_eval ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'Permissions' :
+				break;*/
+			/*case 'Permissions' :
 				$result = $this->inst_permissions ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				if ($result == 0)
 					throw new \Exception ( 'No permission!' );
-				break;
-			case 'AccessControlList':
+				break;*/
+			/*case 'AccessControlList':
 				$result = $this->inst_accessControlList( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname,$instructionname,  $variables, $exit );
-				break;
-			case 'Role' :
+				break;*/
+			/*case 'Role' :
 				$result = $this->inst_role ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'Capability' :
+				break;*/
+			/*case 'Capability' :
 				$result = $this->inst_capability ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			//case 'RegisterAPI' :
 			//	$result = $this->inst_registerapi ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 			//	break;
@@ -1622,15 +1621,15 @@ class Runtime {
 			/*case 'Errors' :
 				$result = $this->inst_errors ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;*/
-			case 'DoPDF' :
+			/*case 'DoPDF' :
 				$result = $this->inst_dopdf ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'DoPDF_v2' :
+				break;*/
+			/*case 'DoPDF_v2' :
 				$result = $this->inst_dopdfV2 ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
-			case 'DoPDFByTemplate' :
+				break;*/
+			/*case 'DoPDFByTemplate' :
 				$result = $this->inst_dopdfByTemplate ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			/*
 			case 'Trace' :
 				$result = $this->inst_trace ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
@@ -1657,15 +1656,15 @@ class Runtime {
 				$result = $this->inst_sleep ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;
 				*/
-			case 'Template' :
+			/*case 'Template' :
 				$result = $this->inst_template ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			/*case 'Script' :
 				$result = $this->inst_script ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
 				break;*/
-			case 'Transaction' :
+			/*case 'Transaction' :
 				$result = $this->inst_transaction ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
-				break;
+				break;*/
 			
 			/*case 'Execute' :
 				$result = $this->inst_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $variables, $exit );
@@ -1751,7 +1750,23 @@ class Runtime {
 			case 'Script' :
 			case 'Errors' :
 			case 'Mail' :
-			case 'Log' :			
+			case 'Log' :		
+			case 'Action' :
+			case 'RaiseEvent' :
+			case 'Permissions' :
+			case 'Transaction' :
+			case 'AccessControlList':	
+			case 'Role' :
+			case 'Capability' :
+			case 'Eval' :
+			case 'NativeCode' :
+			case 'While' :
+			case 'For' :
+			case 'Repeat' :	
+			case 'Redirect' :
+			case 'Template' :		
+			case 'DoPDF_v2' :	
+			case 'AddControl' :									
 				$result = $this->genericInstExecute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
 				break;
 			default :
@@ -1794,6 +1809,7 @@ class Runtime {
 		
 		return $value;
 	}
+
 	function inst_addControl($nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, &$variables, &$exit) {
 		$type = ( string ) $this->get_inst_attr ( $instruction_xmlnode, 'control-type', $variables, true );
 		$name = ( string ) $this->get_inst_attr ( $instruction_xmlnode, 'name', $variables, true );

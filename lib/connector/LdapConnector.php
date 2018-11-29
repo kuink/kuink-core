@@ -472,9 +472,10 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		$return = array ();
 		foreach ( $result as $row ) {
 			$returnRow = array ();
-			foreach ( $row as $key => $value )
-				if (($key != 'count') && ($key != 'objectclass') && ((is_array ( $value )) || ($key == 'dn')))
-					$returnRow [$key] = is_array ( $value ) ? ( string ) $value [0] : ( string ) $value;
+			if (is_array($row))
+				foreach ( $row as $key => $value )
+					if (($key != 'count') && ($key != 'objectclass') && ((is_array ( $value )) || ($key == 'dn')))
+						$returnRow [$key] = is_array ( $value ) ? ( string ) $value [0] : ( string ) $value;
 			if (! empty ( $returnRow ))
 				$return [] = $returnRow;
 		}
@@ -502,6 +503,7 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		
 		$this->connect ();
 		// Build or complete the query
+		$query = '';
 		$queryParams = array ();
 		foreach ( $params as $key => $value ) {
 			if ($key [0] != '_') {
@@ -517,7 +519,10 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 			
 			$query .= ')';
 			
-			$params ['_query'] .= $query;
+			if (isset($params ['_query']))
+				$params ['_query'] .= $query;
+			else
+				$params ['_query'] = $query;
 		}
 		// print_object($params);
 		// die();

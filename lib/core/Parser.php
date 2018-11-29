@@ -151,7 +151,7 @@ class EvalExpr {
 		if (is_string ( $return ))
 			$return = addslashes ( $return );
 		
-		if ((! is_numeric ( $return ) && $stringIsolation && ($return !== null)) || ($this->is_octal("$return")))
+		if ((! is_numeric ( $return ) && $stringIsolation && ($return !== null)) || (!is_array($return) && $this->is_octal("$return")))
 			$return = "'" . (is_array($return) ? '__array' : (string)$return) . "'";
 		else if ($return === null)
 			$return = 'null';

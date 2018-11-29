@@ -69,6 +69,9 @@ class TryInstruction extends \Kuink\Core\Instruction {
 			$KUINK_TRACE[] = 'Exception: '.$e->getMessage();			
 			//print_object(get_class($e));
 			//print_object($e->getPrevious());
+
+			$instManager->variables['EXCEPTION']['name'] = 'Generic';
+			$instManager->variables['EXCEPTION']['message'] = (string)$e->getMessage();
 			
 			$catchXml = $instructionXmlNode->xpath('./Catch');
 			if (!$catchXml || count($catchXml) == 0) {

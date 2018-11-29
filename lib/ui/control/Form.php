@@ -682,7 +682,7 @@ class Form extends Control {
 				$datasource = isset ( $child ['datasource'] ) ? ( string ) $child ['datasource'] : '';
 				$datasourceParams = isset ( $child ['datasourceparams'] ) ? ( string ) $child ['datasourceparams'] : '';
 				
-				$oldAttrValue = ( string ) $attributes [$ruleAttr];
+				$oldAttrValue = isset($attributes [$ruleAttr]) ? ( string ) $attributes [$ruleAttr] : '';
 				if ($ruleRunAt == 'client') {
 					$clientCondition = $this->conditionToJavascript($ruleCondition ,($theme=='default') ? $this->name : $this->guid);
 					if ($datasource != '') {
@@ -906,7 +906,7 @@ class Form extends Control {
 			if ($datasourcename != '')
 				// Store this field to be bind when setting the data
 				// This is usefull to when the bind as the id but we want to show the bind value
-				$datasourceparams = ($datasourceparams != '') ? '('.$datsourceparams.')': $datsourceparams;
+				$datasourceparams = ($datasourceparams != '') ? '('.$datasourceparams.')': $datasourceparams;
 				$this->static_bind [$id] = $datasourcename.$datasourceparams . '|' . $bindid . '|' . $bindvalue;
 			$this->static_fields [$id] = true;
 			
@@ -1434,8 +1434,11 @@ class Form extends Control {
 			$dataSourceParams = isset($clientRule ['datasourceparams']) ? $clientRule ['datasourceparams'] : '';
 			$bindId = isset($clientRule ['bindid']) ? $clientRule ['bindid'] : '';
 			$bindValue = isset($clientRule ['bindvalue']) ? $clientRule ['bindvalue'] : '';
+			$ruleCondition = isset($clientRule ['condition']) ? $clientRule ['condition'] : '';
+			$ruleValueTrue = isset($clientRule ['valueTrue']) ? $clientRule ['valueTrue'] : '';
+			$ruleValueFalse = isset($clientRule ['valueFalse']) ? $clientRule ['valueFalse'] : '';
 			
-			$rules [] = '{ "field": "' . $clientRule ['field'] . '", "condition": "' . $clientRule ['condition'] . '", "attr": "' . $clientRule ['attr'] . '", "value_true":"' . $clientRule ['valueTrue'] . '", "value_false": "' . $clientRule ['valueFalse'] . '", "datasource": "' . $dataSource  . '", "bindid": "' . $bindId . '", "bindvalue": "' . $bindValue . '", "datasourceparams":' . json_encode ( $dataSourceParams ) . '}';
+			$rules [] = '{ "field": "' . $clientRule ['field'] . '", "condition": "' . $ruleCondition . '", "attr": "' . $clientRule ['attr'] . '", "value_true":"' . $ruleValueTrue . '", "value_false": "' . $ruleValueFalse . '", "datasource": "' . $dataSource  . '", "bindid": "' . $bindId . '", "bindvalue": "' . $bindValue . '", "datasourceparams":' . json_encode ( $dataSourceParams ) . '}';
 		}
 		$jsonRules = '[' . implode ( ',', $rules ) . ']';
 		return $jsonRules;

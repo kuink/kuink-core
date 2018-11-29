@@ -256,12 +256,12 @@ class Core {
 			
 			case "tmp" :
 				$pathName = $KUINK_CFG->dataRoot . '/kuink/files/tmp/' . $guid;
-				
 				if (file_exists ( $pathName ) and ! is_dir ( $pathName )) {
 					ob_clean ();
-					$mimeType = mime_content_type($filePath);
+					$mimeType = mime_content_type($pathName);
 					header( 'Content-Type: ' . $mimeType);
 					header ( 'Content-Length: ' . filesize ( $pathName ) );
+					header('Content-Disposition: attachment; filename="'.$guid);
 					readfile ( $pathName );
 				} else {
 					header ( 'HTTP/1.0 404 not found' );
@@ -275,6 +275,7 @@ class Core {
 					$mimeType = mime_content_type($pathName);
 					header('Content-Type: '.$mimeType);
 					header('Content-Length: '.filesize($pathName));
+					header('Content-Disposition: attachment; filename="'.$guid);					
 					readfile($pathName);	
 				} else {
 					header('HTTP/1.0 404 not found');

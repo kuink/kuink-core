@@ -79,14 +79,14 @@ class InstructionManager {
 	/*
 	 * Executes the first instruction inside
 	 */
-	public function executeInnerInstruction($instructionXmlNode) {
+	public function executeInnerInstruction($instructionXmlNode, $innerValueHasString=false) {
 		// var_dump( $instructionXmlNode->count() );
 		$result = null;
 		if ($instructionXmlNode->count () > 0) {
 			$newInstructionXmlNode = $instructionXmlNode->children ();
 			$result = $this->execute ( $newInstructionXmlNode [0] );
 		} else
-			$result = $instructionXmlNode [0];
+			$result = ($innerValueHasString) ? (string) $instructionXmlNode [0] : $instructionXmlNode [0];
 		
 		return $result;
 	}
@@ -119,10 +119,32 @@ class InstructionManager {
 		return $result;
 	}
 
+	public function getCustomParams($instructionXmlNode, $customName) {
+		$paramsXml = $instructionXmlNode->xpath ( './'.$customName );
+		$params = array ();
+		
+		foreach ( $paramsXml as $param ) {
+			$paramName = isset ( $param ['name'] ) ? ( string ) $param ['name'] : '';
+			if ($param->count () > 0) {
+				$value = $this->executeInnerInstruction ( $param );
+			} else {
+				$value = $param [0];
+				if (is_a ( $value, '\SimpleXMLElement' ))
+					$value = ( string ) $value;
+			}
+			// var_dump($value);
+			if ($paramName == '')
+				$params [] = $value;
+			else
+				$params [$paramName] = $value;
+		}
+
+		return ($params);
+	}
 
 
 
-	public function getParams($instructionXmlNode) {
+	public function getParams($instructionXmlNode, $includeParamsAttribute=false) {
 		$paramsXml = $instructionXmlNode->xpath ( './Param' );
 		$params = array ();
 		
@@ -141,7 +163,18 @@ class InstructionManager {
 			else
 				$params [$paramName] = $value;
 		}
-		
+
+		//Join the params defined in params atribute if define
+		if ($includeParamsAttribute) {
+			//Join the params defined in params atribute if defined				
+			$paramsVar = $this->getAttribute($instructionXmlNode, 'params', false, null); //isset ( $instructionXmlNode ['params'] ) ? ( string ) $instructionXmlNode ['params'] : '';
+			if ($paramsVar != null) {
+				$var = $this->variables [$paramsVar];
+				foreach ( $var as $paramKey => $paramValue )
+					$params ["$paramKey"] = $paramValue;
+			}
+		}
+
 		return ($params);
 	}
 
@@ -150,20 +183,33 @@ class InstructionManager {
 			return $default;
 		
 		if ($mandatory && ! isset ( $instruction [$attrName] )) {
-			$inst_name = $instruction->getname ();
-			throw new \Exception ( 'Instruction "' . $inst_name . '" needs attribute "' . $attrName . '" which was not supplied.' );
+			$instName = $instruction->getname ();
+			throw new \Exception ( 'Instruction "' . $instName . '" needs attribute "' . $attrName . '" which was not supplied.' );
 		}
-		$attr_value = ( string ) $instruction [$attrName];
-		$type = $attr_value [0];
-		//$var_name = substr ( $attr_value, 1, strlen ( $attr_value ) - 1 );
+		$attrValue = ( string ) $instruction [$attrName];
+		$type = $attrValue [0];
+		//$var_name = substr ( $attrValue, 1, strlen ( $attrValue ) - 1 );
 		
 		if ($type == '$' || $type == '#' || $type == '@') {
 			$eval = new \Kuink\Core\EvalExpr ();
-			$value = $eval->e ( $attr_value, $this->variables, FALSE, TRUE, FALSE ); // Eval and return a value without ''
+			$value = $eval->e ( $attrValue, $this->variables, FALSE, TRUE, FALSE ); // Eval and return a value without ''
 		} else
-			$value = $attr_value;
-		return ($value == '') ? $default : $value;
+			$value = $attrValue;
+		return ($value == '') ? $default : trim($value);
 	}
+
+	public function getAttributeRaw($instruction, $attrName, $mandatory = 'false', $default = '') {
+		if (! $mandatory && ! isset ( $instruction [$attrName] ))
+			return $default;
+		
+		if ($mandatory && ! isset ( $instruction [$attrName] )) {
+			$instName = $instruction->getname ();
+			throw new \Exception ( 'Instruction "' . $instName . '" needs attribute "' . $attrName . '" which was not supplied.' );
+		}
+		$attrValue = ( string ) $instruction [$attrName];
+		return trim($attrValue);
+	}
+
 
 	public function getVariable($name, $key=null) {
 		if ($key == null || $key == '')

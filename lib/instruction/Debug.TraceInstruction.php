@@ -18,7 +18,7 @@ class TraceInstruction extends \Kuink\Core\Instruction {
 		global $KUINK_MANUAL_TRACE;
 		// $content= $instruction_xmlnode[0];
 		$label = ( string ) self::getAttribute ( $instructionXmlNode, 'label', $instManager->variables, false, '' );
-		$content = $instManager->executeInnerInstruction ( $instructionXmlNode );
+		$content = (string) $instManager->executeInnerInstruction ( $instructionXmlNode );
 
 		$msg = '';
 		if ($label != '')
