@@ -7,12 +7,7 @@ namespace Kuink\Core;
  *
  * @author paulo.tavares
  */
-class DataSourceContext {
-	const FRAMEWORK = 'framework.xml';
-	const APPLICATION = 'application.xml';
-	const DB = 'database - company';
-	const NODE = 'node';
-}
+
 class DataSourceManager {
 	static public function setupDataSources($application) {
 		// global $KUINK_DATASOURCES;

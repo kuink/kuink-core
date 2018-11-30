@@ -81,6 +81,9 @@ class InstructionManager {
 	 */
 	public function executeInnerInstruction($instructionXmlNode, $innerValueHasString=false) {
 		// var_dump( $instructionXmlNode->count() );
+		if (is_array($instructionXmlNode))
+			$instructionXmlNode = $instructionXmlNode[0];
+			
 		$result = null;
 		if ($instructionXmlNode->count () > 0) {
 			$newInstructionXmlNode = $instructionXmlNode->children ();

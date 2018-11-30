@@ -277,9 +277,9 @@ class Smarty extends \Smarty {
 			$smarty_params [$key] = $value;
 		
 		$smarty->assign ( $smarty_params );
-		
-		$template_name = ($skeleton == '') ? $type . '.tpl' : $type . '_' . $skeleton . '.tpl';
-		// kuink_mydebug( 'HEY', __DIR__.'/../../theme/'.$this->theme.'/ui/control/'.$template_name );
+		//kuink_mydebug( 'Skeleton', $params['_skeleton'] );		
+		$template_name = ($params['_skeleton'] == '') ? $type . '.tpl' : $type . '_' . $params['_skeleton'] . '.tpl';
+		//kuink_mydebug( 'HEY', __DIR__.'/../../theme/'.$this->theme.'/ui/control/'.$template_name );
 		
 		//$output = $smarty->fetch ( __DIR__ . '/../../theme/' . $this->theme . '/ui/control/' . $template_name );
 		$output = $smarty->fetch ( __DIR__ . '/../../../../'.$KUINK_CFG->bridge.'/theme/' . $this->themeName . '/ui/control/' . $template_name );

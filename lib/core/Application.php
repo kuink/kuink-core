@@ -17,53 +17,6 @@
 namespace Kuink\Core;
 
 /**
- * Enum values used for Url get params
- * 
- * @author ptavares
- *        
- */
-class UrlParam {
-	const PROCESS = 'startuc';
-	const NODE = 'startnode';
-	const EVENT = 'event';
-	const ACTION = 'action';
-	const ACTION_VALUE = 'actionvalue';
-	const TRACE = 'trace';
-	const ROLE = 'role';
-	const DOC = 'doc';
-	const MODAL = 'modal';
-}
-
-/**
- * Enum values used for nodeconfiguration keys
- * 
- * @author ptavares
- *        
- */
-class NodeConfKey {
-	const APPLICATION = 'customappname';
-	const PROCESS = 'master_process_name';
-	const NODE = 'startnode';
-	const ACTION = 'action';
-	const ACTION_VALUE = 'actionvalue';
-	const EVENT = 'event';
-	const BASEURL = 'baseurl';
-	const CONFIG = 'config';
-	const ROLES = 'roles';
-	const CAPABILITIES = 'capabilities';
-	const INSTANCE_CONFIG_RAW = 'instance_config_raw';
-	const ACTION_PERMISSIONS = 'actionPermissions';
-	const NODE_ROLES = 'nodeRoles';
-	
-	// Description of the referal node
-	const REF_APPLICATION_DESC = 'REF_APPLICATION_DESC';
-	const REF_PROCESS_DESC = 'REF_PROCESS_DESC';
-	const REF_NODE_DESC = 'REF_NODE_DESC';
-	const USER = 'USER';
-	const SYSTEM = 'SYSTEM';
-}
-
-/**
  * Kuink application
  * 
  * @author ptavares

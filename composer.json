@@ -2,7 +2,7 @@
   "name": "kuink/kuink-core",
   "description": "Kuink Core Package",
   "minimum-stability": "stable",
-  "license": "MIT",
+  "license": "AGPLV3",
   "authors": [
     {
       "name": "Kuink Team",
@@ -60,7 +60,8 @@
       "lib/tools/tbs_us/tbs_plugin_opentbs.php"
     ],
     "psr-4": {
-      "Kuink\\Core\\Instruction\\": "lib/instruction"
+      "Kuink\\Core\\Instruction\\": "lib/instruction",
+      "Kuink\\Core\\DataSourceConnector\\": "lib/connector"
     }
   },
   "require": {

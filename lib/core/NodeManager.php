@@ -22,19 +22,6 @@ use Kuink\Core\Exception\NodeLoad;
 use Kuink\Core\Exception\NodeMustBeLoadedException;
 use Kuink\Core\Exception\InvalidName;
 
-class NodeType {
-	const DATA_DEFINITION = 'dd';
-	const API = 'api';
-	const NODE = 'nodes';
-	const DATA_ACCESS = 'dataaccess';
-}
-class NodeObject {
-	const DOMAIN = '/Node/Domains/Domain';
-	const TEMPLATE = '/Node/Templates/Template';
-	const ENTITY_RECURSIVE = '/Node/Entities//Entity';
-	const SCREEN = '/Node/Screens/Screen';
-}
-
 /**
  * Handles all opening stuff
  * 
