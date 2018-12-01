@@ -40,7 +40,7 @@ $KUINK_CFG->wwwRoot = $wwwroot;
 $KUINK_CFG->dirRoot = $KUINK_BRIDGE_CFG->dirRoot;
 $KUINK_CFG->kuinkRoot = $KUINK_BRIDGE_CFG->kuinkRoot; // 'mod/kuink/';
 //$KUINK_CFG->themeRoot = 'kuink-core/';
-$KUINK_CFG->themeRoot = ''; //defaults to the bridge... let the bridge control the theme
+$KUINK_CFG->themeRoot = $KUINK_BRIDGE_CFG->themeRoot;; //defaults to the bridge... let the bridge control the theme
 $KUINK_CFG->apiUrl = $KUINK_CFG->kuinkRoot.'/api.php?idcontext=' . $contextId;
 $KUINK_CFG->streamUrl = $KUINK_CFG->wwwRoot.'stream.php';
 $KUINK_CFG->streamFileUrl = $KUINK_CFG->streamUrl.'?type=file&guid=';
@@ -75,7 +75,7 @@ switch ($KUINK_CFG->environment) {
 		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';		
 		$KUINK_CFG->enableEmailSending = false;
 		$KUINK_CFG->useGlobalACL = false;
-		$KUINK_CFG->displayNativeErrors = false;		
+		$KUINK_CFG->displayNativeErrors = true;		
 		break;
 	case 'test' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
@@ -95,7 +95,7 @@ switch ($KUINK_CFG->environment) {
 		throw new \Exception ( 'Invalid environment' . $KUINK_CFG->environment, 1 );
 }
 
-$KUINK_CFG->imageRoot = $KUINK_CFG->dirRoot . $KUINK_CFG->kuinkRoot . $KUINK_CFG->themeRoot . '/theme/' . $KUINK_CFG->theme . '/img/';
+$KUINK_CFG->imageRoot = $KUINK_CFG->dirRoot .'/'. $KUINK_CFG->kuinkRoot .'/'.$KUINK_CFG->themeRoot . '/theme/' . $KUINK_CFG->theme . '/img/';
 
 $KUINK_CFG->photoRemote = $KUINK_CFG->imageRemote . 'photo/';
 

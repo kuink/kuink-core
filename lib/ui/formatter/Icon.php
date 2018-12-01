@@ -33,12 +33,11 @@ class Icon extends Formatter {
 		// kuink_mydebug($value, $icon);
 		
 		$file = $KUINK_CFG->themeRoot . 'theme/' . $KUINK_CFG->theme . '/img/' . $icon;
-		
 		// Check if the icon exists...
-		if (file_exists ( $file ))
+		//if (file_exists ( $file ))
 			$icon = $file;
-		else
-			$icon = $KUINK_CFG->themeRoot . 'theme/' . $KUINK_CFG->theme . '/img/default.png';
+		//else
+		//	$icon = $KUINK_CFG->themeRoot . 'theme/' . $KUINK_CFG->theme . '/img/default.png';
 			
 			/*
 		 * //Check if the icon exists...

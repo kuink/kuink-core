@@ -32,10 +32,12 @@ $KUINK_APPLICATION = null; // The Application object to run
  *        
  */
 class Core {
-	function __construct($bridgeConfig, $layoutAdapter) {
+	function __construct($bridgeConfig, $layoutAdapter, $kuinkCfg=null) {
 		global $KUINK_CFG, $KUINK_LAYOUT, $KUINK_TRACE, $KUINK_MANUAL_TRACE, $KUINK_DATABASES, $KUINK_DATASOURCES, $KUINK_TRANSLATION, $KUINK_APPLICATION;
 
 		date_default_timezone_set ( 'UTC' );
+		if ($kuinkCfg != null)
+			$KUINK_CFG = $kuinkCfg;
 		$KUINK_LAYOUT = $layoutAdapter;
 	}
 
@@ -179,11 +181,14 @@ class Core {
 	 */
 	public function stream($type, $guid) {
 		global $KUINK_CFG, $KUINK_LAYOUT, $KUINK_TRACE, $KUINK_MANUAL_TRACE, $KUINK_DATABASES, $KUINK_DATASOURCES, $KUINK_TRANSLATION, $KUINK_APPLICATION;
-		
+
 		switch ($type) {
 			case "photo" :
 				$file = $guid . '.jpg';
 				$base = $KUINK_CFG->imageRoot . $type . '/';
+
+				var_dump($KUINK_CFG->imageRoot);
+
 				$baseRP = realpath ( $base );
 				$path = realpath ( $base . $file );
 				$pos = strpos ( $path . '/', $baseRP );

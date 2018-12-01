@@ -1,13 +1,15 @@
 <?php
+global $KUINK_INCLUDE_PATH, $KUINK_CFG;
+//var_dump($KUINK_INCLUDE_PATH);
 require_once ($KUINK_INCLUDE_PATH . 'kuink_config.php');
-require_once ('locallib.php');
+//require_once ('locallib.php');
 
 spl_autoload_register(function ($class) {
     // project-specific namespace prefix
     global $KUINK_INCLUDE_PATH;
 
     require_once ($KUINK_INCLUDE_PATH . 'kuink_config.php');
-  
+
     // Kuink::Core Adapters
     foreach ( glob ( $KUINK_INCLUDE_PATH . 'lib/adapter/layout/*.php' ) as $filename ) {
       include_once $filename;
