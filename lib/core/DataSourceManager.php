@@ -19,17 +19,18 @@ class DataSourceManager {
 		$dataAccess = new \Kuink\Core\DataAccess ( 'getAll', 'framework', 'datasource', '' );
 		$params ['_entity'] = 'fw_datasource';
 		$params ['id_company'] = $idCompany;
+		$params ['is_active'] = 1;
 
 		$resultset = $dataAccess->execute ( $params );
-	
+
 		foreach ( $resultset as $datasource ){
+			//kuink_mydebugObj($datasource ['xml_definition']);
 			self::addDataSourceXmlDefinition ( $datasource ['xml_definition'], DataSourceContext::DB );
 		}
 	
-		//var_dump($KUINK_DATASOURCES);
-		
 		// Setup company specific datasources
 	}
+
 	static public function setupFrameworkDS($application) {		
 		$fw = $application->getFrameworkXml ();
 
@@ -41,6 +42,7 @@ class DataSourceManager {
 			
 		return;
 	}
+	
 	static public function setupApplicationDS($application) {
 		$app = $application->getApplicationXml ();
 		
@@ -70,12 +72,13 @@ class DataSourceManager {
 		$params ['_entity'] = 'fw_datasource';
 		$params ['code'] = $code;
 		$params ['id_company'] = $idCompany;
+		$params ['is_active'] = 1;
 		
 		$resultset = $dataAccess->execute ( $params );
 		
 		if (! $resultset)
 			throw new \Exception ( 'Cannot load DataSource ' . $code . ' for company ' . $idCompany );
-		
+		//kuink_mydebugObj('Datasources', $resultset);
 		DataSourceManager::addDataSourceXmlDefinition ( $resultset ['xml_definition'], $context );
 		
 		return;

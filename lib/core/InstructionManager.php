@@ -172,7 +172,7 @@ class InstructionManager {
 			//Join the params defined in params atribute if defined				
 			$paramsVar = $this->getAttribute($instructionXmlNode, 'params', false, null); //isset ( $instructionXmlNode ['params'] ) ? ( string ) $instructionXmlNode ['params'] : '';
 			if ($paramsVar != null) {
-				$var = $this->variables [$paramsVar];
+				$var = isset($this->variables [$paramsVar]) ? $this->variables [$paramsVar] : array();
 				foreach ( $var as $paramKey => $paramValue )
 					$params ["$paramKey"] = $paramValue;
 			}

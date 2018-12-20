@@ -1150,9 +1150,13 @@ class Runtime {
 					$uielem->position = $this->force_position;
 				}
 				
+				
+				//Check to see if this is a duplicated control
+				if (isset($this->current_controls [$uielem->name]))
+					throw new \Exception('Duplicated control '.$uielem->type.'::'.$uielem->name.' in screen '.$screen_name);
 				// Load in $variables all the objects
 				$variables [$uielem_name] = $uielem;
-				$this->current_controls [] = $uielem;
+				$this->current_controls [$uielem->name] = $uielem;
 			}
 		}
 
@@ -1259,7 +1263,7 @@ class Runtime {
 				// We want jus this control
 				$refreshControlName = isset ( $_GET ['control'] ) ? $_GET ['control'] : null;
 				if (isset($this->current_controls))
-				foreach ( $this->current_controls as $uielem ) {
+				foreach ( $this->current_controls as $uielem ) {					
 					$currentNode = ProcessOrchestrator::getCurrentNode ();
 					$rwx = $currentNode->rwx;
 					$uielem->applyRWX ( $rwx );
@@ -1270,7 +1274,7 @@ class Runtime {
 							// var_dump($uielem->name .' '. $uielem->type);
 							if ($refreshControlName == $uielem->name)
 								$uielem->setRefreshing ();
-							
+
 							$uielem->display ( true );
 						}
 					} else // Collect the html

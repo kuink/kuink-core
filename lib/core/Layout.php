@@ -148,6 +148,13 @@ class Layout {
 	public function setRefresh($actionUrl){
 		$this->layoutAdapter->setRefresh($actionUrl);
 	}
+	public function getApplicationTemplate($application, $process, $templateName, $data) {
+		$this->layoutAdapter->getApplicationTemplate($application, $process, $templateName, $data);
+	}
+	public function expandTemplate($templateCode, $data) {
+		$this->layoutAdapter->expandTemplate($templateCode, $data);
+	}
+
 }
 
 ?>

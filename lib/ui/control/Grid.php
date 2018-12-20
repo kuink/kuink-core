@@ -398,8 +398,9 @@ class Grid extends Control {
 	 * @param unknown_type $field_properties        	
 	 */
 	function addColumn($columnProperties) {
+		//kuink_mydebugObj($columnProperties);
 		$this->dynamicColumns [] = $columnProperties;
-		//print_object($this->dynamicColumns);		
+		
 		return;
 	}
 	

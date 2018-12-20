@@ -119,7 +119,7 @@ class EvalExpr {
 	 * @param unknown_type $key        	
 	 * @param unknown_type $session        	
 	 */
-	function getVariableValueExt($name, $key, $varType, $variables, $stringIsolation = true) {
+	function getVariableValueExt($name, $key, $varType, $variables, $stringIsolation = true, $ignoreOctal = false) {
 		global $SESSION;
 		
 		$isFunction = strpos ( $key, '__' );
@@ -151,7 +151,7 @@ class EvalExpr {
 		if (is_string ( $return ))
 			$return = addslashes ( $return );
 		
-		if ((! is_numeric ( $return ) && $stringIsolation && ($return !== null)) || (!is_array($return) && $this->is_octal("$return")))
+		if ((! is_numeric ( $return ) && $stringIsolation && ($return !== null)) || (!is_array($return) && $this->is_octal("$return") && !$ignoreOctal))
 			$return = "'" . (is_array($return) ? '__array' : (string)$return) . "'";
 		else if ($return === null)
 			$return = 'null';
@@ -169,9 +169,10 @@ class EvalExpr {
 	 * @param type $string
 	 *        	- return directly the value after variables substitution
 	 *        	* @param type $stringIsolation - Strings will be ''
+	 * @param type $ignoreOctal - If a number starts with 0 but it will procesed as a string ignore, don't return the '0xx' with ''
 	 * @return type
 	 */
-	function e($expr, $variables, $boolean = false, $string = false, $stringIsolation = true) {
+	function e($expr, $variables, $boolean = false, $string = false, $stringIsolation = true, $ignoreOctal = false) {
 		global $KUINK_TRACE;
 		
 		$KUINK_TRACE [] = 'EvalExpr: ' . $expr;
@@ -202,7 +203,7 @@ class EvalExpr {
 			
 			// print($type.'»'.$varType.'::'.$matches[0].'::'.$varKey);
 			
-			$varValue = $this->getVariableValueExt ( $varName, $varKey, $varType, $variables, $stringIsolation );
+			$varValue = $this->getVariableValueExt ( $varName, $varKey, $varType, $variables, $stringIsolation, $ignoreOctal );
 			$KUINK_TRACE [] = "VarType:$varType  name:$varName  key:$varKey   value:".(is_array($varValue) ? '' : (string)$varValue);
 			$expr = str_replace ( $matches [0], (is_array($varValue) ? '' : (string)$varValue), $expr );
 			$expr2 = str_replace ( $matches [0], '', $expr2 );

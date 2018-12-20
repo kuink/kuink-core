@@ -36,7 +36,7 @@ class Application {
 	public $appManager; // Application manager
 	public $nodeconfiguration;
 	function __construct($name, $lang, $config) {
-		global $KUINK_CFG, $KUINK_LAYOUT;
+		global $KUINK_CFG;
 		
 		// If it's not a restart and there's an application in the stack, the use it
 		// Get the application to execute from the top of process stack
@@ -402,7 +402,7 @@ class Application {
 	 * It will get all necessary params
 	 */
 	function run($node = null, $functionName = null, $function_params = null) {
-		global $KUINK_CFG, $SESSION, $KUINK_LAYOUT;
+		global $KUINK_CFG;
 		
 		$msgManager = \Kuink\Core\MessageManager::getInstance ();
 		

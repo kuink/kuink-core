@@ -63,10 +63,11 @@ class CallInstruction extends \Kuink\Core\Instruction {
 			unset ( $result ['RETURN'] );
 		
 		foreach ( $result as $outParamName => $outParamValue ) {
-			if (isset ( $paramVars [$outParamName] ))
-				$instManager->variables [$paramVars [$outParamName]] = $outParamValue;
-			else
+			if (isset ( $paramValues [$outParamName] ))
+				$instManager->variables [$paramValues [$outParamName]] = $outParamValue;
+			else {
 				throw new \Exception ( 'Function call must define a variable to store the output value of param ' . $outParamName );
+			}
 		}
 		
 		return $return;

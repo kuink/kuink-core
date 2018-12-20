@@ -14,36 +14,24 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
-namespace Kuink\Core;
+namespace Kuink\UI\Formatter;
 
-class ParserFunctions {
-	static function __empty($value) {
-		return empty ( $value );
+class Json extends Formatter {
+	function format($value, $params = null) {
+		$formatted = $this->set2Json($value, $params);
+		return $formatted;
 	}
-	static function __length($value) {
-		if (is_array ( $value ))
-			return count ( $value );
-		else
-			return strlen ( $value );
+
+	function set2json($value, $params = null) {
+		$formatted = json_encode($value);
+		return $formatted;
 	}
-	static function __isArray($value) {
-		return is_array ( $value );
+
+	function prettyPrint($value, $params = null) {
+		$formatted = json_encode(json_decode($value), \JSON_PRETTY_PRINT);
+		return $formatted;
 	}
-	// used only for captchas right now
-	static function __isValid($value) {
-		$securimage = new \Securimage ();
-		$check = $securimage->check ( strtolower ( $value ) );
-		return ($check) ? 1 : 0;
-	}
-	static function __toStr($value) {
-		$result = ( string ) $value;
-		if (is_array ( $value ))
-			$result = json_encode ( $value );
-		return $result;
-	}
-  static function __hasValue( $value ) {
-  	return (($value !== '') && ($value !== null));
-  }
+
 }
 
 ?>

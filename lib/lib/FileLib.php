@@ -129,8 +129,7 @@ class FileLib {
 						$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'O ficheiro é obrigatório.' );
 					return null;
 				}
-				//var_dump($filename);
-				//
+				
 				if ($filename != '') {
 					// Extract file extension
 					$file_ext = explode ( '.', $filename );
@@ -186,9 +185,11 @@ class FileLib {
 						
 						// Altera o nome para o nome normalizado GUID
 						$full_path_original = str_replace ( " ", "\ ", $full_path_original );
-							
+
+						//kuink_mydebug('$full_path_normalizado',$full_path_normalizado);
 						//kuink_mydebug('$full_path_original',$full_path_original);
-						rename ( $full_path_original, $full_path_normalizado );
+					//This rename is unecessary, because the file was uploaded with the $full_path_normalizado
+						//rename ( $full_path_original, $full_path_normalizado );
 						
 						//var_dump($full_path_normalizado);
 						// Grava o ficheiro na base de dados na tabela ficheiro
@@ -540,8 +541,15 @@ class FileLib {
 		if ($pos === FALSE)
 			throw new \Exception ( 'No permission to access ' . $originalFullPath );
 
+		//Create the destination directory if does not exists
+		if (!is_dir(dirname ( $destinationFullPath )))
+			mkdir ( dirname ( $destinationFullPath ), 0755, true );
+
 			// move folder to final destination
-		return rename ( $originalFullPath, $destinationFullPath );
+		if(rename( $originalFullPath, $destinationFullPath ))
+			return 1;
+		else
+			return 0;			
 	}
 	
 	/**

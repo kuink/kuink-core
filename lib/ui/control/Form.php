@@ -1098,7 +1098,7 @@ class Form extends Control {
 				$event = ( string ) $button [FieldProperty::EVENT];
 				
 				$actionPermissions = $this->nodeconfiguration [NodeConfKey::ACTION_PERMISSIONS];
-				if ($event != '' || $runat == 'client' || $actionPermissions [$action]) {
+				if ($event != '' || $runat == 'client' || (isset($actionPermissions [$action]) && $actionPermissions [$action])) {
 					// $attributes = $this->getFormfieldAttributes($button, $id);
 					$skeleton = $attributes [FieldProperty::SKELETON];
 					$skin = $attributes [FieldProperty::SKIN];
@@ -1147,7 +1147,7 @@ class Form extends Control {
 		
 		//var_dump( $this->bind_data );
 		// print_object( $this->static_bind );
-		// print_object( $this->datasources );
+		//print_object( $this->datasources );
 		// print_object( $this->dynamic_fields);
 		
 		$infer = $this->getProperty ( $this->name, FormProperty::INFER, false, FormPropertyDefaults::INFER );
@@ -1202,7 +1202,10 @@ class Form extends Control {
 
 				$fieldOptions = array ();
 				$fieldOptions [''] = ''; //Add empty option		
-				$selectoptions = $this->datasources [$datasourcename];
+				$selectoptions = array();
+				if (isset($this->datasources [$datasourcename]))
+					$selectoptions = $this->datasources [$datasourcename];
+
 				if (is_array($selectoptions))
 					foreach ( $selectoptions as $selectoption ) {
 						if ((gettype ( $selectoption ) == 'array'))

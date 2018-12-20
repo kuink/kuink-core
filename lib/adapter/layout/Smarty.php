@@ -16,7 +16,7 @@
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Layout\Adapter;
 
-global $KUINK_INCLUDE_PATH, $KUINK_CFG;
+global $KUINK_INCLUDE_PATH;
 require_once ($KUINK_INCLUDE_PATH . 'lib/tools/smarty/Smarty.class.php');
 class Smarty extends \Smarty {
 	private $themeName;
@@ -62,9 +62,7 @@ class Smarty extends \Smarty {
 	}
 
 	public function setTheme($themeName) {
-		global $KUINK_BRIDGE_CFG, $KUINK_CFG;
-		
-		$bridge = isset($KUINK_CFG->bridge) ? $KUINK_CFG->bridge : $KUINK_BRIDGE_CFG->bridge;
+		global $KUINK_BRIDGE_CFG;
 
 		$this->setTemplateDir($KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/template/');
 		$this->setCompileDir($KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/theme_cache_compiled/');
@@ -238,25 +236,26 @@ class Smarty extends \Smarty {
 		//print_object($result);
 		return $result;
 	}
-	static function getApplicationTemplate($application, $process, $templateName, $data) {
-		global $KUINK_BRIDGE_CFG;
+
+	public function getApplicationTemplate($application, $process, $templateName, $data) {
+		global $KUINK_BRIDGE_CFG, $KUINK_APPLICATION;
 		
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 		
 		$smarty = new \Smarty ();
 
-		$templateDir = $KUINK_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/templates/';
+		$templateDir = $KUINK_BRIDGE_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/templates/';
 		$smarty->setTemplateDir ( $templateDir );
-		// print($templateDir);
-		$smarty->setCompileDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/theme_cache_compiled/' );
-		$smarty->setCacheDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/theme_cache/' );
+		$smarty->setCompileDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$this->themeName.'/theme_cache_compiled/' );
+		$smarty->setCacheDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$this->themeName.'/theme_cache/' );
 		$smarty->assign ( $data );
 		return $smarty->fetch ( $templateName . '.tpl' );
 	}
-	static function expandTemplate($templateCode, $data) {
-		global $KUINK_CFG;
+
+	public function expandTemplate($templateCode, $data) {
+		global $KUINK_BRIDGE_CFG;
 		$smarty = new \Smarty ();
-		$templateDir = $KUINK_CFG->appRoot . 'files/temp/';
+		$templateDir = $KUINK_BRIDGE_CFG->appRoot . 'files/temp/';
 		
 		// Create template file
 		$filename = time () . '-' . rand ( 1000, 10000 ) . '.tpl';
@@ -269,8 +268,8 @@ class Smarty extends \Smarty {
 		
 		$smarty->setTemplateDir ( $templateDir );
 		// print($templateDir);
-		$smarty->setCompileDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/theme_cache_compiled/' );
-		$smarty->setCacheDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/theme_cache/' );
+		$smarty->setCompileDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$this->themeName.'/theme_cache_compiled/' );
+		$smarty->setCacheDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$this->themeName.'/theme_cache/' );
 		$smarty->assign ( $data );
 		$returnData = $smarty->fetch ( $file );
 		// delete the file
@@ -279,9 +278,8 @@ class Smarty extends \Smarty {
 	}
 
 	public function addControl($type, $params, $skeleton = null, $skin, $position) {
-		global $KUINK_BRIDGE_CFG, $KUINK_CFG;
+		global $KUINK_BRIDGE_CFG;
 		
-		$bridge = isset($KUINK_CFG->bridge) ? $KUINK_CFG->bridge : $KUINK_BRIDGE_CFG->bridge;
 		$smarty = \Kuink\Core\Factory::getLayoutAdapter ( "Smarty" );
 		
 		$smarty_params = array ();

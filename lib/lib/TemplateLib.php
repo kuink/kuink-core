@@ -1,5 +1,6 @@
 <?php
 use Kuink\Core\NodeManager;
+use Kuink\UI\Layout\Layout;
 // This file is part of Kuink Application Framework
 //
 // Kuink Application Framework is free software: you can redistribute it and/or modify
@@ -48,7 +49,9 @@ class TemplateLib {
 					'source' => $src 
 			);
 			// print_object($data);
-		$d = \Kuink\UI\Layout\Adapter\Smarty::getApplicationTemplate ( $application, $process, $templateName, $data );
+		$layout = Layout::getInstance ();			
+		$d = $layout->getApplicationTemplate ( $application, $process, $templateName, $data );
+
 		return $d;
 	}
 	function ExecuteStandardTemplate($params) {
@@ -100,8 +103,10 @@ class TemplateLib {
 				$parsedValue = $childs;
 			} else {
 				// If template isset then get the template from smarty
-				if ($template)
-					$parsedValue = \Kuink\UI\Layout\Adapter\Smarty::getApplicationTemplate ( $application, $process, $template, $data );
+				if ($template) {
+					$layout = Layout::getInstance ();
+					$parsedValue = $layout->getApplicationTemplate ( $application, $process, $templateName, $data );
+				}
 				else {
 					$eval = new \Kuink\Core\EvalExpr ();
 					$cleanedData = array ();
@@ -120,7 +125,8 @@ class TemplateLib {
 	function expandTemplate($params) {
 		$templateCode = ( string ) $params [0];
 		$data = $params [1];
-		$d = \Kuink\UI\Layout\Adapter\Smarty::expandTemplate ( $templateCode, $data );
+		$layout = Layout::getInstance ();
+		$d = $layout->getApplicationTemplate( $templateCode, $data );
 		return $d;
 	}
 }

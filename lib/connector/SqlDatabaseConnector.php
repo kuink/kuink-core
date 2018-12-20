@@ -43,6 +43,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			$passwd = $this->dataSource->getParam ('passwd', true );
 			$options = $this->dataSource->getParam ('options', false );
 
+			//kuink_mydebug('Connect', $type.'::'.$server__);
+
 			$this->type = $type;
 			
 			//Connect with specific drivers
@@ -591,25 +593,27 @@ private function encloseIdentifier($identifier) {
 		global $KUINK_TRACE;
 		
 		// print_object($sql);
-		unset ( $params ['_entity'] );
-		unset ( $params ['_attributes'] );
-		unset ( $params ['_sort'] );
-		unset ( $params ['_pageNum'] );
-		unset ( $params ['_pageSize'] );
-		unset ( $params ['_pk'] );
-		unset ( $params ['_sql'] );
-		unset ( $params ['_debug_'] );
-		unset ( $params ['_multilang_fields'] );
-  	unset ( $params ['_acl']);
-  	unset ( $params ['_aclPermissions']);
-		
-		
-		foreach ( $params as $key => $value )
-			if (($ignoreNulls && ($value == '')) || is_array($value))
-				unset ( $params [$key] ); //ignore empty values and arrays
-			// print_object($params);
-		
+		if (isset($params)) {
+			unset ( $params ['_entity'] );
+			unset ( $params ['_attributes'] );
+			unset ( $params ['_sort'] );
+			unset ( $params ['_pageNum'] );
+			unset ( $params ['_pageSize'] );
+			unset ( $params ['_pk'] );
+			unset ( $params ['_sql'] );
+			unset ( $params ['_debug_'] );
+			unset ( $params ['_multilang_fields'] );
+			unset ( $params ['_acl']);
+			unset ( $params ['_aclPermissions']);
+		}
 
+		if (isset($params) && is_array($params))
+			foreach ( $params as $key => $value )
+				if (($ignoreNulls && ($value == '')) || is_array($value))
+					unset ( $params [$key] ); //ignore empty values and arrays
+				// print_object($params);
+		
+		$params = (isset($params)) ? $params : array();
 		if (count ( $params ) == 0 && ! $allowEmptyParams) {
 			return null;
 		}
@@ -1092,6 +1096,7 @@ private function encloseIdentifier($identifier) {
 	 */
 	public function getEntityChanges($params) {
 		$application = ( string ) $params ['application'];
+		$process = isset($params ['process']) ? ( string ) $params ['process'] : null;
 		$node = ( string ) $params ['node'];
 		$dropTablesBeforeCreate = (isset ( $params ['dropTablesBeforeCreate'] )) ? ( string ) $params ['dropTablesBeforeCreate'] : 'false';
 		$drop = ($dropTablesBeforeCreate == 'true') ? true : false;
@@ -1173,12 +1178,13 @@ private function encloseIdentifier($identifier) {
 			// print_object($entity);
 			
 			// Check to see if this entity is multilang, in this case we need to create two tables
-			$multiLang = $this->getAttribute ( $entity, 'multilang', false, 'multilang', 'false' );
+			$multilang = $this->getAttribute ( $entity, 'multilang', false, 'multilang', 'false' );
 			$name = $this->getAttribute ( $entity, 'name', true, 'multilang' );
 			
-			if ($multiLang == 'true') {
+			if ($multilang == 'true') {
 				// Add this entity with no multilang attributes
 				$entityArrayNoLang = Array ();
+				$entityArrayNoLang ['__attributes'] = Array ();
 				$entityArrayNoLang ['__attributes'] ['name'] = $name;
 				$entityArrayNoLang ['__attributes'] ['multilang'] = $multilang;
 				foreach ( $entityArray as $key => $field ) {
@@ -1198,8 +1204,8 @@ private function encloseIdentifier($identifier) {
 				$entityArrayLang ['__attributes'] ['name'] = $name . '_lang';
 				// $entityArrayLang['__attributes']['multilang'] = 'true';
 				//$entityArrayLang['id'] = array('name'=>'id', 'domain'=>'id');
-				$entityArrayLang['id'] = array('name'=>'id', 'domain'=>'foreign', 'refentity'=>$entData['name'], 'refattr'=>'id', 'pk'=>'true');
-				$entityArrayLang['lang'] = array('name'=>lang, 'domain'=>'lang', 'pk'=>'true');
+				$entityArrayLang['id'] = array('name'=>'id', 'domain'=>'foreignPk', 'refentity'=>$entData['name'], 'refattr'=>'id', 'pk'=>'true');
+				$entityArrayLang['lang'] = array('name'=>'lang', 'domain'=>'langPk', 'pk'=>'true');
 
 				foreach ( $entityArray as $key => $field ) {
 					$fieldMultilang = (isset ( $field ['multilang'] )) ? $field ['multilang'] : 'false';
@@ -1453,7 +1459,7 @@ private function encloseIdentifier($identifier) {
 		$data = array ();
 		
 		$name = $entity ['__attributes'] ['name']; // $this->getAttribute($entity, 'name', true, 'entity');
-		$multiLang = isset ( $entity ['__attributes'] ['multilang'] ) ? $entity ['__attributes'] ['multilang'] : 'false'; // $this->getAttribute($entity, 'multilang', false, 'multilang', 'false');
+		$multilang = isset ( $entity ['__attributes'] ['multilang'] ) ? $entity ['__attributes'] ['multilang'] : 'false'; // $this->getAttribute($entity, 'multilang', false, 'multilang', 'false');
 		$types = $this->getTypeConversion ();
 		
 		$change = DDChanges::ADD;
@@ -1498,7 +1504,7 @@ private function encloseIdentifier($identifier) {
 				// print_object('PHYSYCAL- '.$phDebug);
 				
 				// The corresponding entity model
-				$entAttr = $entity [$phName]; // $entity->xpath('Attributes/Attribute[@name="'.$phName.'"]');
+				$entAttr = isset($entity [$phName]) ? $entity [$phName] : null; // $entity->xpath('Attributes/Attribute[@name="'.$phName.'"]');
 				                             // $entAttr = @$entAttr[0];
 				                             // print_object($entAttr);
 				
@@ -1521,16 +1527,16 @@ private function encloseIdentifier($identifier) {
 						$domain ['required'] = ( string ) $this->getAttribute ( $entAttr, 'required', false, 'entity', 'false' );
 					}
 					
-					$attr ['pk'] = (isset ( $entAttr ['pk'] )) ? ( string ) $entAttr ['pk'] : ( string ) $domain ['pk'];
-					$attr ['autonumber'] = (isset ( $entAttr ['autonumber'] )) ? ( string ) $entAttr ['autonumber'] : ( string ) $domain ['autonumber'];
-					$attr ['required'] = (isset ( $entAttr ['required'] )) ? ( string ) $entAttr ['required'] : ( string ) $domain ['required'];
-					$attr ['foreign'] = (isset ( $entAttr ['foreign'] )) ? ( string ) $entAttr ['foreign'] : ( string ) $domain ['foreign'];
-					$attr ['multilang'] = (isset ( $entAttr ['multilang'] )) ? ( string ) $entAttr ['multilang'] : ( string ) $domain ['multilang'];
-					$attr ['refentity'] = (isset ( $entAttr ['refentity'] )) ? ( string ) $entAttr ['refentity'] : ( string ) $domain ['refentity'];
-					$attr ['refattr'] = (isset ( $entAttr ['refattr'] )) ? ( string ) $entAttr ['refattr'] : ( string ) $domain ['refattr'];
-					$attr ['type'] = (isset ( $entAttr ['type'] )) ? ( string ) $entAttr ['type'] : ( string ) $domain ['type'];
-					$attr ['size'] = (isset ( $entAttr ['size'] )) ? ( string ) $entAttr ['size'] : ( string ) $domain ['size'];
-					$attr ['default'] = (isset ( $entAttr ['default'] )) ? ( string ) $entAttr ['default'] : ( string ) $domain ['default'];
+					$attr ['pk'] = isset($domain ['pk']) ? $domain ['pk'] : ''; $attr ['pk'] = isset($entAttr ['pk']) ? $entAttr ['pk'] : $attr['pk'];
+					$attr ['autonumber'] = isset($domain ['autonumber']) ? $domain ['autonumber'] : ''; $attr ['autonumber'] = isset($entAttr ['autonumber']) ? $entAttr ['autonumber'] : $attr['autonumber'];
+					$attr ['required'] = isset($domain ['required']) ? $domain ['required'] : ''; $attr ['required'] = isset($entAttr ['required']) ? $entAttr ['required'] : $attr['required'];
+					$attr ['foreign'] = isset($domain ['foreign']) ? $domain ['foreign'] : ''; $attr ['foreign'] = isset($entAttr ['foreign']) ? $entAttr ['foreign'] : $attr['foreign'];
+					$attr ['multilang'] = isset($domain ['multilang']) ? $domain ['multilang'] : ''; $attr ['multilang'] = isset($entAttr ['multilang']) ? $entAttr ['multilang'] : $attr['multilang'];
+					$attr ['refentity'] = isset($domain ['refentity']) ? $domain ['refentity'] : ''; $attr ['refentity'] = isset($entAttr ['refentity']) ? $entAttr ['refentity'] : $attr['refentity'];
+					$attr ['refattr'] = isset($domain ['refattr']) ? $domain ['refattr'] : ''; $attr ['refattr'] = isset($entAttr ['refattr']) ? $entAttr ['refattr'] : $attr['refattr'];
+					$attr ['type'] = isset($domain ['type']) ? $domain ['type'] : ''; $attr ['type'] = isset($entAttr ['type']) ? $entAttr ['type'] : $attr['type'];
+					$attr ['size'] = isset($domain ['size']) ? $domain ['size'] : ''; $attr ['size'] = isset($entAttr ['size']) ? $entAttr ['size'] : $attr['size'];
+					$attr ['default'] = isset($domain ['default']) ? $domain ['default'] : ''; $attr ['default'] = isset($entAttr ['default']) ? $entAttr ['default'] : $attr['default'];
 					
 					// Compare the domain to see if there is any changes
 					$domType = ( string ) $domain ['type'];
@@ -1582,6 +1588,7 @@ private function encloseIdentifier($identifier) {
 					// print_object($attr['debug']);
 				} else {
 					// The attribute is in physycal but not in entity definition, so remove it
+					$attr ['debug'] = '';
 					$attr ['name'] = ( string ) $phName;
 					$attr ['type'] = ( string ) $phType;
 					$attr ['_physType'] = ( string ) $phType;
@@ -1630,6 +1637,7 @@ private function encloseIdentifier($identifier) {
 			if (! $phFound) {
 				// print_object($attrName);
 				$attr = Array ();
+				$attr ['debug'] = '';
 				$attr ['name'] = $this->getAttribute ( $entAttr, 'name', true, 'entity' );
 				$attr ['domain'] = $this->getAttribute ( $entAttr, 'domain', false, 'entity' );
 				$attr ['foreign'] = $this->getAttribute ( $entAttr, 'foreign', false, 'entity' );
@@ -1638,6 +1646,7 @@ private function encloseIdentifier($identifier) {
 					$domain = $this->domainToArray ( $domain, $nodeManager );
 					if (! isset ( $domain ))
 						throw new DomainNotFound ( __CLASS__, $attr ['domain'] );
+					
 				} else {
 					$domain ['name'] = $attr ['domain'];
 					$domain ['type'] = $this->getAttribute ( $attr, 'type', true, 'entity' );
@@ -1647,25 +1656,26 @@ private function encloseIdentifier($identifier) {
 					$domain ['required'] = ($attr ['required'] == '') ? $this->getAttribute ( $attr, 'required', false, 'entity', 'false' ) : $attr ['required'];
 				}
 				
-				$attr ['pk'] = (isset ( $entAttr ['pk'] )) ? $entAttr ['pk'] : $domain ['pk'];
-				$attr ['autonumber'] = (isset ( $entAttr ['autonumber'] )) ? $entAttr ['autonumber'] : $domain ['autonumber'];
-				$attr ['required'] = (isset ( $entAttr ['required'] )) ? $entAttr ['required'] : $domain ['required'];
-				$attr ['foreign'] = (isset ( $entAttr ['foreign'] )) ? $entAttr ['foreign'] : $domain ['foreign'];
-				$attr ['multilang'] = (isset ( $entAttr ['multilang'] )) ? $entAttr ['multilang'] : $domain ['multilang'];
-				$attr ['refentity'] = (isset ( $entAttr ['refentity'] )) ? $entAttr ['refentity'] : $domain ['refentity'];
-				$attr ['refattr'] = (isset ( $entAttr ['refattr'] )) ? $entAttr ['refattr'] : $domain ['refattr'];
-				$attr ['type'] = (isset ( $entAttr ['type'] )) ? $entAttr ['type'] : $domain ['type'];
-				$attr ['size'] = (isset ( $entAttr ['size'] )) ? $entAttr ['size'] : $domain ['size'];
-				$attr ['default'] = (isset ( $entAttr ['default'] )) ? $entAttr ['default'] : $domain ['default'];
-				
+				$attr ['pk'] = isset($domain ['pk']) ? $domain ['pk'] : ''; $attr ['pk'] = isset($entAttr ['pk']) ? $entAttr ['pk'] : $attr['pk'];
+				$attr ['autonumber'] = isset($domain ['autonumber']) ? $domain ['autonumber'] : ''; $attr ['autonumber'] = isset($entAttr ['autonumber']) ? $entAttr ['autonumber'] : $attr['autonumber'];
+				$attr ['required'] = isset($domain ['required']) ? $domain ['required'] : 'false'; $attr ['required'] = isset($entAttr ['required']) ? $entAttr ['required'] : $attr['required'];
+				$attr ['foreign'] = isset($domain ['foreign']) ? $domain ['foreign'] : ''; $attr ['foreign'] = isset($entAttr ['foreign']) ? $entAttr ['foreign'] : $attr['foreign'];
+				$attr ['multilang'] = isset($domain ['multilang']) ? $domain ['multilang'] : ''; $attr ['multilang'] = isset($entAttr ['multilang']) ? $entAttr ['multilang'] : $attr['multilang'];
+				$attr ['refentity'] = isset($domain ['refentity']) ? $domain ['refentity'] : ''; $attr ['refentity'] = isset($entAttr ['refentity']) ? $entAttr ['refentity'] : $attr['refentity'];
+				$attr ['refattr'] = isset($domain ['refattr']) ? $domain ['refattr'] : ''; $attr ['refattr'] = isset($entAttr ['refattr']) ? $entAttr ['refattr'] : $attr['refattr'];
+				$attr ['type'] = isset($domain ['type']) ? $domain ['type'] : ''; $attr ['type'] = isset($entAttr ['type']) ? $entAttr ['type'] : $attr['type'];
+				$attr ['size'] = isset($domain ['size']) ? $domain ['size'] : ''; $attr ['size'] = isset($entAttr ['size']) ? $entAttr ['size'] : $attr['size'];
+				$attr ['default'] = isset($domain ['default']) ? $domain ['default'] : ''; $attr ['default'] = isset($entAttr ['default']) ? $entAttr ['default'] : $attr['default'];
+								
 				$domType = ( string ) $domain ['type'];
 				$typeConverted = isset ( $types [$domType] ) ? $types [$domType] : Array ();
 				$domain ['convType'] = $typeConverted ['type'];
-				$domain ['convLength'] = ($domain ['size'] != '') ? $domain ['size'] : $typeConverted ['size'];
+				$domain ['convLength'] = isset($typeConverted ['size']) ? $typeConverted ['size'] : '';
+				$domain ['convLength'] = (isset($domain ['size']) && $domain ['size'] != '') ? $domain ['size'] : $domain ['convLength'];
 				$check ['type'] = $domain ['convType'];
 				$check ['length'] = $domain ['convLength'];
-				$check ['required'] = ($attr ['required'] != '') ? $attr ['required'] : $domain ['required'];
-				$check ['required'] = ($check ['required']) ? $check ['required'] : 'false';
+				$check ['required'] = $attr ['required'];
+				//$check ['required'] = ($check ['required']) ? $check ['required'] : 'false';
 				
 				$attr ['_physType'] = $domain ['convType'];
 				$attr ['_physSize'] = $domain ['convLength'];
@@ -1696,7 +1706,7 @@ private function encloseIdentifier($identifier) {
 				
 				$attrMultiLang = $this->getAttribute ( $attr, 'multilang', false, 'multilang', 'false' );
 				// print_object($attrMultiLang);
-				if (($multiLang == 'true')) {
+				if (($multilang == 'true')) {
 					if ($onlyMultilangAttributes && ($attrMultiLang == 'true'))
 						$attrs [$attrName] = $attr;
 					else if (! $onlyMultilangAttributes && ($attrMultiLang == 'false'))
@@ -1746,11 +1756,11 @@ private function encloseIdentifier($identifier) {
 			$sqlAttributesArray = array ();
 			$sqlPrimaryKeysArray = array ();
 			$sqlUniquesArray = array ();
-			
 			foreach ( $entity ['attributes'] as $attribute ) {
+				//kuink_mydebugObj($entity['name'], $attribute);
 				$sqlAttribute = '';
 				$sqlAttribute .= $this->encloseIdentifier($attribute ['name']);
-				if ($attribute ['newName'] != '')
+				if (isset($attribute ['newName']) && $attribute ['newName'] != '')
 					$sqlAttribute .= ' ' . $this->encloseIdentifier($attribute ['newName']); // If this is set then this attribute is to be renamed to this newName
 				$sqlAttribute .= ' ' . $attribute ['_physType'] . ' ';
 				if (($attribute ['_physSize'] != ''))
@@ -1863,7 +1873,7 @@ private function encloseIdentifier($identifier) {
 		
 		foreach ( $sqlStatementsArray as $key => $sqlStatement ) {
 			try {
-				$this->executeSql ( $sqlStatement );
+				$this->executeSql ( $sqlStatement, null );
 				$log [] = array (
 						'entity' => $key,
 						'status' => 'OK',

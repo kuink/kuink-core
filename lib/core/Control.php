@@ -100,18 +100,16 @@ abstract class Control {
 	 *        	[1] - (array) datasource
 	 */
 	function addDataSource($params) {
-		$ds_name = ( string ) $this->getParam ( $params, 0, true );
+		$dsName = ( string ) $this->getParam ( $params, 0, true );
 		$ds = $this->getParam ( $params, 1, true );
 		
 		// Convert all stdClass to Array
 		$datasource = array ();
 		foreach ( $ds as $key => $value ) {
-			$new_value = ( array ) $value;
-			$datasource [$key] = $new_value;
+			$newValue = ( array ) $value;
+			$datasource [$key] = $newValue;
 		}
-		$ds = $datasource;
-		
-		$this->datasources [$ds_name] = $ds;
+		$this->datasources [$dsName] = $datasource;
 	}
 	
 	/**

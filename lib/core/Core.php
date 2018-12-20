@@ -98,6 +98,7 @@ class Core {
 		// Creating the application
 		$KUINK_APPLICATION = new \Kuink\Core\Application ( $application, $KUINK_CFG->auth->user->lang, $configuration );
 		// Adding roles to the application
+
 		foreach ( $KUINK_CFG->auth->roles as $role )
 			$KUINK_APPLICATION->addRole ( ( string ) $role );
 			

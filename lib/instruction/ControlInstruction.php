@@ -21,8 +21,9 @@ class ControlInstruction extends \Kuink\Core\Instruction {
 		$object = (string) $instManager->getAttribute( $instructionXmlNode, 'object', true);// $this->get_inst_attr ( $instruction_xmlnode, 'object', $variables, false );
 		$method = $instManager->getAttribute( $instructionXmlNode, 'method', true);		
 		$manager = $instManager->variables[$object];
-		$params = $instManager->getParams ( $instructionXmlNode );
-		
+		$params = $instManager->getParams ( $instructionXmlNode, true );
+		$paramsVariable = (string) $instManager->getAttribute( $instructionXmlNode, 'params', false, null);// $this->get_inst_attr ( $instruction_xmlnode, 'object', $variables, false );
+
 		if (method_exists ( $manager, $method ))
 			$result = $manager->$method ( $params );
 		else

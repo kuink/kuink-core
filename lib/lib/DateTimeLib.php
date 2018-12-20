@@ -208,7 +208,7 @@ class DateTimeLib {
 	 * Given a timestamp, get the day
 	 */
 	function getDay($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		$dateTime->setTimestamp ( $timestamp );
 		if (isset ( $params [0] )) {
@@ -221,7 +221,7 @@ class DateTimeLib {
 	 * Given a timestamp, get the month
 	 */
 	function getMonth($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		$dateTime->setTimestamp ( $timestamp );
 		if (isset ( $params [0] )) {
@@ -234,7 +234,7 @@ class DateTimeLib {
 	 * Given a timestamp, get the year
 	 */
 	function getYear($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		$dateTime->setTimestamp ( $timestamp );
 		if (isset ( $params [0] )) {
@@ -247,7 +247,7 @@ class DateTimeLib {
 	 * Given a timestamp, get the hour
 	 */
 	function getHour($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		$dateTime->setTimestamp ( $timestamp );
 		if (isset ( $params [0] )) {
@@ -263,7 +263,7 @@ class DateTimeLib {
 	 * Given a timestamp, get the minutes
 	 */
 	function getMinutes($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		$dateTime->setTimestamp ( $timestamp );
 		if (isset ( $params [0] )) {
@@ -276,7 +276,7 @@ class DateTimeLib {
 	 * Given a timestamp, get the seconds
 	 */
 	function getSeconds($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		$dateTime->setTimestamp ( $timestamp );
 		if (isset ( $params [0] )) {
@@ -289,7 +289,7 @@ class DateTimeLib {
 	 * Given a timestamp, get the date components in an array (day, month, year, hour, minutes, seconds)
 	 */
 	function getComponents($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		if (isset ( $params [1] )) {
 			$format = $params [1];
 			$hourArray = array (
@@ -320,7 +320,7 @@ class DateTimeLib {
 		return $out;
 	}
 	function addDays($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		$numberOfDays = (isset ( $params [1] )) ? $params [1] : 0;
 		return (( int ) $timestamp + (86400 * $numberOfDays));
 	}
