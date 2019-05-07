@@ -44,5 +44,49 @@ class Style extends Formatter {
 		
 		return $newstring . '</' . $tag . '>';
 	}
+
+	function size($value, $params) {
+		$size = '75%';
+		if (isset($params['size']))
+				$size = (string)$params['size'];
+		return '<span style="font-size: '.$size.'">'.$value.'</span>';
+	}   
+	
+	function collapsible($value, $params) {
+		
+		if (isset($params['collapsed']))
+			$collapsed = (string)$params['collapsed'];
+		else
+			$collapsed = 'false';
+
+			$styleDisplay = ($collapsed == 'false') ? 'block' : 'none';
+
+		$uuid = uniqid();
+		$format = '
+		<script>
+		$(document).ready(function(){
+			var showText = $("#showHide_'.$uuid.'").attr("showText");
+			var hideText = $("#showHide_'.$uuid.'").attr("hideText");
+
+			$("#showHide_'.$uuid.'").html('.(($collapsed == 'false') ? 'hideText' : 'showText').');
+		});
+
+		function showHideHeader_'.$uuid.'() {
+			var showText = $("#showHide_'.$uuid.'").attr("showText");
+			var hideText = $("#showHide_'.$uuid.'").attr("hideText");
+
+			if( $("#head_'.$uuid.'").css("display") == "block") {
+				$("#showHide_'.$uuid.'").html(showText);
+				$("#head_'.$uuid.'").fadeOut();
+			} else {
+				$("#showHide_'.$uuid.'").html(hideText);
+				$("#head_'.$uuid.'").fadeIn("slow");
+			}
+		}
+	</script>';
+		$format .=  '<a id="showHide_'.$uuid.'" showtext="mostrar" hidetext="ocultar" href="javascript:void(0);" onmousedown="showHideHeader_'.$uuid.'();">ocultar</a>';
+		$format .=  '<div id="head_'.$uuid.'" name="head_'.$uuid.'" style="display: '.$styleDisplay.';">'.$value.'</div>';
+		return $format;
+	}
 }
 ?>

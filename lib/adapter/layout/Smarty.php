@@ -222,15 +222,15 @@ class Smarty extends \Smarty {
 	public function setActionsSource($actionsSource) {
 		$this->assign ( '_actionsSource', $actionsSource );
 	}
-	static function getTemplate($templateName, $data) {
+	static function getTemplate($templateName, $data, $themeName='') {
 		global $KUINK_BRIDGE_CFG;
 		
 		$smarty = new \Smarty ();
-		$smarty->setTemplateDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/template/' );
-		$smarty->setCompileDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/theme_cache_compiled/' );
-		$smarty->setCacheDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/theme_cache/' );
+		$smarty->setTemplateDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/template/' );
+		$smarty->setCompileDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/theme_cache_compiled/' );
+		$smarty->setCacheDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/theme_cache/' );
 		$smarty->assign ( $data );
-		
+		//var_dump($KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/template/'.$templateName);
 		$result = $smarty->fetch ( $templateName . '.tpl' ); 
 		//print_object(dirname ( __FILE__ ) . '/../../../theme/default/template/'.$templateName );
 		//print_object($result);
@@ -249,7 +249,10 @@ class Smarty extends \Smarty {
 		$smarty->setCompileDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$this->themeName.'/theme_cache_compiled/' );
 		$smarty->setCacheDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$this->themeName.'/theme_cache/' );
 		$smarty->assign ( $data );
-		return $smarty->fetch ( $templateName . '.tpl' );
+		
+		$result = $smarty->fetch ( $templateName . '.tpl' );
+
+		return $result;
 	}
 
 	public function expandTemplate($templateCode, $data) {

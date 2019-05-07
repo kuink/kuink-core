@@ -1553,4 +1553,20 @@ class Runtime {
 		return ($hasPermissionsResult > 0);
 	}
 
+	/**
+	 * Returns the kuink application object
+	 */
+	function getApplication() {
+		global $KUINK_APPLICATION;
+		return $KUINK_APPLICATION;
+	}
+
+	/**
+	 * Returns the kuink core object
+	 */
+	function getCore() {
+		global $KUINK_APPLICATION;
+		return $KUINK_APPLICATION->core;
+	}
+
 }

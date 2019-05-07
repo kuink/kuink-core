@@ -16,7 +16,7 @@ class ErrorsInstruction extends \Kuink\Core\Instruction {
 	 */
 	static public function execute($instManager, $instructionXmlNode) {
 		$msgManager = \Kuink\Core\MessageManager::getInstance ();
-		$errors = $msgMaanager->has_type ( \Kuink\Core\MessageType::ERROR );
+		$errors = $msgManager->has_type ( \Kuink\Core\MessageType::ERROR );
 		return $errors;
 	}
 }

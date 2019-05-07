@@ -205,6 +205,7 @@ private function encloseIdentifier($identifier) {
 					// print_object(count($testRecord) );
 					if (count ( $testRecord ) > 0) {
 						$insertLangFields ['id'] = $testRecord ['id'];
+						$insertLangFields ['_pk'] = 'id,lang'; //These are the primary keys
 						$this->update ( $insertLangFields );
 					} else {
 						$returnId = $this->insert ( $insertLangFields );
@@ -634,15 +635,15 @@ private function encloseIdentifier($identifier) {
 		
 		// Handle the errors
 		$errorInfo = $query->errorInfo ();
+		//kuink_mydebugObj('ErrorInfo', $errorInfo);
 		//if ($this->type == 'sqlsrv')
 		//	kuink_mydebugObj('ErrorInfo', $errorInfo);
 
-		if ($errorInfo [0] != 0) {
+		if ($errorInfo [0] != 0 || $errorInfo [1] != 0) {
 			$KUINK_TRACE [] = 'Database error';
 			$KUINK_TRACE [] = $sql;
-			$KUINK_TRACE [] = $errorInfo [0];
-			$KUINK_TRACE [] = $errorInfo [1];
-			$KUINK_TRACE [] = $errorInfo [2];
+			$KUINK_TRACE [] = $errorInfo [0] . '|' . $errorInfo [1];
+			//$KUINK_TRACE [] = $errorInfo [2]; //Verbose not needed
 			throw new \Exception ( 'Internal database error' );
 		}
 		// print_object($records);

@@ -35,7 +35,8 @@ class Application {
 	private $inMaintenance; // Is this application in maintenance?
 	public $appManager; // Application manager
 	public $nodeconfiguration;
-	function __construct($name, $lang, $config) {
+	public $core; //The kuink core object
+	function __construct($name, $lang, $config, $core) {
 		global $KUINK_CFG;
 		
 		// If it's not a restart and there's an application in the stack, the use it
@@ -69,7 +70,8 @@ class Application {
 		$this->config = $config;
 		$this->roles = array ();
 		$this->capabilities = array ();
-		
+		$this->core = $core;
+				
 		// Loads the config keys from instance
 		$this->loadInstanceConfig ( $config );
 		

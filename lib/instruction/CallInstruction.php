@@ -32,6 +32,7 @@ class CallInstruction extends \Kuink\Core\Instruction {
 			throw new \Exception ( 'The function name must be supplied in attribute function or as the 4th param in library ' );
 			
 		$paramValues = $instManager->getParams( $instructionXmlNode, true ); //Get the params defined in params attribute
+		$paramOutputVars = $instManager->getParamsOutputVars( $instructionXmlNode ); //Get the params defined in params attribute
 		
 		if (trim ( $library ) != '') {
 			// Call a function in a different application,process
@@ -57,15 +58,16 @@ class CallInstruction extends \Kuink\Core\Instruction {
 		} else
 			// Execute the local function
 			$result = $instManager->runtime->function_execute ( $instManager->nodeConfiguration, $instManager->runtime->nodeManager->nodeXml, null, $functionName, $instManager->variables, $instManager->exit, $paramValues );
-		
+
 		$return = $result ['RETURN'];
 		if (isset ( $result ['RETURN'] ))
 			unset ( $result ['RETURN'] );
-		
+
 		foreach ( $result as $outParamName => $outParamValue ) {
-			if (isset ( $paramValues [$outParamName] ))
-				$instManager->variables [$paramValues [$outParamName]] = $outParamValue;
-			else {
+			if (isset ( $paramOutputVars [$outParamName] )) {
+				$varName = (string) $paramOutputVars [$outParamName];
+				$instManager->variables [$varName] = $outParamValue;
+			} else {
 				throw new \Exception ( 'Function call must define a variable to store the output value of param ' . $outParamName );
 			}
 		}

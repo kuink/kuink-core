@@ -39,6 +39,7 @@ class Core {
 		if ($kuinkCfg != null)
 			$KUINK_CFG = $kuinkCfg;
 		$KUINK_LAYOUT = $layoutAdapter;
+
 	}
 
 	/**
@@ -68,7 +69,7 @@ class Core {
 
 
 		if (isset ( $_GET ['idWidget'] )) {
-			$KUINK_APPLICATION = new Kuink\Core\Application ( $application, $lang, $configuration );
+			$KUINK_APPLICATION = new Kuink\Core\Application ( $application, $lang, $configuration, $this );
 			
 			$idWidget = ( string ) $_GET ['idWidget'];
 			$node = new \Kuink\Core\Node ( 'framework', 'widget', 'api' );
@@ -96,7 +97,7 @@ class Core {
 		}
 		//print_object($application);
 		// Creating the application
-		$KUINK_APPLICATION = new \Kuink\Core\Application ( $application, $KUINK_CFG->auth->user->lang, $configuration );
+		$KUINK_APPLICATION = new \Kuink\Core\Application ( $application, $KUINK_CFG->auth->user->lang, $configuration, $this );
 		// Adding roles to the application
 
 		foreach ( $KUINK_CFG->auth->roles as $role )
@@ -147,7 +148,7 @@ class Core {
 		$wsService = $functionParsed [3];
 		
 		// Creating the application
-		$KUINK_APPLICATION = new \Kuink\Core\Application ( $wsApp, $USER->lang, '<Configuration/>' );
+		$KUINK_APPLICATION = new \Kuink\Core\Application ( $wsApp, $USER->lang, '<Configuration/>', $this );
 		$node = new \Kuink\Core\Node ( $wsApp, $wsProcess, $wsLibrary );
 		// Get the function parametrs
 		$wsParams = \Kuink\Core\Reflection::getLibraryFunctionParams ( $wsApp, $wsProcess, $wsLibrary, $wsService );
@@ -211,7 +212,7 @@ class Core {
 				$process = $split [1];
 				$bpmn = $split [2];
 				$KUINK_DATASOURCES = array ();
-				$KUINK_APPLICATION = new Kuink\Core\Application ( 'framework', $USER->lang, null );
+				$KUINK_APPLICATION = new Kuink\Core\Application ( 'framework', $USER->lang, null, this );
 				
 				$base = $KUINK_APPLICATION->appManager->getApplicationBase ( 'framework' );
 				
@@ -225,7 +226,7 @@ class Core {
 			
 			case "file" :
 				$KUINK_DATASOURCES = array ();
-				$KUINK_APPLICATION = new \Kuink\Core\Application ( 'framework', 'pt', null );
+				$KUINK_APPLICATION = new \Kuink\Core\Application ( 'framework', 'pt', null, $this );
 				
 				if (! empty ( $guid )) {
 					$dataAccess = new \Kuink\Core\DataAccess ( 'load', 'framework', 'config' );
@@ -302,6 +303,89 @@ class Core {
 			$values [$name] = $this->kuink_service_param_value ( $name );
 		}
 		return $values;
+	}
+
+	/**
+	 * Check the global prerequisites of the framework
+	 * @return array with the prerequisites 
+	 */
+	public function checkPrerequisites () {
+		$extStatus=array();
+		$iniStatus=array();
+
+		$extensions = array(
+			array('name'=>'libxml', 'required'=>true),
+			array('name'=>'soap', 'required'=>true),
+			array('name'=>'pdo', 'required'=>true),
+			array('name'=>'pdo_mysql', 'required'=>true),
+			array('name'=>'curl', 'required'=>true)
+		);
+		$iniConfig = array(
+			array('name'=>'allow_url_fopen', 'required'=>true, 'expected'=>'1')
+		);
+
+		//Check for installed extensions
+		foreach ($extensions as $extension)
+			$extStatus[$extension['name']] = $this->checkExtension($extension['name'], $extension['required']);
+
+		//Check for php.ini options
+		foreach ($iniConfig as $ini)
+			$iniStatus[$ini['name']] = $this->checkIniConfig($ini['name'], $ini['required'], $ini['expected']);
+
+		$result = array();
+		$result['ext'] = $extStatus;
+		$result['ini'] = $iniStatus;
+		return $result;
+	}
+
+	/**
+	 * Check if an extension is installed
+	 * @return array with the status and the result
+	 */
+	protected function checkExtension( $extension, $required=true ) {
+		$status=array();
+		$params=array();
+		$params[] = $extension;
+		$status['name'] = $extension;
+		$status['doc'] = \Kuink\Core\Language::getString ( 'ext:'.$extension.':doc', 'framework', $params );
+		$status['required'] = $required;
+		$status['installed'] = extension_loaded($extension);
+		if ($status['required'] && $status['installed'])
+			$status['resultType'] = 'success';
+		else if ($status['required'] && !$status['installed'])
+			$status['resultType'] = 'error';
+		else
+			$status['resultType'] = 'warning';
+		
+		$status['resultMessage'] = \Kuink\Core\Language::getString ( 'ext:'.$status['resultType'], 'framework', $params );
+
+		return $status;
+	}
+
+	/**
+	 * Check if an extension is installed
+	 * @return array with the status and the result
+	 */
+	protected function checkIniConfig( $config, $required, $expected ) {
+		$status=array();
+		$params=array();
+		$params[] = $config;
+		$params[] = $expected;		
+		$status['name'] = $config;
+		$status['doc'] = \Kuink\Core\Language::getString ( 'ini:'.$config.':doc', 'framework', $params );
+		$status['required'] = $required;
+		$status['current'] = ini_get($config);
+		if ($status['required'] && ($status['current'] == $expected))
+			$status['resultType'] = 'success';
+		else if ($status['required'] && ($status['current'] != $expected))
+			$status['resultType'] = 'error';
+		else
+			$status['resultType'] = 'warning';
+
+		$params[] = $status['current'];	
+		$status['resultMessage'] = \Kuink\Core\Language::getString ( 'ini:'.$status['resultType'], 'framework', $params );
+
+		return $status;
 	}
 
 }

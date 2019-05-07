@@ -173,10 +173,10 @@ class DataSourceManager {
 		
 		return;
 	}
-	static public function addDataSource($dsName, $dsConnector, $context, $dsParams) {
+	static public function addDataSource($dsName, $dsConnector, $context, $dsParams, $dsBypass=0) {
 		global $KUINK_DATASOURCES;
 		
-		$ds = new DataSourceClass ( $dsName, $dsConnector, $context, $dsParams );
+		$ds = new DataSourceClass ( $dsName, $dsConnector, $context, $dsParams, $dsBypass );
 		$KUINK_DATASOURCES [$dsName] = $ds;
 		
 		return;

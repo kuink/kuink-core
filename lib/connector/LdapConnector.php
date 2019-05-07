@@ -88,6 +88,10 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		$info ['unixHomeDirectory'] = ( string ) $this->dataSource->getParam ( 'unixHomeDirectory', true );
 		$info ['unixHomeDirectory'] .= ( string ) $this->getParam ( $user, 'uid', true );
 		
+		$defaultPager = (string)$this->dataSource->getParam('pager.default', false, '');
+		if ($defaultPager != '')
+			$info['pager'] = (string)$this->getParam($user, 'pager', false, $defaultPager);
+
 		$homeDirectoryKey = 'homeDirectory.' . $this->getParam ( $user, 'personTypeCode', true );
 		$homeDirectory = ( string ) $this->dataSource->getParam ( $homeDirectoryKey, false );
 		

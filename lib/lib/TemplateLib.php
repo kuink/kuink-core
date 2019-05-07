@@ -24,12 +24,14 @@ class TemplateLib {
 		return;
 	}
 	function GetTemplateHtml($params) {
+		global $KUINK_BRIDGE_CFG;
 		$templateName = $params [0];
 		$data = $params [1];
-		// echo "<pre>";
-		// var_dump($data);
-		// echo "</pre>";
-		$d = \Kuink\UI\Layout\Adapter\Smarty::getTemplate ( $templateName, $data );
+		//echo "<pre>";
+		//var_dump($templateName);
+		//var_dump($data);
+		//echo "</pre>";
+		$d = \Kuink\UI\Layout\Adapter\Smarty::getTemplate ( $templateName, $data, $KUINK_BRIDGE_CFG->theme );
 		return $d;
 	}
 	function ExecuteTemplate($params) {
@@ -51,7 +53,7 @@ class TemplateLib {
 			// print_object($data);
 		$layout = Layout::getInstance ();			
 		$d = $layout->getApplicationTemplate ( $application, $process, $templateName, $data );
-
+		
 		return $d;
 	}
 	function ExecuteStandardTemplate($params) {

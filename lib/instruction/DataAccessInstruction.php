@@ -96,8 +96,9 @@ class DataAccessInstruction extends \Kuink\Core\Instruction {
 		// Adding params if variable is defined
 		if ($paramsvar != "") {
 			$var = $instManager->variables [$paramsvar];
-			foreach ( $var as $key => $value )
-				$params ["$key"] = $value;
+			if (isset($var) && $var !== '')
+				foreach ( $var as $key => $value )
+					$params ["$key"] = $value;
 		}
 		
 		// Adding the _pk parameter

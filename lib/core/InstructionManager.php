@@ -181,6 +181,20 @@ class InstructionManager {
 		return ($params);
 	}
 
+	//** Get the params output vars
+	public function getParamsOutputVars($instructionXmlNode) {
+		$paramsXml = $instructionXmlNode->xpath ( './Param' );
+		$params = array ();
+		
+		foreach ( $paramsXml as $param ) {
+			$paramName = isset ( $param ['var'] ) ? ( string ) $param ['name'] : '';
+			if (isset($param ['var']))
+			$params [$paramName] = (string)$param['var'];
+		}
+
+		return $params;
+	}
+
 	public function getAttribute($instruction, $attrName, $mandatory = 'false', $default = '') {
 		if (! $mandatory && ! isset ( $instruction [$attrName] ))
 			return $default;

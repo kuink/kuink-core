@@ -21,16 +21,16 @@ class CoreInstruction extends \Kuink\Core\Instruction {
 		return null;
 	}
 
-    /**
-     * Calls a method from ProcessOrchestrator
-     *
-     * @param InstructionManager $instManager
-     *            - The instruction Manager
-     * @param mixed $instructionXmlNode
-     *            - The instruction to execute
-     * @return mixed
-     * @throws \Exception
-     */
+	/**
+	 * Calls a method from ProcessOrchestrator
+	 *
+	 * @param InstructionManager $instManager
+	 *            - The instruction Manager
+	 * @param mixed $instructionXmlNode
+	 *            - The instruction to execute
+	 * @return mixed
+	 * @throws \Exception
+	 */
 	static public function processOrchestrator($instManager, $instructionXmlNode) {
 		$method = ( string ) $instManager->getAttribute ( $instructionXmlNode, NativeCallAttributes::METHOD, true );
 		
@@ -38,6 +38,24 @@ class CoreInstruction extends \Kuink\Core\Instruction {
 		
 		return $result;
 	}
+
+	/**
+	 * Calls a method from ProcessOrchestrator
+	 *
+	 * @param InstructionManager $instManager
+	 *            - The instruction Manager
+	 * @param mixed $instructionXmlNode
+	 *            - The instruction to execute
+	 * @return mixed
+	 * @throws \Exception
+	 */
+	static public function core($instManager, $instructionXmlNode) {
+		$method = ( string ) $instManager->getAttribute ( $instructionXmlNode, NativeCallAttributes::METHOD, true );
+		$core = $instManager->runtime->getCore();
+		$result = $core->$method();
+		return $result;
+	}
+
 }
 
 ?>
