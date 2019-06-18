@@ -79,7 +79,6 @@ class NTLMSoapClient extends \SoapClient
     			'Content-Type: text/xml; charset=utf-8',
     			'SOAPAction: "'.$action.'"',
     	);
-    
     	$this->__last_request_headers = $headers;
     	$this->ch = curl_init($location);
     
@@ -145,7 +144,6 @@ class NTLMSoapClient extends \SoapClient
     			'Content-Type: text/xml; charset=utf-8',
     			'SOAPAction: "'.$action.'"',
     	);
-    
     	$this->__last_request_headers = $headers;
     	$this->ch = curl_init($location);
     
@@ -712,10 +710,12 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
   		$newParams[$key] = (string)$value;
   	try {
 			// hack to cast to array a object of objects
+			//print_object($newParams);
 			$response = $this->object_to_array($this->soapClient->$entity($newParams));
 
   	} catch (\Exception $e) {
-  		$KUINK_TRACE[]='Error calling webservice '.$this->dataSource->name.':'.$entity.':'.$e->getMessage() ;
+			$KUINK_TRACE[]='Error calling webservice '.$this->dataSource->name.':'.$entity.':'.$e->getMessage() ;
+			$KUINK_TRACE[]=$this->soapClient->__getLastRequestHeaders();
   	}
 
   	return (isset($response) ? $response : null);
@@ -870,6 +870,7 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
    * @return unknown
    */
   private function prepareRequestToExecute($params) {
+		global $KUINK_TRACE;
   	$prefix=$this->dataSource->getParam('prefix', false);
   	$entity=$params['_entity'];
   	$call = '<'.$entity.' xmlns="'.$prefix.'">';
@@ -896,8 +897,8 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
 		  <soap:Body>'.$call.'
 		  </soap:Body>
 		</soap:Envelope>';
-  
-  	return $envelope;
+
+		return $envelope;
 	}  
 	
 	public function getSchemaName($params) {

@@ -235,12 +235,13 @@ class DateTimeLib {
 	 */
 	function getYear($params) {
 		$timestamp = isset($params [0]) ? $params [0] : null;
+		$format = isset($params [1]) ? $params [1] : 'Y';
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		$dateTime->setTimestamp ( $timestamp );
 		if (isset ( $params [0] )) {
 			$dateTime->setTimestamp ( $params [0] );
 		}
-		return $dateTime->format ( "Y" );
+		return $dateTime->format ( $format );
 	}
 	
 	/**

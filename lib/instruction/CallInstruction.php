@@ -19,8 +19,8 @@ class CallInstruction extends \Kuink\Core\Instruction {
 		global $KUINK_TRACE;
 		$library = self::getAttribute ( $instructionXmlNode, 'library', $instManager->variables, false ); //$this->get_inst_attr ( $instructionXmlNode, 'library', $instManager->variables, false );
 		$functionName = self::getAttribute ( $instructionXmlNode, 'function', $instManager->variables, false ); //$this->get_inst_attr ( $instructionXmlNode, 'function', $instManager->variables, false );
-
-		
+		$assync = self::getAttribute ( $instructionXmlNode, 'assync', $instManager->variables, false, 'false' ); //$this->get_inst_attr ( $instructionXmlNode, 'function', $instManager->variables, false );
+	
 		$KUINK_TRACE[] = 'Call: '.$library.','.$functionName;
 		
 		// Check if library as 4 elements, the last one is the function name
@@ -51,13 +51,54 @@ class CallInstruction extends \Kuink\Core\Instruction {
 			$callNodeName = $libNodeName;
 			
 			// kuink_mydebug(__CLASS__, __FUNCTION__);
-			$node = new \Kuink\Core\Node ( $callAppName, $callProcessName, $callNodeName );
-			$runtime = new \Kuink\Core\Runtime ( $node, 'lib', $instManager->nodeConfiguration );
-			
-			$result = $runtime->execute ( $functionName, $paramValues, $instManager->exit );
-		} else
+			if ($assync == 'false') {
+				//This is a synchronous call
+				$node = new \Kuink\Core\Node ( $callAppName, $callProcessName, $callNodeName );
+				$runtime = new \Kuink\Core\Runtime ( $node, 'lib', $instManager->nodeConfiguration );
+				
+				$result = $runtime->execute ( $functionName, $paramValues, $instManager->exit );
+			} else {
+				//This is an assync call, then add a new request in order to execute this call assynchronously
+				$node = new \Kuink\Core\Node ( 'framework', 'request', 'api' );
+				$runtime = new \Kuink\Core\Runtime ( $node, 'lib', $instManager->nodeConfiguration );
+
+				$data = array();
+				$data['library'] = $callAppName.','.$callProcessName.','.$callNodeName;
+				$data['function'] = $functionName;
+				$data['params'] = json_encode($paramValues);
+
+				$requestParams = array();
+				$requestParams['request_category_code'] = 'generic.api';
+				$requestParams['data'] = json_encode($data); //Json with context information to call the assync process
+				$requestParams['allowDuplicates'] = '1'; //Allow duplicates
+				$requestParams['assyncProcess'] = '1'; //Assynchronous
+
+				$result = $runtime->execute ('addByCode', $requestParams, $instManager->exit );				
+			}
+		} else {
 			// Execute the local function
-			$result = $instManager->runtime->function_execute ( $instManager->nodeConfiguration, $instManager->runtime->nodeManager->nodeXml, null, $functionName, $instManager->variables, $instManager->exit, $paramValues );
+			if ($assync == 'false') {
+				//This is a synchronous call
+				$result = $instManager->runtime->function_execute ( $instManager->nodeConfiguration, $instManager->runtime->nodeManager->nodeXml, null, $functionName, $instManager->variables, $instManager->exit, $paramValues );
+			} else {
+				//This is an assync call, then add a new request in order to execute this call assynchronously
+				$node = new \Kuink\Core\Node ( 'framework', 'request', 'api' );
+				$runtime = new \Kuink\Core\Runtime ( $node, 'lib', $instManager->nodeConfiguration );
+
+				$data = array();
+				$data['library'] = $instManager->runtime->appName.','.$instManager->runtime->processName.','.$instManager->runtime->nodeName;
+				$data['function'] = $functionName;
+				$data['params'] = json_encode($paramValues);
+
+				$requestParams = array();
+				$requestParams['request_category_code'] = 'generic.api';
+				$requestParams['data'] = json_encode($data); //Json with context information to call the assync process
+				$requestParams['allowDuplicates'] = '1'; //Allow duplicates
+				$requestParams['assyncProcess'] = '1'; //Assynchronous
+
+				$result = $runtime->execute ('addByCode', $requestParams, $instManager->exit );								
+			}
+		}
 
 		$return = $result ['RETURN'];
 		if (isset ( $result ['RETURN'] ))

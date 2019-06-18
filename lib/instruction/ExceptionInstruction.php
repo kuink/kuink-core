@@ -15,14 +15,15 @@ class ExceptionInstruction extends \Kuink\Core\Instruction {
 	static public function execute($instManager, $instructionXmlNode) {
 		global $KUINK_TRACE;
 		$name = (string) self::getAttribute ( $instructionXmlNode, 'name', $instManager->variables, false, '' );//$this->get_inst_attr($instructionXmlNode, 'name', $instManager->variables, false, '');
-		$conditionExpr = (string) self::getAttribute ( $instructionXmlNode, 'condition', $instManager->variables, false, '' );//$this->get_inst_attr($instructionXmlNode, 'condition', $instManager->variables, false, '');
+		//Get the attribute the old fashion way
+		$conditionExpr = isset ( $instructionXmlNode ['condition'] ) ? ( string ) $instructionXmlNode ['condition'] : null;
 				
 		//If condition is set then evaluate it and only continue if it is true
 		if ($conditionExpr != '') {
 			$eval = new \Kuink\Core\EvalExpr();
-				$value = $eval->e( $conditionExpr, $instManager->variables, TRUE);
-				if (!$value)
-					return; //If the condition is not true then return immediately, else let it flow
+			$value = $eval->e( $conditionExpr, $instManager->variables, TRUE);
+			if (!$value)
+				return; //If the condition is not true then return immediately, else let it flow
 		}
 		$KUINK_TRACE[] = '*** EXCEPTION ('.$name.')';   
 		if ($name != '') {	
