@@ -51,7 +51,7 @@
       "lib/lib/MessageLib.php",
       "lib/lib/MetadataLib.php",
       "lib/tools/zend_libs/autoload.php",
-      "lib/tools/tcpdf/config/lang/eng.php",
+      "lib/tools/tcpdf_min/config/lang/eng.php",
       "lib/tools/KuinkPDF/KuinkPDF.php",
       "lib/tools/imapMailbox/ImapMailbox.php",
       "lib/tools/securimage/securimage.php",
