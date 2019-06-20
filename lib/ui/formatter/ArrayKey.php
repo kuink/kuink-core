@@ -30,7 +30,7 @@ class ArrayKey extends Formatter {
 				// print_object($formatedString);
 			}
 		} else {
-			$formatedString = $value [$key];
+			$formatedString = isset($value [$key]) ? $value [$key] : '';
 		}
 
 		return ( string ) $formatedString;
