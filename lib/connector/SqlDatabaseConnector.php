@@ -139,7 +139,7 @@ private function encloseIdentifier($identifier) {
 		}
 		
 		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
+		//$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
 		
 		$this->executeSql ( $sql, $params );
 		
@@ -236,7 +236,7 @@ private function encloseIdentifier($identifier) {
 		}
 		
 		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
+		//$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
 		//$KUINK_TRACE [] = $params;
 
 		//kuink_mydebug('Sql', $sql);
@@ -284,7 +284,7 @@ private function encloseIdentifier($identifier) {
 		}
 		
 		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
+		//$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
 		
 		$canDelete = true;
 		if ($acl == 'true') {
@@ -403,7 +403,7 @@ private function encloseIdentifier($identifier) {
 		
 		// get the page records
 		
-		$params = array ();
+		//$params = array ();
 		if ($limitFrom != 0 || $limitNum != 0)
 			$querySql .= ' LIMIT ' . $limitFrom . ',' . $limitNum;
 		
@@ -489,7 +489,7 @@ private function encloseIdentifier($identifier) {
 			$sql .= ' FOR UPDATE';
 		
 		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
+		//$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
 		
 		$records = $this->executeSql ( $sql, $params, true, false );
 		
@@ -620,8 +620,31 @@ private function encloseIdentifier($identifier) {
 		}
 		// Here we have some parameters
 		$query = $this->db->prepare ( $sql );
+		//if ($query === FALSE)
+		//var_dump($query);
 		//print($sql.'<br/>');
-		$query->execute ( $params );
+
+		//print_object($sql);
+		//print_object($params);
+
+		//Remove unused params from the query to use bind params
+		//$bindParams = array();
+		$sqlTmp = $sql;
+		while ( preg_match ( "/[\:][a-zA-Z0-9_]+/", $sqlTmp, $matches ) ) {
+			$bindParamRaw = $matches [0];
+			$sqlTmp = str_replace($matches[0],'',$sqlTmp);
+			$bindParam = substr($bindParamRaw, -(strlen($bindParamRaw)-1));
+			//$bindParams[$bindParam] = $params[$bindParam];
+			$query->bindValue($bindParam, $params[$bindParam]);
+			//print_object($bindParam);
+		}
+		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
+		//print_object($bindParams);
+		//$this->db->setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_WARNING );
+		//$query->execute ( $bindParams );
+		$query->execute ();
+		//print_r($this->db->errorInfo());
+		//print_object($query->debugDumpParams());
 		
 		//var_dump($sql);
 		//var_dump(count($params));
@@ -632,6 +655,7 @@ private function encloseIdentifier($identifier) {
 		}
 
 		$records = $query->fetchAll ( \PDO::FETCH_ASSOC );
+		//print_object($records);
 		
 		// Handle the errors
 		$errorInfo = $query->errorInfo ();
@@ -981,8 +1005,13 @@ private function encloseIdentifier($identifier) {
   	foreach ($params as $key => $value) {
   		//$param_value = mysql_escape_string($value);
 			$param_value = $value;
-			if (!is_array($param_value))
-				$sql = str_replace('{param->'.$key.'}', $param_value , $sql);
+			if (!is_array($param_value)) {
+				//$sql = str_replace('{param->'.$key.'}', $param_value , $sql);
+				//Prepare the statement for bind params
+				$sql = str_replace('{@param->'.$key.'}', $param_value , $sql);
+				$sql = str_replace('{param->'.$key.'}', ':'.$key , $sql);
+				$sql = str_replace("':".$key."'", ':'.$key , $sql);
+			}
 		}
 			$sql = str_replace('{table_prefix}', $tablePrefix , $sql);
 
@@ -1176,7 +1205,7 @@ private function encloseIdentifier($identifier) {
 			// $entTemplates = $entity->xpath('Attributes/Template');
 			// print_object($entity->Attributes->Attribute);
 			$entityArray = $this->entityToArray ( $entity->Attributes, $nodeManager );
-			// print_object($entity);
+			//print_object($entity);
 			
 			// Check to see if this entity is multilang, in this case we need to create two tables
 			$multilang = $this->getAttribute ( $entity, 'multilang', false, 'multilang', 'false' );
@@ -1193,9 +1222,9 @@ private function encloseIdentifier($identifier) {
 					if ($fieldMultilang != 'true' && $key != '__attributes')
 						$entityArrayNoLang [$field ['name']] = $field;
 				}
-				
 				$entData = $this->getEntityWithChanges ( $nodeManager, $entityArrayNoLang, false, $drop );
 				$changes [$entData ['name']] = $entData;
+
 				// print_object($entityArray);
 				
 				// Add the corresponding multilang entity
@@ -1458,7 +1487,7 @@ private function encloseIdentifier($identifier) {
 	 */
 	private function getEntityWithChanges($nodeManager, $entity, $onlyMultilangAttributes = false, $drop = false) {
 		$data = array ();
-		
+		//print_object($entity);
 		$name = $entity ['__attributes'] ['name']; // $this->getAttribute($entity, 'name', true, 'entity');
 		$multilang = isset ( $entity ['__attributes'] ['multilang'] ) ? $entity ['__attributes'] ['multilang'] : 'false'; // $this->getAttribute($entity, 'multilang', false, 'multilang', 'false');
 		$types = $this->getTypeConversion ();
@@ -1623,7 +1652,8 @@ private function encloseIdentifier($identifier) {
 		// Check for new fields logical --> physical
 		$entAttrs = $entity; // $entity->xpath('Attributes/Attribute');
 		unset ( $entAttrs ['__attributes'] );
-		// print_object($entAttrs);
+		//print_object($name);
+		//print_object($entAttrs);
 		
 		foreach ( $entAttrs as $entAttr ) {
 			$attrName = $entAttr ['name'];
@@ -1636,7 +1666,7 @@ private function encloseIdentifier($identifier) {
 			}
 			
 			if (! $phFound) {
-				// print_object($attrName);
+				//print_object($attrName);
 				$attr = Array ();
 				$attr ['debug'] = '';
 				$attr ['name'] = $this->getAttribute ( $entAttr, 'name', true, 'entity' );
@@ -1706,8 +1736,11 @@ private function encloseIdentifier($identifier) {
 					$attr ['debug'] .= ' default(' . $attr ['default'] . ')';
 				
 				$attrMultiLang = $this->getAttribute ( $attr, 'multilang', false, 'multilang', 'false' );
+				$attrMultiLang = ($attrMultiLang == '') ? 'false' : $attrMultiLang;
 				// print_object($attrMultiLang);
 				if (($multilang == 'true')) {
+					//var_dump($onlyMultilangAttributes);
+					//var_dump($attrMultiLang);
 					if ($onlyMultilangAttributes && ($attrMultiLang == 'true'))
 						$attrs [$attrName] = $attr;
 					else if (! $onlyMultilangAttributes && ($attrMultiLang == 'false'))
