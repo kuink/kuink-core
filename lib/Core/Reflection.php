@@ -18,9 +18,9 @@ namespace Kuink\Core;
 
 class Reflection {
 	static function getBases() {
-		global $KUINK_CFG;
+
 		$applications = array ();
-		$apps = self::directoryContents ( $KUINK_CFG->appRoot . '/apps' );
+		$apps = self::directoryContents ( Configuration::getInstance()->paths->apps );
 		foreach ( $apps as $app )
 			$applications [] = array (
 					'name' => ( string ) $app 
@@ -36,7 +36,7 @@ class Reflection {
 		global $KUINK_CFG;
 		
 		$applications = array ();
-		$apps = self::directoryContents ( $KUINK_CFG->appRoot . '/apps/' . $base );
+		$apps = self::directoryContents ( Configuration::getInstance()->paths->apps . '/' . $base );
 		foreach ( $apps as $app )
 			$applications [] = array (
 					'name' => ( string ) $app 
@@ -56,7 +56,7 @@ class Reflection {
 		// print_object(file_exists($NEON_CFG->appRoot.'/apps/'.$base.'/'.$application.'/application.xml' ));
 		
 		$processes = array ();
-		if (file_exists ( $KUINK_CFG->appRoot . '/apps/' . $base . '/' . $application . '/application.xml' ))
+		if (file_exists ( Configuration::getInstance()->paths->apps . '/' . $base . '/' . $application . '/application.xml' ))
 			return 1;
 		else
 			return 0;
@@ -94,7 +94,7 @@ class Reflection {
 		
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 		
-		$libs = self::directoryContents ( $KUINK_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/lib' );
+		$libs = self::directoryContents ( Configuration::getInstance()->paths->apps. '/' . $appBase . '/' . $application . '/process/' . $process . '/lib' );
 		
 		$cleanLibs = array ();
 		
@@ -310,7 +310,7 @@ class Reflection {
 		
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 		
-		$nodePath = $KUINK_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/' . $type . '/' . $process . '_' . $node . '.xml';
+		$nodePath = Configuration::getInstance()->paths->apps . '/' . $appBase . '/' . $application . '/process/' . $process . '/' . $type . '/' . $process . '_' . $node . '.xml';
 		
 		libxml_use_internal_errors ( true );
 		$nodeXml = simplexml_load_file ( $nodePath, 'SimpleXMLElement', LIBXML_NOCDATA );

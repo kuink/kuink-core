@@ -17,6 +17,7 @@
 namespace Kuink\UI\Control;
 
 use Kuink\Core;
+use Kuink\Core\Lib\FormatterLib;
 
 // Requires neonDatasource to load a datasource
 
@@ -395,7 +396,7 @@ abstract class Control {
 		$params[2] = $value;
 		$params[3] = $formatter_params;
 
-		$formatter = new \FormatterLib($this->nodeconfiguration, null);
+		$formatter = new FormatterLib($this->nodeconfiguration, null);
 
 		$result = $formatter->format( $params );
 

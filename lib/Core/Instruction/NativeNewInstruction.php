@@ -2,6 +2,8 @@
 
 namespace Kuink\Core\Instruction;
 
+use ReflectionClass;
+
 /**
  * Call a native object method
  *
@@ -20,7 +22,7 @@ class NativeNewInstruction extends \Kuink\Core\Instruction {
 		$params = $instManager->getParams ( $instructionXmlNode );
 		
 		// Create a new instance of this object
-		$rc = new \ReflectionClass ( $class );
+		$rc = new ReflectionClass ( $class );
 		$result = $rc->newInstanceArgs ( $params );
 		
 		// var_dump($result);

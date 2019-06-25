@@ -16,6 +16,8 @@
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Formatter;
 
+use Kuink\Core\Configuration;
+
 class Icon extends Formatter {
 	function format($value, $params = null) {
 		return $this->small ( $value, $params );
@@ -29,11 +31,11 @@ class Icon extends Formatter {
 	function small($value, $params = null) {
 		global $KUINK_CFG;
 		$default = ( string ) $this->getParam ( $params, 'default', false, '' );
-		$icon = ( string ) $this->getParam ( $params, $value, false, 'default' );
+		$icon = ( string ) $this->getParam ( $params, $value, false, 'default.png' );
 		$size = ( string ) $this->getParam ( $params, 'size', true, '' );
 		// kuink_mydebug($value, $icon);
-		
-		$file = $KUINK_CFG->themeRoot . 'theme/' . $KUINK_CFG->theme . '/img/' . $icon;
+		$configuration = Configuration::getInstance();
+		$file = $configuration->web->www_root. '/theme/'. $configuration->theme->name .'/img/' . $icon;
 		// Check if the icon exists...
 		//if (file_exists ( $file ))
 			$icon = $file;
@@ -58,7 +60,7 @@ class Icon extends Formatter {
 		
 		$i_value = ( int ) $value;
 		
-		$icon = 'theme/' . $KUINK_CFG->theme . '/img/' . $icon;
+		$icon = 'theme/' . Configuration::getInstance()->theme->name. '/img/' . $icon;
 		for($i = 1; $i <= $i_value; $i ++)
 			$formatter .= '<img align="left" src="' . $icon . '" style="height: ' . $size . 'px; width: auto;" />';
 		

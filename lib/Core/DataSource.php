@@ -16,6 +16,8 @@
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\Core;
 
+use Kuink\Core\Lib\UtilsLib;
+
 class DataSource {
 	var $application;
 	var $process;
@@ -437,7 +439,7 @@ class DataSource {
 		return $record;
 	}
 	function dataset($instruction, $params, $DB) {
-		$utils = new \UtilsLib ();
+		$utils = new UtilsLib ();
 		$records = $utils->xmlToSet ( array (
 				0 => $instruction->asXML () 
 		) );

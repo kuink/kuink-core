@@ -16,6 +16,8 @@
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Control;
 
+use Kuink\Core\Lib\FormatterLib;
+
 /**
  * Properties of the FORM
  * 
@@ -65,7 +67,7 @@ class FileDownload extends Control {
 		$params [2] = $this->id;
 		$params [3] = null;
 		
-		$formatter = new \FormatterLib ( $this->nodeconfiguration, null );
+		$formatter = new FormatterLib ( $this->nodeconfiguration, null );
 		
 		// var_dump( $formatter );
 		

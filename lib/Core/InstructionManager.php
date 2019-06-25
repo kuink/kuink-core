@@ -208,7 +208,7 @@ class InstructionManager {
 		//$var_name = substr ( $attrValue, 1, strlen ( $attrValue ) - 1 );
 		
 		if ($type == '$' || $type == '#' || $type == '@') {
-			$eval = new \Kuink\Core\EvalExpr ();
+			$eval = new EvalExpr ();
 			$value = $eval->e ( $attrValue, $this->variables, FALSE, TRUE, FALSE ); // Eval and return a value without ''
 		} else
 			$value = $attrValue;

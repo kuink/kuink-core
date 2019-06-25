@@ -18,7 +18,7 @@ class LegacyLibraryInstruction extends \Kuink\Core\Instruction {
 	//A list is a string, so an empty list is an empty string
 	static public function execute($instManager, $instructionXmlNode) {
 		$library = $instructionXmlNode->getName();
-		$managerName = '\\' . $library;
+		$managerName = '\\Kuink\\Core\\Lib\\' . $library;
 		$manager = new $managerName($instManager->nodeConfiguration, \Kuink\Core\MessageManager::getInstance());
 		$params = $instManager->getParams ( $instructionXmlNode );
 		$method = $instManager->getAttribute( $instructionXmlNode, 'method');

@@ -269,11 +269,6 @@ class Smarty extends \Smarty
 
         self::setSmartyDirectories($smarty, $themeName);
 
-        $smarty->setTemplateDir($configuration->get('dirRoot') . '/' . $configuration->get('kuinkRoot') . '/theme/' . $themeName . '/template/');
-        $smarty->setCompileDir($configuration->get('dirRoot') . '/' . $configuration->get('kuinkRoot') . '/theme/' . $themeName . '/theme_cache_compiled/');
-        $smarty->setCacheDir($configuration->get('dirRoot') . '/' . $configuration->get('kuinkRoot') . '/theme/' . $themeName . '/theme_cache/');
-
-
         $smarty->assign($data);
         $result = $smarty->fetch($templateName . '.tpl');
         return $result;
@@ -287,7 +282,6 @@ class Smarty extends \Smarty
 
         $smarty = new \Smarty ();
 
-        $templateDir = $this->configuration->get('appRoot') . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/templates/';
         $this->setThemeDirectories();
         $smarty->assign($data);
 
@@ -332,7 +326,7 @@ class Smarty extends \Smarty
 
         $template_name = ($params['_skeleton'] == '') ? $type . '.tpl' : $type . '_' . $params['_skeleton'] . '.tpl';
 
-        $output = $smarty->fetch($this->configuration->get('dirRoot') . '/' . $this->configuration->get('kuinkRoot') . '/theme/' . $this->themeName . '/ui/control/' . $template_name);
+        $output = $smarty->fetch(Configuration::getInstance()->paths->theme . '/ui/control/' . $template_name);
 
         $this->addHtml($output, $position);
     }

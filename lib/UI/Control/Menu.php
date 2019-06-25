@@ -16,11 +16,13 @@
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Control;
 
+use Kuink\Core\Lib\UtilsLib;
+
 class Menu extends Control {
 	function display() {
 		$actionPermissions = $this->nodeconfiguration [\Kuink\Core\NodeConfKey::ACTION_PERMISSIONS];
 		$actionarray = array ();
-		$utils = new \UtilsLib ( $this->nodeconfiguration, null );
+		$utils = new UtilsLib ( $this->nodeconfiguration, null );
 		$root = ($this->xml_definition->xpath ( './Action' ));
 		$parent = $this->xml_definition->xpath ( '.' );
 		$actionName = ( string ) $parent [0] ['action'];

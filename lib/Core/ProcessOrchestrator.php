@@ -489,7 +489,7 @@ class ProcessOrchestrator
                 // var_dump($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->processVars[$currentProcessGuid][$variable]);
             }
 
-            if (count($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid]) == 0)
+            if (empty($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid]) == 0)
                 unset ($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid]);
         }
         // var_dump("CLEAR");

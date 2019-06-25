@@ -204,7 +204,7 @@ class NodeManager {
 		// We have to use the DomDocument for this and reload the node
 		$domXml = new \DOMDocument ();
 		$domXml->load ( $this->nodeFilename );
-		$xsdFilename = $KUINK_CFG->appRoot . '/apps/framework/framework/schema/' . $this->type . '.xsd';
+		$xsdFilename = $KUINK_CFG->appRoot . '/apps/framework/schema/' . $this->type . '.xsd';
 		var_dump ( $this->nodeFilename );
 		var_dump ( $xsdFilename );
 		$isValid = $domXml->schemaValidate ( $xsdFilename );

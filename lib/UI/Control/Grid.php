@@ -17,6 +17,9 @@
 namespace Kuink\UI\Control;
 
 use Kuink\Core as Core;
+use Kuink\Core\Lib\DateTimeLib;
+use Kuink\Core\Lib\SetLib;
+use Kuink\Core\Lib\UtilsLib;
 
 /**
  * Default values for properties
@@ -865,8 +868,8 @@ class Grid extends Control {
 			$pivotData = explode ( ',', $this->pivotdata );
 			$pivotSort = explode(',', $this->pivotsort);
 			$count = 0;
-			$utilsLib = new \UtilsLib ();
-			$setLib = new \SetLib();			
+			$utilsLib = new UtilsLib ();
+			$setLib = new SetLib();
 			foreach ( $this->bind_data as $data ) {
 				$unsortedData = $utilsLib->pivotTable(array((array) $data, $this->pivotlines, $this->pivotcols, $this->pivotdata));
 				//zprint_object($unsortedData);
@@ -1436,7 +1439,7 @@ class Grid extends Control {
 				break;
 		}
 		
-		$guid = new \UtilsLib ( $this->nodeconfiguration, null );
+		$guid = new UtilsLib ( $this->nodeconfiguration, null );
 		$guid = $guid->GuidClean ( null );
 		
 		$width = (isset ( $this->view_params ['width'] )) ? $this->view_params ['width'] : 300; // @TODO STI: Joao Patricio - add 300 to a default value
@@ -1681,7 +1684,7 @@ class Grid extends Control {
 		$params ['treeparentid'] = $this->getProperty ( $this->name, GridProperty::TREE_PARENT_ID, false, GridDefaults::TREE_PARENT_ID );
 		$params ['treecollapsed'] = $this->getProperty ( $this->name, GridProperty::TREE_COLLAPSED, false, GridDefaults::TREE_COLLAPSED );
 		
-		$dateTimeLib = new \DateTimeLib ( $this->nodeconfiguration, null );
+		$dateTimeLib = new DateTimeLib ( $this->nodeconfiguration, null );
 		$personTimeZoneOffset = $dateTimeLib->getTzOffset ( array (
 				0 => $kuink_user ['timezone']
 		) );
@@ -1700,7 +1703,7 @@ class Grid extends Control {
 		) );
 		$this->build ();
 		
-		$utils = new \UtilsLib ( $this->nodeconfiguration, null );
+		$utils = new UtilsLib ( $this->nodeconfiguration, null );
 		$file_guid = $utils->GuidClean ( null );
 		
 		$config = $this->nodeconfiguration ['config'];

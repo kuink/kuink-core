@@ -2,6 +2,8 @@
 
 namespace Kuink\Core\Instruction;
 
+use Kuink\Core\Lib\TemplateLib;
+
 /**
  * Template Instruction
  *
@@ -29,7 +31,7 @@ class TemplateInstruction extends \Kuink\Core\Instruction {
 		$params [] = $name;
 		$params [] = $language;
 		$params [] = $instManager->getParams( $instructionXmlNode, true ); //Get the params defined in params attribute
-		$tl = new \TemplateLib ( $instManager->nodeConfiguration, null );
+		$tl = new TemplateLib ( $instManager->nodeConfiguration, null );
 		$result = $tl->ExecuteStandardTemplate ( $params );
 		
 		return $result;

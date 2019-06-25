@@ -22,60 +22,63 @@ namespace Kuink\Core;
  * @author ptavares
  *        
  */
-use Kuink\UI\Layout\NLayout;
-use Kuink\UI\Layout\LayoutTemplate;
-
 class Factory {
-	/**
-	 * Given the formatter name, returns the formatter object
-	 * 
-	 * @param string $name
-	 *        	- Formatter name
-	 * @param array $nodeconfiguration        	
-	 * @param Kuink\Core\MessageManager $msg_manager        	
-	 */
+    /**
+     * Given the formatter name, returns the formatter object
+     *
+     * @param string $name
+     *            - Formatter name
+     * @param array $nodeconfiguration
+     * @param Kuink\Core\MessageManager $msg_manager
+     * @return mixed
+     * @throws \Exception
+     */
 	static function getFormatter($name, $nodeconfiguration, $msg_manager) {
-		global $KUINK_INCLUDE_PATH;
-		if (file_exists ( $KUINK_INCLUDE_PATH . 'lib/ui/formatter/' . $name . '.php' )) {
-			require_once ($KUINK_INCLUDE_PATH . 'lib/ui/formatter/' . $name . '.php');
-			$class = 'Kuink\\UI\\Formatter\\' . $name;
-			return new $class ( $nodeconfiguration, $msg_manager );
-		} else
-			throw new \Exception ( 'Formatter ' . $name . ' does not exists.' );
-	}
-	
-	/**
-	 * Given the control name, returns the control object
-	 * 
-	 * @param string $name
-	 *        	- control name
-	 * @param array $nodeconfiguration        	
-	 * @param Neuton\Core\MessageManager $msg_manager        	
-	 */
+		try {
+            $class = 'Kuink\\UI\\Formatter\\' . $name;
+            return new $class ( $nodeconfiguration, $msg_manager );
+        } catch (\Throwable $e) {
+            throw new \Exception ( 'Formatter ' . $name . ' does not exists.' , 0, $e);
+        }
+
+
+    }
+
+    /**
+     * Given the control name, returns the control object
+     *
+     * @param $type
+     * @param array $nodeconfiguration
+     * @param $xml_definition
+     * @return mixed
+     * @throws \Exception
+     */
 	static function getControl($type, $nodeconfiguration, $xml_definition) {
-		global $KUINK_INCLUDE_PATH;
-		$controlFile = $KUINK_INCLUDE_PATH . 'lib/ui/control/' . $type . '.php';
-		if (file_exists ( $controlFile )) {
-			require_once ($controlFile);
-			$class = 'Kuink\\UI\\Control\\' . $type;
-			return new $class ( $nodeconfiguration, $xml_definition );
-		} else
-			throw new \Exception ( 'Cannot create ' . $type . ' control object.' );
+	    try {
+            $class = 'Kuink\\UI\\Control\\' . $type;
+            return new $class ( $nodeconfiguration, $xml_definition );
+        } catch (\Throwable $e) {
+            throw new \Exception ( 'Cannot create ' . $type . ' control object.' , 0, $e);
+        }
 	}
-	
-	/**
-	 * Given the library name, returns the Library object
-	 * 
-	 * @param string $name
-	 *        	- Library name
-	 * @param array $nodeconfiguration        	
-	 * @param Kuink\Core\MessageManager $msg_manager        	
-	 */
+
+    /**
+     * Given the library name, returns the Library object
+     *
+     * @param string $name
+     *            - Library name
+     * @param array $nodeconfiguration
+     * @param Kuink\Core\MessageManager $msg_manager
+     * @return mixed
+     */
 	static function getLibrary($name, $nodeconfiguration, $msg_manager) {
-		global $KUINK_INCLUDE_PATH;
-		require_once ($KUINK_INCLUDE_PATH . 'lib/lib/' . $name . '.php');
-		$class = 'Kuink\\Core\\Library\\' . $name;
-		return new $class ( $nodeconfiguration, $msg_manager );
+	    try {
+            $class = 'Kuink\\Core\\Lib\\' . $name;
+            return new $class ( $nodeconfiguration, $msg_manager );
+        } catch (\Throwable $e) {
+            throw new \Exception ( 'Cannot create ' . $name . ' lib.' , 0, $e);
+        }
+
 	}
 
     /**
@@ -97,18 +100,15 @@ class Factory {
 		return;
 	}
 	static function getDataSourceConnector($type, $dataSource) {
-		global $KUINK_INCLUDE_PATH;
-
 		$class = '\\Kuink\\Core\\DataSourceConnector\\' . $type;
 		return new $class ( $dataSource );
 	}
 	static function getInstruction($name, $runtime) {
-		global $KUINK_INCLUDE_PATH;
-		
-		require_once ($KUINK_INCLUDE_PATH . 'lib/instruction/' . $name . 'Instruction.php');
-		$class = '\\Kuink\\Core\\Instruction\\' . $name . 'Instruction';
-		return new $class ( $runtime );
+	    try {
+            $class = '\\Kuink\\Core\\Instruction\\' . $name . 'Instruction';
+            return new $class ( $runtime );
+        } catch (\Throwable $e) {
+            throw new \Exception ( 'Cannot create ' . $name . ' lib.' , 0, $e);
+        }
 	}
 }
-
-?>

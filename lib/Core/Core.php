@@ -196,9 +196,7 @@ class Core
         switch ($type) {
             case "photo" :
                 $file = $guid . '.jpg';
-                $base = $KUINK_CFG->imageRoot . $type . '/';
-
-                var_dump($KUINK_CFG->imageRoot);
+                $base = Configuration::getInstance()->paths->image . '/' . $type . '/';
 
                 $baseRP = realpath($base);
                 $path = realpath($base . $file);

@@ -6,6 +6,7 @@
  */
 namespace Kuink\Core\DataSourceConnector;
 
+use Kuink\Core\Lib\FileLib;
 use Kuink\Core\TraceManager;
 use Kuink\Core\TraceCategory;
 
@@ -66,7 +67,7 @@ class DocumentConverterConnector extends \Kuink\Core\DataSourceConnector {
 			$fileExt = $format;
 			$fileMime = 'application/'.$format;
 			
-			$fileLib = new \FileLib ( $this->nodeconfiguration, \Kuink\Core\MessageManager::getInstance () );
+			$fileLib = new FileLib ( $this->nodeconfiguration, \Kuink\Core\MessageManager::getInstance () );
 			
 			$newFile = $fileLib->register( $newName, $path, $newName, $fileSize, $fileExt, $fileMime, $KUINK_CFG->auth->user->id, '' );
 		}

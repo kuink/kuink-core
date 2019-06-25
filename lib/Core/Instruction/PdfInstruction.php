@@ -2,6 +2,10 @@
 
 namespace Kuink\Core\Instruction;
 
+use Kuink\Core\Lib\FileLib;
+use Kuink\Core\Lib\UtilsLib;
+use KuinkPDF;
+
 /**
  * Creates a PDF
  *
@@ -49,7 +53,7 @@ class PdfInstruction extends \Kuink\Core\Instruction {
 		
 		// The file should be overriden if exists?
 		$override = (string) self::getAttribute ( $instructionXmlNode, 'override', $instManager->variables, false, 'true'); //$this->get_inst_attr ( $instruction_xmlnode, 'override', $instManager->variables, false, 'true' );
-		$guid = new \UtilsLib ( $instManager->nodeConfiguration, null );
+		$guid = new UtilsLib ( $instManager->nodeConfiguration, null );
 		$guid = $guid->GuidClean ( null );
 		// If the filename is not supplied then return a guid
 		$filename = (string) self::getAttribute ( $instructionXmlNode, 'filename', $instManager->variables, false, $guid); //$this->get_inst_attr ( $instruction_xmlnode, 'filename', $instManager->variables, false, $guid );
@@ -59,7 +63,7 @@ class PdfInstruction extends \Kuink\Core\Instruction {
 		$html = $params ['content'];
 		
 		// create new PDF document
-		$pdf = new \KuinkPDF ( $orientation, $unit, $paper, true, 'UTF-8', false, false );
+		$pdf = new KuinkPDF ( $orientation, $unit, $paper, true, 'UTF-8', false, false );
 		
 		// set document information
 
@@ -172,9 +176,9 @@ class PdfInstruction extends \Kuink\Core\Instruction {
 		
 		$idFile = null;
 		
-		$utils = new \UtilsLib ( $instManager->nodeConfiguration, \Kuink\Core\MessageManager::getInstance () );
+		$utils = new UtilsLib ( $instManager->nodeConfiguration, \Kuink\Core\MessageManager::getInstance () );
 		$fileGuid = $utils->GuidClean ( null );
-		$filelib = new \FileLib ( $instManager->nodeConfiguration, \Kuink\Core\MessageManager::getInstance () );
+		$filelib = new FileLib ( $instManager->nodeConfiguration, \Kuink\Core\MessageManager::getInstance () );
 		if ($register == 'true') {
 			// register the file in the database
 			$originalName = $filename;

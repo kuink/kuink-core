@@ -37,9 +37,7 @@ class Tools {
 		return $pageURL;
 	}
 	static public function getWWWRoot() {
-		global $KUINK_CFG;
-		
-		return $KUINK_CFG->wwwRoot;
+		return Configuration::getInstance()->web->www_root;
 	}
 	static public function setUrlParams($baseurl, $params=array()) {
 		$url_parsed = parse_url ( htmlspecialchars_decode($baseurl) );

@@ -16,6 +16,8 @@
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Control;
 
+use Kuink\Core\Lib\DateTimeLib;
+use Kuink\Core\Lib\UtilsLib;
 use Kuink\Core\NodeConfKey;
 use Kuink\Core as Core;
 
@@ -1044,7 +1046,7 @@ class Form extends Control {
 				// The user has permissions to execute this action
 				// Add this action to the array
 				$label = Core\Language::getString ( $label, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
-				$utils = new \UtilsLib ( $this->nodeconfiguration, null );
+				$utils = new UtilsLib ( $this->nodeconfiguration, null );
 				$url = $utils->ActionUrl ( array (
 						0 => $name 
 				) );
@@ -1351,7 +1353,7 @@ class Form extends Control {
 		$params ['listFormFields'] = $listFormFields;
 		$params ['_languages'] = isset ( $this->datasources ['_lang'] ) ? $this->datasources ['_lang'] : null;
 		
-		$dateTimeLib = new \DateTimeLib ( $this->nodeconfiguration, null );
+		$dateTimeLib = new DateTimeLib ( $this->nodeconfiguration, null );
 		$personTimeZoneOffset = $dateTimeLib->getTzOffset ( array (
 				0 => $user ['timezone'] 
 		) );

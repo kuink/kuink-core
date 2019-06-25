@@ -42,7 +42,7 @@ class FormatterLib {
 	private function call_formatter($formatter_name, $params, $value) {
 		$formatter_name = str_replace ( 'Formatter', '', $formatter_name );
 		// kuink_mydebug('Formatter', $formatter_name);
-		$formatter = Kuink\Core\Factory::getFormatter ( $formatter_name, $this->nodeconfiguration, null );
+		$formatter = \Kuink\Core\Factory::getFormatter ( $formatter_name, $this->nodeconfiguration, null );
 		
 		if (! $formatter)
 			throw new Exception ( 'Formatter ' . $formatter_name . ' does not exists.' );
