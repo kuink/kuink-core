@@ -159,7 +159,7 @@ class Runtime {
 		$this->libraries [] = null;
 		
 		// This object will hold the feedback user messages
-		$this->msg_manager = \Kuink\Core\MessageManager::getInstance (); // \neon_msg_manager();
+		$this->msg_manager = MessageManager::getInstance (); // \neon_msg_manager();
 		
 		$kuinkUser = new User ();
 		$kuink_user = $kuinkUser->getUser ();
@@ -362,8 +362,8 @@ class Runtime {
 
 		// Registering global apis
 		// This shouldn't be here
-		\Kuink\Core\ProcessOrchestrator::registerAPI ( 'framework,ticket,api,add' );
-		\Kuink\Core\ProcessOrchestrator::registerAPI ( 'framework,ticket,api,getHandlers' );
+		ProcessOrchestrator::registerAPI ( 'framework,ticket,api,add' );
+		ProcessOrchestrator::registerAPI ( 'framework,ticket,api,getHandlers' );
 		// Clear event control variables
 		$this->event_raised = false;
 		$this->event_raised_name = '';
@@ -585,7 +585,7 @@ class Runtime {
 				
 				// Bypass formatters and controls
 				if ($libtype == 'lib') {
-					$manager = new $managername ( $this->nodeconfiguration, \Kuink\Core\MessageManager::getInstance () );
+					$manager = new $managername ( $this->nodeconfiguration, MessageManager::getInstance () );
 					
 					if (isset ( $manager ))
 						$this->libraries [$libname] = $manager;
@@ -665,7 +665,7 @@ class Runtime {
 				//throw new \Exception($e->getMessage());
 				throw $e;
 			} else {
-				$msg_manager = \Kuink\Core\MessageManager::getInstance();
+				$msg_manager = MessageManager::getInstance();
 				$msg_manager->add(MessageType::EXCEPTION,'Exception:: '. $e->getMessage());
 			}
 			//Rollback transactions
@@ -673,7 +673,7 @@ class Runtime {
 			//print_object($KUINK_TRACE);
 			//die();			
 			//print_object($e->getMessage());
-			\Kuink\Core\DataSourceManager::rollbackTransaction();
+			DataSourceManager::rollbackTransaction();
 				
 		}
 		catch(\Exception $e) {
@@ -684,12 +684,12 @@ class Runtime {
 			      //throw new \Exception($e->getMessage());
 		      		throw $e;
 		  		} else {
-		      	$msg_manager = \Kuink\Core\MessageManager::getInstance();
+		      	$msg_manager = MessageManager::getInstance();
 		        $msg_manager->add(MessageType::EXCEPTION,'Exception:: '. $e->getMessage());
 		      }
 					//Rollback transactions
 					//print_object($e->getMessage());
-		      \Kuink\Core\DataSourceManager::rollbackTransaction();
+		      DataSourceManager::rollbackTransaction();
 		}
 		
 		if ($this->event_raised) {

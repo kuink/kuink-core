@@ -47,11 +47,11 @@ class NodeManager {
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 		if ($this->process != '') {
 			if ($type == 'nodes' || $type == 'lib' || $type == 'ui')
-				$this->nodeFilename = Configuration::getInstance()->web->www_root .'/' . $appBase . '/' . $application . '/process/' . $process . '/' . $type . '/' . $process . '_' . $node . '.xml';
+				$this->nodeFilename = Configuration::getInstance()->paths->apps .'/' . $appBase . '/' . $application . '/process/' . $process . '/' . $type . '/' . $process . '_' . $node . '.xml';
 			else
-				$this->nodeFilename = Configuration::getInstance()->web->www_root .'/' . $appBase . '/' . $application . '/process/' . $process . '/' . $type . '/' . $node . '.xml';
+				$this->nodeFilename = Configuration::getInstance()->paths->apps .'/' . $appBase . '/' . $application . '/process/' . $process . '/' . $type . '/' . $node . '.xml';
 		} else
-			$this->nodeFilename = Configuration::getInstance()->web->www_root .'/' . $appBase . '/' . $application . '/' . $type . '/' . $node . '.xml';
+			$this->nodeFilename = Configuration::getInstance()->paths->app .'/' . $appBase . '/' . $application . '/' . $type . '/' . $node . '.xml';
 		$this->loaded = 0;
 	}
 	public function exists() {
