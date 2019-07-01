@@ -60,7 +60,6 @@ class DataSource {
 		
 		// kuink_mydebug('METHOD PATH','apps/'.$methodappname.'/process/'.$methodprocessname.'/dataaccess/'.$methodname.'.xml');
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $methodappname ) : '';
-		
 		libxml_use_internal_errors ( true );
 		$this->datasourcexml_domobject = simplexml_load_file ( Configuration::getInstance()->paths->apps. '/' . $appBase . '/' . $methodappname . '/process/' . $methodprocessname . '/dataaccess/' . $methodname . '.xml', 'SimpleXMLElement', LIBXML_NOCDATA );
 		if ($this->datasourcexml_domobject == null) {

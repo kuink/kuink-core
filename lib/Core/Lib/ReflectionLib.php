@@ -15,6 +15,8 @@ namespace Kuink\Core\Lib;
 //
 // You should have received a copy of the GNU General Public License
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
+use Kuink\Core\Configuration;
+
 class ReflectionLib extends \Kuink\Core\Lib {
 	var $nodeconfiguration;
 	var $msg_manager;
@@ -231,7 +233,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		
 		$nodeName = ($type == 'nodes' || $type == 'lib') ? $process . '_' . $node . '.xml' : $node . '.xml';
 		
-		$filePath = ($type == 'dd') ? $KUINK_CFG->appRoot . "apps/$base/$application/$type/" : $KUINK_CFG->appRoot . "apps/$base/$application/process/$process/$type/";
+		$filePath = ($type == 'dd') ? Configuration::getInstance()->paths->apps . "/$base/$application/$type/" : Configuration::getInstance()->paths->apps . "/$base/$application/process/$process/$type/";
 		$fileName = $filePath . '/' . $nodeName;
 		
 		// print_object($fileName);

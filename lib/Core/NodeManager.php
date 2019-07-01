@@ -51,7 +51,7 @@ class NodeManager {
 			else
 				$this->nodeFilename = Configuration::getInstance()->paths->apps .'/' . $appBase . '/' . $application . '/process/' . $process . '/' . $type . '/' . $node . '.xml';
 		} else
-			$this->nodeFilename = Configuration::getInstance()->paths->app .'/' . $appBase . '/' . $application . '/' . $type . '/' . $node . '.xml';
+			$this->nodeFilename = Configuration::getInstance()->paths->apps .'/' . $appBase . '/' . $application . '/' . $type . '/' . $node . '.xml';
 		$this->loaded = 0;
 	}
 	public function exists() {
@@ -114,7 +114,7 @@ class NodeManager {
 		$this->requireLoad ();
 		
 		$xpathCondition = '[';
-		$conditions = count ( $attributeName );
+		$conditions = is_array($attributeName) ? count($attributeName) : 0;
 		$countConditions = 0;
 		if (is_array ( $attributeName )) {
 			foreach ( $attributeName as $attr ) {
@@ -204,7 +204,7 @@ class NodeManager {
 		// We have to use the DomDocument for this and reload the node
 		$domXml = new \DOMDocument ();
 		$domXml->load ( $this->nodeFilename );
-		$xsdFilename = $KUINK_CFG->appRoot . '/apps/framework/schema/' . $this->type . '.xsd';
+		$xsdFilename = $KUINK_CFG->appRoot . '/apps/framework/framework/schema/' . $this->type . '.xsd';
 		var_dump ( $this->nodeFilename );
 		var_dump ( $xsdFilename );
 		$isValid = $domXml->schemaValidate ( $xsdFilename );

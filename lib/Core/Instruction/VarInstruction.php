@@ -104,14 +104,18 @@ class VarInstruction extends \Kuink\Core\Instruction {
 				ProcessOrchestrator::setProcessVariable ( $varname, $key, $value );
 			} else { // local variable
 				//Get the original variable
-				$var = isset($instManager->variables[$varname]) ? $instManager->variables [$varname] : null; 
+				$var = isset($instManager->variables[$varname]) ? $instManager->variables[$varname] : null;
 				if ($key != '')
 					$instManager->variables[$varname] = self::setVarKeyInDepth($instManager, $var, $keys, $value);
 				else {
-					if ($keyIsSet && $key == '')
+					if ($keyIsSet && $key == '') {
+						if (!is_array($instManager->variables[$varname])) {
+							$instManager->variables[$varname] = [];
+						}
 						$instManager->variables[$varname][] = $value;
-					else
+					} else {
 						$instManager->variables[$varname] = $value;
+					}
 				}
 			}
 		}

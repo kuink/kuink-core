@@ -52,11 +52,11 @@ class Smarty extends \Smarty
         $this->assign('THEME', $themeName);
         $context = \Kuink\Core\ProcessOrchestrator::getContext();
         $this->assign('_idContext', ($context == null) ? null : $context->id);
-        $this->assign('_apiUrl', $this->configuration->get('apiUrl '));
+        $this->assign('_apiUrl', '/api.php?neonfunction=');
         $this->assign('_kuinkRoot', $this->configuration->get('kuinkRoot'));
         $this->assign('_themeRoot', $this->configuration->get('themeRoot'));
         $this->assign('_streamUrl', $this->configuration->get('streamUrl'));
-        $this->assign('_apiCompleteUrl', $this->configuration->get('apiCompleteUrl'));
+        $this->assign('_apiCompleteUrl', Configuration::getInstance()->web->www_root.'/api.php?neonfunction=');
         $this->assign('_imageUrl', $this->configuration->get('imageRemote'));
         $this->assign('_photoUrl', $this->configuration->get('photoRemote'));
         $this->assign('_environment', $this->configuration->get('environment'));

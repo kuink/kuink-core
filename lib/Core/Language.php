@@ -28,7 +28,7 @@ class Language {
 		// Load language specific string objects
 		$appBase = $appManager->getApplicationBase ( $app_name );
 		$KUINK_TRANSLATION [$app_name] = self::loadLaguageFile ( $appBase . '/' . $app_name, $lang );
-		$KUINK_TRANSLATION ['framework'] = self::loadLaguageFile ( 'framework', $lang );
+		$KUINK_TRANSLATION ['framework'] = self::loadLaguageFile ( 'framework/framework', $lang );
 	}
 	
 	static private function getTranslation($xPathElement, $xPathAttribute, $identifier, $app_name='framework', $params=null){

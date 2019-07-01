@@ -20,6 +20,7 @@ use Kuink\Core\Lib\DateTimeLib;
 use Kuink\Core\Lib\UtilsLib;
 use Kuink\Core\NodeConfKey;
 use Kuink\Core as Core;
+use Kuink\Core\Tools;
 
 /**
  * Properties of the FORM
@@ -260,7 +261,7 @@ class Form extends Control {
 		parent::__construct ( $nodeconfiguration, $xml_definition );
 		
 		$baseurl = $nodeconfiguration ['baseurl'];
-		$url = \Kuink\Core\Tools::setUrlParams ( $baseurl );
+		$url = Tools::setUrlParams ( $baseurl );
 		$this->baseurl = $url . '&form=' . $this->name;
 		
 		$this->dynamic_fields = array ();
@@ -318,7 +319,7 @@ class Form extends Control {
 	 */
 	private function hasTabs()
 	{
-		return ((count($his->tabs) > 1) ? 1 : 0);
+		return ((count($this->tabs) > 1) ? 1 : 0);
 	}
 
 	/**
@@ -671,7 +672,7 @@ class Form extends Control {
 	// If this field has rules, then register them
 	private function addRules($formfield, $id, $attributes) {
 		global $KUINK_LAYOUT;
-		$theme = $KUINK_LAYOUT->getTheme();
+		$theme = Core\Configuration::getInstance()->theme->name;
 		
 		$f_xml = $formfield->children ();
 		foreach ( $f_xml as $child ) {
@@ -1121,10 +1122,11 @@ class Form extends Control {
 	function bindData() {
 		$persist = $this->getProperty ( $this->name, FormProperty::PERSIST, false, FormPropertyDefaults::PERSIST );
 		$storedData = $this->getContextVariable ( $this->name . '_contextData' );
-		if (count ( $this->bind_data ) == 0) {
+
+		if (empty( $this->bind_data )) {
 			// No bind data
 			// print_object('NO POST DATA');
-			if (count ( $storedData ) > 0) {
+			if (!empty( $storedData )) {
 				// Set context Data
 				// print_object('SET CONTEXT DATA');
 				// $this->bind_data = $storedData;

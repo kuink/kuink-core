@@ -69,7 +69,7 @@ class DataAccess {
 			$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $daAppName ) : '';
 			// var_dump($appBase.' - '.$daAppName.' - '.$daProcessName.' - '.$daName.' - '.$dataSourceName);
 			libxml_use_internal_errors ( true );
-			$this->dataAccessXml_domobject = simplexml_load_file ( Configuration::getInstance()->paths->apps . $appBase . '/' . $daAppName . '/process/' . $daProcessName . '/dataaccess/' . $daName . '.xml', 'SimpleXMLElement', LIBXML_NOCDATA );
+			$this->dataAccessXml_domobject = simplexml_load_file ( Configuration::getInstance()->paths->apps . '/' . $appBase . '/' . $daAppName . '/process/' . $daProcessName . '/dataaccess/' . $daName . '.xml', 'SimpleXMLElement', LIBXML_NOCDATA );
 			if ($this->dataAccessXml_domobject == null) {
 				// Register the error
 				echo "Failed loading XML\n";

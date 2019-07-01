@@ -228,7 +228,7 @@ class Application {
 			  $datasource = new \Kuink\Core\DataSource( null, 'framework,acl,getRoles','framework', 'user');
 			  $pars=array( 'acl_code'=>'_global', 'id_person'=>$idNumber, 'id_company' => $idCompany );
 			} else {
-			  $datasource = new \Kuink\Core\DataSource( null, 'framework,user,user.getRoles','framework', 'user');
+			  $datasource = new \Kuink\Core\DataSource( null, 'framework/framework,user,user.getRoles','framework', 'user');
 			  $pars=array( 'id_person'=>$idNumber, 'id_company' => $idCompany );
 			}
 			$alocs = $datasource->execute($pars);

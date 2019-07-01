@@ -67,7 +67,7 @@ class User {
 
 		// Load the person from fw_person
 		// Set the public key
-		$personDa = new DataAccess ( 'framework,user,person.get', 'framework', 'user' );
+		$personDa = new DataAccess ( 'framework/framework,user,person.get', 'framework', 'user' );
 		$personData = array (
 				'id_person' => $kuinkUser ['id'],
 				'id_company' => ProcessOrchestrator::getCompany ()
@@ -221,9 +221,9 @@ class Runtime {
 			$capabilities = isset($this->nodeconfiguration[NodeConfKey::CAPABILITIES]) ? $this->nodeconfiguration[NodeConfKey::CAPABILITIES] : null;
 
 			//Only rebuild if the capabilites are not set
-			if (count($capabilities) == 0 || $force) {
+			if (empty($capabilities) || $force) {
 				//print_object('NEW...');
-				if (count($roles)>0) {
+				if (!empty($roles)) {
 					$rolesFilter = array();
 					foreach ($roles as $roleName => $roleValue) {
 						$rolesFilter[] = '\''.$roleName.'\'';
@@ -276,7 +276,7 @@ class Runtime {
 	public function buildCapabilitiesOfList($roles) {
 		if ($roles != '') {
 			// get the value from fw_config
-			$dataAccess = new \Kuink\Core\DataAccess ( 'framework,user.role,getCapabilitiesOfList', 'framework', 'role' );
+            $dataAccess = new \Kuink\Core\DataAccess ( 'framework/framework,user.role,getCapabilitiesOfList', 'framework', 'role' );
 			$params ['role_codes'] = $roles;
 			$resultset = $dataAccess->execute ( $params );
 			if ($resultset) {
@@ -666,7 +666,7 @@ class Runtime {
 				throw $e;
 			} else {
 				$msg_manager = MessageManager::getInstance();
-				$msg_manager->add(MessageType::EXCEPTION,'Exception:: '. $e->getMessage());
+				$msg_manager->add(MessageType::EXCEPTION,sprintf('Exception:: %s %s', $e->getMessage(), $e->getTraceAsString()));
 			}
 			//Rollback transactions
 			//global $KUINK_TRACE;

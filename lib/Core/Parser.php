@@ -213,16 +213,13 @@ class EvalExpr {
 		$KUINK_TRACE [] = 'EvalExpr: ' . $expr;
 		$result = FALSE;
 		if ($boolean) {
-			// TODO: Handle quotes in expr
-			$functionRef = function() use ($expr) {
-				return $expr ? 1 : 0;
-			};
-			$result = $functionRef ();
+
+			$result = eval(sprintf("return (%s) ? 1 : 0;", $expr));
 		} else if ($string) {
 			$result = $expr;
 		} else {
 			// Math Expression
-			// $functionRef = create_function('', "return (".$expr.");");
+			// $functionRef = namespace Kuink\Core\Lib;('', "return (".$expr.");");
 			// safely evaluate expressions. To avoid php injection
 			
 			$parser = new EvalMath ();

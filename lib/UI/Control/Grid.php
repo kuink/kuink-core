@@ -251,7 +251,7 @@ class Grid extends Control {
 	var $dynamicColumns; // Fields dynamically added to a container
 	var $dynamicRules; // Field rules dynamically added to a field
 	var $dynamicFormatters; // Field rules dynamically added to a field
-	var $requiredColumns; // List of columns required
+	var $requiredColumns = []; // List of columns required
 	var $static_bind; // columns that have a datasource and the value must be lookup
 	var $tree; // tree view or not
 	var $treeid; // tree id

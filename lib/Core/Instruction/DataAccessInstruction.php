@@ -2,6 +2,8 @@
 
 namespace Kuink\Core\Instruction;
 
+use Kuink\Core\Lib\DateTimeLib;
+
 /**
  * DataAccess Instruction
  *
@@ -111,7 +113,7 @@ class DataAccessInstruction extends \Kuink\Core\Instruction {
 		// Handle base template
 		$_base = isset ( $params ['_base'] ) ? $params ['_base'] : null;
 		if ($_base == 'true') {
-			$dateTime = new \DateTimeLib ( $instManager->nodeConfiguration, null );
+			$dateTime = new DateTimeLib ( $instManager->nodeConfiguration, null );
 			unset ( $params ['_base'] );
 			$params ['id_company'] = $instManager->variables ['USER'] ['idCompany'];
 			

@@ -375,9 +375,11 @@ class ProcessOrchestrator
     static function setNode($node, $contextId = null)
     {
         $contextId = (isset ($contextId)) ? $contextId : self::getContextId();
-        foreach ($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->stack as $key => $stackNode) {
-            if ($stackNode->nodeGuid == $node->nodeGuid)
-                $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->stack [$key] = $node;
+        $stack = is_array($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->stack) ? $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->stack : [];
+        foreach ($stack as $key => $stackNode) {
+            if ($stackNode->nodeGuid == $node->nodeGuid) {
+                $stack[$key] = $node;
+            }
         }
     }
 
@@ -865,7 +867,7 @@ class ProcessOrchestrator
             redirect($KUINK_CFG->wwwRoot);
         } else if (!isset ($context->idCompany)) {
             // Load the user companies
-            $datasource = new \Kuink\Core\DataSource (null, 'framework,user,user.getCompanies', 'framework', 'user');
+            $datasource = new \Kuink\Core\DataSource (null, 'framework/framework,user,user.getCompanies', 'framework', 'user');
             $idNumber = Configuration::getInstance()->defaults->user->id ?? 0;
             $pars = array(
                 'id_person' => $idNumber
@@ -876,7 +878,7 @@ class ProcessOrchestrator
 
             // Get the default company and set it
             foreach ($companies as $company) {
-                if ($KUINK_CFG->useNewDataAccessInfrastructure) {
+                if (Configuration::getInstance()->kuink->use_new_data_access_infrastructure) {
                     if ($company ['is_default'] == 1)
                         $context->idCompany = $company ['id'];
                 } else {
