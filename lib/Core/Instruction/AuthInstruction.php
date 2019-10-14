@@ -79,9 +79,10 @@ class AuthInstruction extends \Kuink\Core\Instruction {
     static public function logout($instManager, $instructionXmlNode) {
 
         $_SESSION['kuink.logged'] = 0;
+        unset($_SESSION['kuink.logged.user'], $_SESSION['USER']);
         return true;
     }
-
+    
 }
 
 ?>
