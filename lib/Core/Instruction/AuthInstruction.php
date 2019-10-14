@@ -26,7 +26,6 @@ class AuthInstruction extends \Kuink\Core\Instruction {
     static public function setLoggedUser($instManager, $instructionXmlNode) {
         $params = $instManager->getParams ( $instructionXmlNode );
         $loggedUser = $params['user'] ?? ($params[0] ?? null);
-
         if (!$loggedUser){
             throw new \Exception('Auth: param user cannot be empty');
         }
@@ -42,10 +41,46 @@ class AuthInstruction extends \Kuink\Core\Instruction {
         $user['lang'] = $loggedUser['lang'];
 
         $_SESSION['kuink.logged.user'] = $user;
+        $_SESSION['USER'] = $user;
 
         return true;
     }
 
+
+    /**
+     * Get the authenticated user
+     *
+     * @return array
+     */
+    static public function getLoggedUser($instManager, $instructionXmlNode) {
+        if (static::isLoggedIn($instManager, $instructionXmlNode)) {
+            return $_SESSION['kuink.logged.user'] ?? null;
+        }
+        return null;
+    }
+
+
+    /**
+     * Check if there is a logged user
+     *
+     * @return boolean
+     */
+    static public function isLoggedIn($instManager, $instructionXmlNode) {
+        return isset($_SESSION['kuink.logged']) && $_SESSION['kuink.logged'] == 1;
+    }
+
+    /**
+     * Logout the current user
+     *
+     * @param mixed $instManager
+     * @param mixed $instructionXmlNode
+     * @return void
+     */
+    static public function logout($instManager, $instructionXmlNode) {
+
+        $_SESSION['kuink.logged'] = 0;
+        return true;
+    }
 
 }
 

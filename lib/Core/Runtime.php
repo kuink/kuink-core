@@ -396,6 +396,7 @@ class Runtime {
 
 		try {
 			// Load the Xml node
+			// die(var_dump($this));
 			$nodeManager = new NodeManager ( $this->app_name, $this->process_name, $this->type, $this->node_name );
 			$nodeManager->load ( false, false ); // Don't validate the xml neither the schema
 			$nodexml = $nodeManager->nodeXml;

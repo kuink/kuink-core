@@ -429,14 +429,20 @@ class Application {
 				$this->displayMenu ();
 			}
 
-
 			$configuration = Configuration::getInstance();
+			$loggedUser = $_SESSION['kuink.logged.user'] ?? null;
+			if (!$loggedUser) {
+        		$loggedUser['id'] = $configuration->defaults->user->id;
+        		$loggedUser['uid'] = null;
+        		$loggedUser['firstName'] = $configuration->defaults->user->first_name;
+				$loggedUser['lastName'] =  $configuration->defaults->user->last_name;
+			};
 
 			$baseUrl = $configuration->web->www_root;
 			if ($functionName == null) {
 				$layout = \Kuink\UI\Layout\Layout::getInstance ();
 				$layout->setBaseUrl ( $configuration->web->www_root );
-				$layout->setLogOut ( $configuration->defaults->user->first_name . ' ' . $configuration->defaults->user->last_name, $configuration->defaults->user->id, 'BUM' ); // todo joao.patricio don't forget this one
+				$layout->setLogOut ( $loggedUser['firstName'] . ' ' . $loggedUser['lastName'], $loggedUser['id'], 'BUM' ); // todo joao.patricio don't forget this one
 			}
 			$runtime = null;
 			if ($functionName == null)
@@ -444,10 +450,11 @@ class Application {
 			else
 				$runtime = new Runtime ( $runNode, 'lib', $this->nodeconfiguration );
 
-			if ($functionName == null)
+			if ($functionName == null) {
 				$result = $runtime->execute ();
-			else // Execute directly a function
+			} else { // Execute directly a function 
 				$result = $runtime->execute ( $functionName, $function_params );
+			}
 
 			while ( $runtime->eventRaised () ) {
 				$eventRaisedName = $runtime->eventRaisedName ();
