@@ -64,7 +64,7 @@ class TemplateLib {
 		$name = ( string ) $params [0];
 		
 		$nameParts = explode ( ',', $name );
-		if (count ( $nameParts ) != 3)
+		if (!empty($nameParts) && count($nameParts) != 3)
 			throw new \Exception ( 'Template: name must be method or appName,processName,template' );
 		
 		$application = (trim ( $nameParts [0] ) == 'this') ? $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] : trim ( $nameParts [0] );
@@ -93,7 +93,7 @@ class TemplateLib {
 			$keyValue = (isset ( $key ['value'] )) ? ( string ) $key ['value'] : ( string ) $key [0];
 			$template = (isset ( $key ['template'] )) ? ( string ) $key ['template'] : null;
 			
-			if (count ( $key->children () ) > 0) {
+			if (!empty($key->children())) {
 				// Handle the child nodes
 				$childs = array ();
 				foreach ( $key->children () as $child ) {

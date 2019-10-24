@@ -1068,7 +1068,7 @@ class Grid extends Control {
 						// If this is an array value, then concatenate values
 						// var_dump($originalValuesArray);
 						// var_dump($this->tablecolattributes);
-					if (count ( $originalValuesArray ) > 0) {
+					if (!empty($originalValuesArray )) {
 						// var_dump($valuesArray);
 						// remove values whose columns are not visible
 						foreach ( $valuesArray as $inferKey => $inferValue ) {

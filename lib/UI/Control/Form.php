@@ -576,7 +576,7 @@ class Form extends Control {
 		$storedData = $this->getContextVariable ( $this->name . '_contextData' );
 		// print_object($this->name.'_contextData');
 		// print_object($storedData);
-		if (count ( $this->bind_data ) > 0) {
+		if (!empty($this->bind_data)) {
 			// print_object('currentData::POSTDATA');
 			// print_object($this->bind_data);
 			$newBindDataArray = array ();
@@ -587,12 +587,12 @@ class Form extends Control {
 			return $newBindDataArray;
 			// return $this->bind_data[0];
 		}
-		if (count ( $storedData ) > 0) {
+		if (!empty($storedData)) {
 			// print_object('currentData::CONTEXT');
 			// return $storedData[0];
 			return $storedData;
 		}
-		if (count ( $this->defaultData ) > 0) {
+		if (!empty($this->defaultData)) {
 			// print_object('currentData::DEFAULT');
 			return $this->defaultData;
 		}
@@ -915,7 +915,7 @@ class Form extends Control {
 			
 			
 			//options will return allways the empty option se if count(options) > 1 states that there are options
-			if (count($options) > 1) {
+			if (!empty($options) && count($options) > 1) {
 				
 				$datasource = array ();
 				foreach ( $options as $key => $value )

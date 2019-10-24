@@ -46,7 +46,7 @@ class Xml extends Formatter {
 		$format = '';
 		foreach ( $elems as $elem ) {
 			$childs = $elem->children ();
-			if (count ( $childs ) > 0) {
+			if (sizeof ( $childs ) > 0) {
 				foreach ( $elem->attributes () as $xmlMetaAttrName => $xmlMetaAttrValue )
 					$format .= '<tr><td><strong>' . $spaces . $xmlMetaAttrValue . '</strong></td>' . '<td></td></tr>';
 				$format .= $this->prettyFormHelper ( $childs, $level + 1 );
