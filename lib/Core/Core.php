@@ -65,7 +65,11 @@ class Core
         }
 
         // If so then the application will be given by the widget istead of the kuink configuration in moodle
-        $application = $this->configuration->defaults->application;
+        $application = $this->configuration->defaults->login_application;
+        if (!empty($_SESSION['kuink.logged'])) {
+            $application = $this->configuration->defaults->application;    
+        }
+
 
         $lang = $this->configuration->defaults->user->lang;
 

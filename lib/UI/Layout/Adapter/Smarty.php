@@ -66,10 +66,10 @@ class Smarty extends \Smarty
 //            $userEmail = $this->configuration->get('auth')->user->email;
         $this->assign('_userEmail', $userEmail);
         //Get rid of unnecessary reporting
-        $this->error_reporting = E_ALL & ~E_NOTICE;
+        $this->error_reporting = E_ERROR;//E_ALL & ~E_NOTICE;
         $this->muteExpectedErrors();
         //Do not use this in production
-        // $this->force_compile = true;
+        $this->force_compile = true;
     }
 
     public function setTheme($themeName)
@@ -191,6 +191,20 @@ class Smarty extends \Smarty
     {
         $this->assign("baseurl", $baseurl);
     }
+
+    public function setUserInfo(
+        string $firstName,
+        string $lastName,
+        string $id,
+        string $sessionKey = null,
+        bool $isGuest = false
+    ) { 
+        $this->assign("userDisplayName", $firstName . ' ' . $lastName);
+        $this->assign("userId", $id);
+        $this->assign("sessKey", $sessionKey);
+        $this->assign("isGuest", $isGuest);
+    }
+
 
     public function setLogOut($userDisplayName, $userId, $sessKey)
     {

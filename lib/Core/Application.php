@@ -428,6 +428,7 @@ class Application {
 			if ($functionName == null) {
 				$this->displayMenu ();
 			}
+			
 
 			$configuration = Configuration::getInstance();
 			$loggedUser = $_SESSION['kuink.logged.user'] ?? null;
@@ -442,7 +443,13 @@ class Application {
 			if ($functionName == null) {
 				$layout = \Kuink\UI\Layout\Layout::getInstance ();
 				$layout->setBaseUrl ( $configuration->web->www_root );
-				$layout->setLogOut ( $loggedUser['firstName'] . ' ' . $loggedUser['lastName'], $loggedUser['id'], 'BUM' ); // todo joao.patricio don't forget this one
+				$layout->setUserInfo( 
+					$loggedUser['firstName'],
+					$loggedUser['lastName'],
+					$loggedUser['id'],
+					null,
+					true
+				 ); // todo joao.patricio don't forget this one
 			}
 			$runtime = null;
 			if ($functionName == null)

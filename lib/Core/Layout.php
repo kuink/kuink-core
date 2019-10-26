@@ -63,8 +63,8 @@ class Layout {
 	public function setBaseUrl($baseurl) {
 		$this->layoutAdapter->setBaseUrl ( $baseurl );
 	}
-	public function setLogOut($userDisplayName, $userId, $sessKey) {
-		$this->layoutAdapter->setLogOut ( $userDisplayName, $userId, $sessKey );
+	public function setUserInfo($firstName, $lastName, $id, $sessionKey=null) {
+		$this->layoutAdapter->setUserInfo($firstName, $lastName, $id, $sessionKey, $isGuest = (empty($sessionKey)));
 	}
 	public function setRedirectHeader($url) {
 		$this->layoutAdapter->setRedirectHeader ( $url );
