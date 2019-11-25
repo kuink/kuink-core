@@ -620,6 +620,12 @@ private function encloseIdentifier($identifier) {
 		}
 		// Here we have some parameters
 		$query = $this->db->prepare ( $sql );
+		if (!$query) {
+			$KUINK_TRACE [] = 'Database error';
+			$KUINK_TRACE [] = $sql;
+			$KUINK_TRACE [] = $errorInfo [0] . '|' . $errorInfo [1];
+			throw new \Exception ( 'Error preparing query ('.$errorInfo [0].') - '.$errorInfo [1] );
+		}
 		//if ($query === FALSE)
 		//var_dump($query);
 		//print($sql.'<br/>');
@@ -628,51 +634,69 @@ private function encloseIdentifier($identifier) {
 		//print_object($params);
 
 		//Remove unused params from the query to use bind params
-		//$bindParams = array();
+		$bindParams = array();
 		$sqlTmp = $sql;
 		while ( preg_match ( "/[\:][a-zA-Z0-9_]+/", $sqlTmp, $matches ) ) {
 			$bindParamRaw = $matches [0];
-			$sqlTmp = str_replace($matches[0],'',$sqlTmp);
 			$bindParam = substr($bindParamRaw, -(strlen($bindParamRaw)-1));
-			//$bindParams[$bindParam] = $params[$bindParam];
+			$bindParams[$bindParam] = $params[$bindParam];
 			$query->bindValue($bindParam, $params[$bindParam]);
+			$keys=array();
+			if (is_string($bindParam))
+				$keys[] = '/:'.$bindParam.'/';
+			else
+				$keys[] = '/[?]/';
+			$sqlTmp = preg_replace($keys, $bindParams, $sqlTmp, 1, $count);//str_replace($matches[0],"'".$params[$bindParam]."'",$sqlTmp);			
 			//print_object($bindParam);
 		}
-		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
+		$KUINK_TRACE [] = $sqlTmp;//$this->interpolateQuery($sql, $params);
+		//print_object($sqlTmp);
 		//print_object($bindParams);
 		//$this->db->setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_WARNING );
 		//$query->execute ( $bindParams );
 		$query->execute ();
 		//print_r($this->db->errorInfo());
-		//print_object($query->debugDumpParams());
+		$KUINK_TRACE [] = $this->pdoDebugStrParams($query); //$query->debugDumpParams();
 		
 		//var_dump($sql);
 		//var_dump(count($params));
 
 		// print_object($sql);
+		//print_object($records);
+		
+		// Handle the errors
+		$errorInfo = $query->errorInfo ();
+		$KUINK_TRACE [] = $errorInfo;
+		//kuink_mydebugObj('ErrorInfo', $errorInfo);
+		//if ($this->type == 'sqlsrv')
+		//	kuink_mydebugObj('ErrorInfo', $errorInfo);
+
+		if ($errorInfo [0] !== '00000' || $errorInfo [1] != 0) {
+			$KUINK_TRACE [] = 'Database error';
+			$KUINK_TRACE [] = $sql;
+			$KUINK_TRACE [] = $errorInfo [0] . '|' . $errorInfo [1];
+			//print_object($errorInfo);
+			//$KUINK_TRACE [] = $errorInfo [2]; //Verbose not needed
+			throw new \Exception ( 'Internal database error ('.$errorInfo [0].') - '.$errorInfo [1] );
+		}
+
 		if (($this->type == 'sqlsrv') && $notSelect) {
 			$query->nextRowset();
 		}
 
 		$records = $query->fetchAll ( \PDO::FETCH_ASSOC );
-		//print_object($records);
-		
-		// Handle the errors
-		$errorInfo = $query->errorInfo ();
-		//kuink_mydebugObj('ErrorInfo', $errorInfo);
-		//if ($this->type == 'sqlsrv')
-		//	kuink_mydebugObj('ErrorInfo', $errorInfo);
 
-		if ($errorInfo [0] != 0 || $errorInfo [1] != 0) {
-			$KUINK_TRACE [] = 'Database error';
-			$KUINK_TRACE [] = $sql;
-			$KUINK_TRACE [] = $errorInfo [0] . '|' . $errorInfo [1];
-			//$KUINK_TRACE [] = $errorInfo [2]; //Verbose not needed
-			throw new \Exception ( 'Internal database error' );
-		}
 		// print_object($records);
 		$this->lastAffectedRows = $query->rowCount ();
 		return $records;
+	}
+
+	function pdoDebugStrParams($stmt) {
+		ob_start();
+		$stmt->debugDumpParams();
+		$r = ob_get_contents();
+		ob_end_clean();
+		return $r;
 	}
 
 	private function getPreparedStatementSelectCount($params) {
@@ -1790,6 +1814,7 @@ private function encloseIdentifier($identifier) {
 			$sqlAttributesArray = array ();
 			$sqlPrimaryKeysArray = array ();
 			$sqlUniquesArray = array ();
+			$previousAttribute = null;
 			foreach ( $entity ['attributes'] as $attribute ) {
 				//kuink_mydebugObj($entity['name'], $attribute);
 				$sqlAttribute = '';
@@ -1847,13 +1872,14 @@ private function encloseIdentifier($identifier) {
 				if ($attribute ['changes'] == DDChanges::ADD && $entity ['change'] == DDChanges::ADD)
 					$sqlAttributesArray [] = $sqlAttribute;
 				else if ($attribute ['changes'] == DDChanges::ADD && $entity ['change'] == DDChanges::CHANGE)
-					$sqlAttributesArray [] = 'ADD ' . $sqlAttribute;
+					$sqlAttributesArray [] = 'ADD ' . $sqlAttribute . ' '; // . (($previousAttribute) ? ' AFTER '.$this->encloseIdentifier($previousAttribute['name']) : '');
 				else if ($attribute ['changes'] == DDChanges::CHANGE)
 					$sqlAttributesArray [] = 'MODIFY ' . $sqlAttribute;
 				else if ($attribute ['changes'] == DDChanges::REMOVE) {
 					// print_object($sqlAttribute);
 					$sqlAttributesArray [] = 'CHANGE ' . $sqlAttribute;
 				}
+				$previousAttribute = $attribute;
 			}
 			// print_object($sqlAttributesArray);
 			

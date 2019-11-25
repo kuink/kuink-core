@@ -28,6 +28,13 @@ class DateTimeLib {
 	function Execute($functionname, $params) {
 		$this->$functionname ( $params );
 	}
+	function PreviousWeekStart($params) {
+		return strtotime ( "last sunday -7 days" );
+	}
+	function PreviousWeekEnd($params) {
+		$date = getdate ( strtotime ( "last sunday" ) );
+		return mktime ( 23, 59, 59, $date ['mon'], $date ['mday'], $date ['year'] );
+	}
 	function ThisWeekStart($params) {
 		return strtotime ( "last sunday" );
 	}
