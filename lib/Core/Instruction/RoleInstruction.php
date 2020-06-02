@@ -36,14 +36,17 @@ class RoleInstruction extends \Kuink\Core\Instruction {
 			$currentStackRoles [$value] = 1;
 			\Kuink\Core\ProcessOrchestrator::setNodeRoles ( $currentStackRoles );
 		}
-		$actionPermissions = $instManager->runtime->getActionPermissions ( $instManager->runtime->nodeManager->nodeXml );
+
 		$instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::ROLES] = $roles;
-        $instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::ACTION_PERMISSIONS] = $actionPermissions;
         $instManager->runtime->nodeconfiguration = $instManager->nodeConfiguration;
 
 		$instManager->runtime->buildAllCapabilities ();
 		$instManager->variables['ROLES'] = $instManager->runtime->nodeconfiguration[\Kuink\Core\NodeConfKey::ROLES];
 		$instManager->variables['CAPABILITIES'] = $instManager->runtime->nodeconfiguration[\Kuink\Core\NodeConfKey::CAPABILITIES];		
+
+		$actionPermissions = $instManager->runtime->getActionPermissions ( $instManager->runtime->nodeManager->nodeXml );
+		$instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::ACTION_PERMISSIONS] = $actionPermissions;		
+		$instManager->runtime->nodeconfiguration = $instManager->nodeConfiguration;		
 		return $value;
     }
 }

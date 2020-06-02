@@ -345,9 +345,10 @@ class Smarty extends \Smarty
         $this->addHtml($output, $position);
     }
 
-    protected function setThemeDirectories(): void
+    protected function setThemeDirectories()
     {
         self::setSmartyDirectories($this, $this->themeName);
+        return;
     }
 
     /**
@@ -357,6 +358,7 @@ class Smarty extends \Smarty
      */
     protected static function setSmartyDirectories(\Smarty &$smartyObj, string $themeName) {
         $configuration = Configuration::getInstance();
+        //die(realpath($configuration->paths->theme . '/theme_cache_compiled/'));
         $smartyObj->setTemplateDir($configuration->paths->theme . '/template/');
         $smartyObj->setCompileDir($configuration->paths->theme . '/theme_cache_compiled/');
         $smartyObj->setCacheDir($configuration->paths->theme . '/theme_cache/');

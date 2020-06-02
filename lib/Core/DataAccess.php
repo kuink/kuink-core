@@ -123,6 +123,9 @@ class DataAccess {
 						}
 						
 						$newParams [$key] = implode ( ',', $arrayValues );
+						//Remove the first and last ' chars to avoid erros in bind params
+						//$newParams [$key] = substr($newParams [$key],1,strlen($newParams [$key])-2);
+						//print_object($newParams [$key]);
 					}
 				} else {
 					if ((!is_array($value)) && (in_array($key, $ignoreArrays))) {

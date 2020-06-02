@@ -107,7 +107,6 @@ class DataSourceManager {
 	}
 	
 	static public function addDataSourceXml($dataSource, $context) {
-		global $KUINK_CFG;
 		$dsName = ( string ) $dataSource ['name'];
 		
 		$dsConnector = ( string ) $dataSource ['connector'];
@@ -115,16 +114,22 @@ class DataSourceManager {
 		if ($dsBypass == '' || $dsBypass == 'false')
 			$dsBypass = 0;
 		else {
+			$configuration = Configuration::getInstance();
+			// initialize kuink global variable SERVER
+			$server_info ['name'] = $_SERVER ['SERVER_NAME'] ?? "N/A";
+			$server_info ['ip'] = $_SERVER ['SERVER_ADDR'] ?? "N/A";
+			$server_info ['port'] = $_SERVER ['SERVER_PORT'] ?? "N/A";
+			$server_info ['userAgent'] = $_SERVER ['HTTP_USER_AGENT'] ?? "N/A";
+			$server_info ['wwwRoot'] = $configuration->web->www_root;
+			$server_info ['appRoot'] = $configuration->paths->apps;
+			$server_info ['apiUrl'] = $configuration->web->www_root.'/api.php';
+			$server_info ['streamUrl'] = $configuration->web->www_root.'/stream.php';
+			$server_info ['guestUrl'] = $configuration->web->www_root;
+			$server_info ['baseUploadDir'] = $configuration->paths->upload_dir; //(isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)$this->nodeconfiguration [NodeConfKey::CONFIG] ['uploadFolderBase'] : '';
+			$server_info ['fullUploadDir'] = $configuration->paths->upload_dir; //$KUINK_CFG->dataRoot . '/' . $config;
+			$server_info ['environment'] = $configuration->environment;
+	
 			// evaluate the bypass expression
-			$server_info ['name'] = $_SERVER ['SERVER_NAME'];
-			$server_info ['ip'] = $_SERVER ['SERVER_ADDR'];
-			$server_info ['port'] = $_SERVER ['SERVER_PORT'];
-			$server_info ['wwwRoot'] = $KUINK_CFG->wwwRoot;
-			$server_info ['appRoot'] = $KUINK_CFG->appRoot;
-			$server_info ['apiUrl'] = $KUINK_CFG->apiUrl;
-			$server_info ['streamUrl'] = $KUINK_CFG->streamUrl;
-			$server_info ['guestUrl'] = $KUINK_CFG->guestUrl;
-			$server_info ['environment'] = $KUINK_CFG->environment;
 			$variables ['SYSTEM'] = $server_info;
 			
 			$eval = new \Kuink\Core\EvalExpr ();

@@ -173,6 +173,22 @@ class StringInstruction extends \Kuink\Core\Instruction {
 		return $result;
 	}	
 
+	/**
+	 * Explodes a string in the last word before the width 
+	 * Example 1: explodeWord(10, 'This is a sentence'); -> ['This is a','sentence']
+	 * Example 2: explodeWord(9, 'This is a sentence'); -> ['This is','a sentence']
+	 */
+	static public function explodeWord( $instManager, $instructionXmlNode ) {
+		$params = $instManager->getParams( $instructionXmlNode );
+		$marker = '_§§_';
+		$width = (string)$params[0];
+		$str = (string)$params[1];
+		$wrapped = wordwrap($str, $width, $marker, false);
+		$lines = explode($marker, $wrapped);		
+	
+		return $lines;
+	}
+
 }
 
 ?>

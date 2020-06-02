@@ -112,6 +112,18 @@ class MetadataLib {
 		
 		return $metaExpanded;
 	}
+
+    public function getMetadataValue($params) {
+        $metaXmlDefinition = (string)$params['metadata'];
+        $key = (string)$params['key'];
+
+        //Search for this meta key
+        $xml = simplexml_load_string($metaXmlDefinition);
+        $xmlMeta = $xml->xpath('//Meta[@name="'.$key.'"]');
+        $value = (string) $xmlMeta[0][0];
+        return $value;
+	}
+		
 	private function _d($data, $label = null) {
 		if ($label)
 			echo "<pre>$label</pre>";

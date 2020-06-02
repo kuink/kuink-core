@@ -76,6 +76,11 @@ class FileLib {
 		return $result;
 	}
 	
+    public function getTmpPath( $params ) {
+        global $KUINK_CFG;
+        return $KUINK_CFG->tmpRoot;
+    }
+
 	// Param: UploadFolder - The folder under moodledata where the file is to be copied
 	// Param: Filename - Force the name of the file. Generally a GUID
 	// Param: MaxUploadSize - Maximum upload size of the file

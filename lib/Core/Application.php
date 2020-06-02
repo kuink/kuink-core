@@ -37,8 +37,6 @@ class Application {
 	public $nodeconfiguration;
 	public $core; //The kuink core object
 	function __construct($name, $lang, $config, $core) {
-		global $KUINK_CFG;
-
 		// If it's not a restart and there's an application in the stack, the use it
 		// Get the application to execute from the top of process stack
 		$reset = FALSE;
@@ -156,8 +154,6 @@ class Application {
 	 * Loads the application xml definition file
 	 */
 	private function loadApplicationDefinition() {
-		global $KUINK_CFG;
-
 		$appBase = $this->appManager->getApplicationAttribute ( $this->name, 'app_base' );
 		$appFileName = Configuration::getInstance()->paths->apps . '/' . $appBase . '/' . $this->name . '/application.xml';
 
@@ -182,8 +178,6 @@ class Application {
 	 * @throws \Exception
 	 */
 	private function loadInstanceConfig($instanceConfigRaw) {
-		global $KUINK_CFG;
-
 		$config = array ();
 		if (trim ( $instanceConfigRaw ) != '') {
 			libxml_use_internal_errors ( true );
@@ -218,7 +212,7 @@ class Application {
 	 * Loads the user roles from DB allocation tables
 	 */
 	private function loadRolesFromDB() {
-		global $KUINK_TRACE, $KUINK_CFG;
+		global $KUINK_TRACE;
 
 		$idCompany = ProcessOrchestrator::getCompany ();
 		$idNumber= Configuration::getInstance()->defaults->user->id ?? 0;
@@ -235,7 +229,7 @@ class Application {
 
      	if (isset($alocs))
 				foreach ( $alocs as $aloc ) {
-					if ($KUINK_CFG->useNewDataAccessInfrastructure)
+					if (Configuration::getInstance()->kuink->use_new_data_access_infrastructure)
 						$this->addRole ( ( string ) $aloc ['code'] );
 					else
 						$this->addRole ( ( string ) $aloc->code );
@@ -256,7 +250,7 @@ class Application {
 		// $caps = $datasource->execute( $pars );
 		// if (isset($caps))
 		// foreach( $caps as $cap ) {
-		// if ($KUINK_CFG->useNewDataAccessInfrastructure)
+		// if (Configuration::getInstance()->kuink->use_new_data_access_infrastructure)
 		// $this->addCapability( (string)$cap['code'] );
 		// else
 		// $this->addCapability( (string)$cap->code );
@@ -316,7 +310,6 @@ class Application {
 		$layout->setAppMenu ( $menu );
 	}
 	function makeMenuItems($flowMenu) {
-		global $KUINK_CFG;
 		$configuration = Configuration::getInstance();
 		if ($flowMenu == null) { // if has no menu, stop the recursion. Just in case
 			return false;
@@ -410,8 +403,6 @@ class Application {
 	 * It will get all necessary params
 	 */
 	function run($node = null, $functionName = null, $function_params = null) {
-		global $KUINK_CFG;
-
 		$msgManager = \Kuink\Core\MessageManager::getInstance ();
 
 		if (($this->isActive && ! $this->inMaintenance) || $this->isFwAdmin ()) {
@@ -548,7 +539,6 @@ class Application {
 	 * @param Node $node
 	 */
 	private function getNodeConfiguration($node) {
-		global $KUINK_CFG;
 		$currentNode = ProcessOrchestrator::getCurrentNode ();
 
 		$fwConfig = $this->getFrameworkConfig ();

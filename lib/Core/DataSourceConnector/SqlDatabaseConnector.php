@@ -1018,8 +1018,10 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector
         foreach ($params as $key => $value) {
             //$param_value = mysql_escape_string($value);
             $param_value = $value;
-            if (!is_array($param_value))
+            if (!is_array($param_value)){
+                $sql = str_replace('{@param->'.$key.'}', $param_value , $sql);                
                 $sql = str_replace('{param->' . $key . '}', $param_value, $sql);
+            }
         }
         $sql = str_replace('{table_prefix}', $tablePrefix, $sql);
 

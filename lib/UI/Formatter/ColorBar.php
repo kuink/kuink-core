@@ -16,7 +16,7 @@
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Formatter;
 
-class Pallete {
+class ColorBarPallete {
 	var $light;
 	var $medium;
 	var $dark;
@@ -63,7 +63,7 @@ class ColorBar extends Formatter {
 		$showValue = ( string ) $this->getParam ( $params, 'showvalue', false, 'true' );
 		$pallete_name = ( string ) $this->getParam ( $params, 'pallete', false, 'blue' );
 		
-		$pallete = new Pallete ( $pallete_name );
+		$pallete = new ColorBarPallete ( $pallete_name );
 		
 		$display_value = ($showValue == 'true') ? number_format ( ( float ) $value, $decimals, ',', '.' ) : (($showValue == 'percentage') ? number_format ( ( float ) $perc, $decimals, ',', '.' ) . '%' : '&nbsp');
 		$formatter = '

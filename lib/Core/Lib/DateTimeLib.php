@@ -29,6 +29,13 @@ class DateTimeLib {
 	function Execute($functionname, $params) {
 		$this->$functionname ( $params );
 	}
+	function PreviousWeekStart($params) {
+		return strtotime ( "last sunday -7 days" );
+	}
+	function PreviousWeekEnd($params) {
+		$date = getdate ( strtotime ( "last sunday" ) );
+		return mktime ( 23, 59, 59, $date ['mon'], $date ['mday'], $date ['year'] );
+	}
 	function ThisWeekStart($params) {
 		return strtotime ( "last sunday" );
 	}
@@ -236,12 +243,13 @@ class DateTimeLib {
 	 */
 	function getYear($params) {
 		$timestamp = isset($params [0]) ? $params [0] : null;
+		$format = isset($params [1]) ? $params [1] : 'Y';
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		$dateTime->setTimestamp ( $timestamp );
 		if (isset ( $params [0] )) {
 			$dateTime->setTimestamp ( $params [0] );
 		}
-		return $dateTime->format ( "Y" );
+		return $dateTime->format ( $format );
 	}
 	
 	/**

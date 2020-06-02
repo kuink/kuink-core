@@ -276,9 +276,13 @@ class Runtime {
 	public function buildCapabilitiesOfList($roles) {
 		if ($roles != '') {
 			// get the value from fw_config
-            $dataAccess = new \Kuink\Core\DataAccess ( 'framework/framework,user.role,getCapabilitiesOfList', 'framework', 'role' );
-			$params ['role_codes'] = $roles;
+			$dataAccess = new \Kuink\Core\DataAccess ( 'framework/framework,user.role,getCapabilitiesOfList', 'framework', 'role' );
+			$rolesCleaned = str_replace("'", '"', $roles); // substr($roles,1,strlen($roles)-2);
+			$params ['role_codes'] = $rolesCleaned;
 			$resultset = $dataAccess->execute ( $params );
+			//var_dump($resultset);
+
+
 			if ($resultset) {
 				foreach ( $resultset as $capability ) {
 					$this->addCapability ( $capability );
