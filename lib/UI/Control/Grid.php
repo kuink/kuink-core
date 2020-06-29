@@ -1694,8 +1694,6 @@ class Grid extends Control {
 		return;
 	}
 	public function export($type) {
-		global $KUINK_CFG;
-		
 		$this->setProperty ( array (
 				$this->name,
 				'freeze',
@@ -1708,8 +1706,8 @@ class Grid extends Control {
 		
 		$config = $this->nodeconfiguration ['config'];
 		
-		$base_upload = $KUINK_CFG->uploadRoot;
-		$upload_dir = $base_upload . '/tmp/';
+
+		$upload_dir = Configuration::getInstance()->paths->tmp;
 		
 		// Handle dupplication of slashes in configurations
 		$upload_dir = str_replace ( '//', '/', $upload_dir );

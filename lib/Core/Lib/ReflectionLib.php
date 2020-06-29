@@ -125,7 +125,6 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		return null;
 	}
 	function setNode($params) {
-		global $KUINK_CFG;
 		if (count ( $params ) < 5)
 			throw new Exception ( __METHOD__ . ' must have one parameter: aplication, process, type, node, xmlDefinition, [override->false]' );
 		
@@ -138,7 +137,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		$override = isset ( $params ['override'] ) ? ( string ) $params ['override'] : 'false';
 		
 		$nodeName = ($type == 'nodes' || $type == 'lib') ? $process . '_' . $node . '.xml' : $node . '.xml';
-		$filePath = $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/$type/";
+		$filePath = Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process/$type/";
 		$fileName = $filePath . '/' . $nodeName;
 		
 		// Check if the path exists
@@ -186,8 +185,6 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		return $xml->asXml ();
 	}
 	function nodeAddElement($params) {
-		global $KUINK_CFG;
-		
 		if (count ( $params ) < 7)
 			throw new Exception ( __METHOD__ . ' must have one parameter: aplication, process, type, node, xPath, xmlDefinition, [override->false]' );
 		
@@ -202,7 +199,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		
 		$nodeName = ($type == 'nodes' || $type == 'lib') ? $process . '_' . $node . '.xml' : $node . '.xml';
 		
-		$filePath = $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/$type/";
+		$filePath = Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process/$type/";
 		$fileName = $filePath . '/' . $nodeName;
 		
 		$nodeXml = self::loadNode ( $filePath, $fileName );
@@ -220,7 +217,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		self::setNode ( $setNodeParams );
 	}
 	function nodeExists($params) {
-		global $KUINK_CFG, $KUINK_APPLICATION;
+		global $KUINK_APPLICATION;
 		if (count ( $params ) < 4)
 			throw new Exception ( __METHOD__ . ' must have one parameter: aplication, process, type, node' );
 		
@@ -243,27 +240,27 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		else
 			return 0;
 	}
+
 	function processExists($params) {
-		global $KUINK_CFG;
 		if (count ( $params ) < 2)
 			throw new Exception ( __METHOD__ . ' must have one parameter: aplication, process' );
 		
 		$application = ( string ) $params ['application'];
 		$process = ( string ) $params ['process'];
 		
-		return is_dir ( $KUINK_CFG->appRoot . "apps/$application/process/$process" );
+		return is_dir ( Configuration::getInstance()->paths->apps . "/$application/process/$process" );
 	}
+
 	function applicationExists($params) {
-		global $KUINK_CFG;
 		if (count ( $params ) < 1)
 			throw new Exception ( __METHOD__ . ' must have one parameter: aplication' );
 		
 		$application = ( string ) $params ['application'];
 		
-		return is_dir ( $KUINK_CFG->appRoot . "apps/$application" );
+		return is_dir ( Configuration::getInstance()->paths->apps . "/$application" );
 	}
+
 	function applicationAdd($params) {
-		global $KUINK_CFG;
 		if (count ( $params ) < 3)
 			throw new Exception ( __METHOD__ . ' must have one parameter: aplication, xmlDefinition, [override->false]' );
 			// var_dump($params);
@@ -273,9 +270,9 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		$langXmlDefinition = (string) $params ['langXmlDefinition'];
 		$override = isset ( $params ['override'] ) ? ( string ) $params ['override'] : 'false';
 		
-		$baseFilePath = $KUINK_CFG->appRoot . "apps/$appBase";
+		$baseFilePath = Configuration::getInstance()->paths->apps . "/$appBase";
 		
-		$filePath = $KUINK_CFG->appRoot . "apps/$appBase/$application";
+		$filePath = Configuration::getInstance()->paths->apps . "/$appBase/$application";
 		$fileName = $filePath . '/application.xml';
 		
 		// Check if base exists
@@ -291,7 +288,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		
 		if (! file_exists ( $fileName ))
 			file_put_contents ( $fileName, $xmlDefinition );
-		$filePath = $KUINK_CFG->appRoot."apps/$appBase/$application/lang";
+		$filePath = Configuration::getInstance()->paths->apps."/$appBase/$application/lang";
 		$fileName = $filePath.'/pt.xml';      
 		//Check if the path exists
 		if (!is_dir($filePath))
@@ -303,7 +300,6 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		return;
 	}
 	function processAdd($params) {
-		global $KUINK_CFG;
 		if (count ( $params ) < 4)
 			throw new Exception ( __METHOD__ . ' must have one parameter: aplication, process, xmlDefinition, [override->false]' );
 		
@@ -313,24 +309,24 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		$xmlDefinition = ( string ) $params ['xmlDefinition'];
 		$override = isset ( $params ['override'] ) ? ( string ) $params ['override'] : 'false';
 		
-		$filePath = $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process";
+		$filePath = Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process";
 		$fileName = $filePath . '/process.xml';
 		
 		// Check if the path exists
-		if (! is_dir ( $KUINK_CFG->appRoot . "apps/$appBase/$application/process" ))
-			mkdir ( $KUINK_CFG->appRoot . "apps/$appBase/$application/process" );
-		if (! is_dir ( $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process" ))
-			mkdir ( $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process" );
-		if (! is_dir ( $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/dataaccess" ))
-			mkdir ( $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/dataaccess" );
-		if (! is_dir ( $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/nodes" ))
-			mkdir ( $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/nodes" );
-		if (! is_dir ( $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/lib" ))
-			mkdir ( $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/lib" );
-		if (! is_dir ( $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/ui" ))
-			mkdir ( $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/ui" );
-		if (! is_dir ( $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/templates" ))
-			mkdir ( $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/templates" );
+		if (! is_dir ( Configuration::getInstance()->paths->apps . "/$appBase/$application/process" ))
+			mkdir ( Configuration::getInstance()->paths->apps . "/$appBase/$application/process" );
+		if (! is_dir ( Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process" ))
+			mkdir ( Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process" );
+		if (! is_dir ( Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process/dataaccess" ))
+			mkdir ( Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process/dataaccess" );
+		if (! is_dir ( Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process/nodes" ))
+			mkdir ( Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process/nodes" );
+		if (! is_dir ( Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process/lib" ))
+			mkdir ( Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process/lib" );
+		if (! is_dir ( Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process/ui" ))
+			mkdir ( Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process/ui" );
+		if (! is_dir ( Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process/templates" ))
+			mkdir ( Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process/templates" );
 		
 		if (file_exists ( $fileName ) && $override == 'true')
 			unlink ( $fileName );
@@ -341,7 +337,6 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		return;
 	}
 	function nodeAdd($params) {
-		global $KUINK_CFG;
 		if (count ( $params ) < 6)
 			throw new Exception ( __METHOD__ . ' must have one parameter: aplication, process, type, node, xmlDefinition, [override->false]' );
 		
@@ -354,7 +349,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		$override = isset ( $params ['override'] ) ? ( string ) $params ['override'] : 'false';
 		
 		$nodeName = ($type == 'nodes' || $type == 'lib') ? $process . '_' . $node . '.xml' : $node . '.xml';
-		$filePath = $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/$type/";
+		$filePath = Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process/$type/";
 		$fileName = $filePath . '/' . $nodeName;
 		
 		if (file_exists ( $fileName ) && $override == 'true')
@@ -366,7 +361,6 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		return;
 	}
 	function dataaccessAdd($params) {
-		global $KUINK_CFG;
 		if (count ( $params ) < 5)
 			throw new Exception ( __METHOD__ . ' must have one parameter: aplication, process, node, xmlDefinition, [override->false]' );
 		
@@ -378,7 +372,7 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		$override = isset ( $params ['override'] ) ? ( string ) $params ['override'] : 'false';
 		
 		$nodeName = $node . '.xml';
-		$filePath = $KUINK_CFG->appRoot . "apps/$appBase/$application/process/$process/dataaccess";
+		$filePath = Configuration::getInstance()->paths->apps . "/$appBase/$application/process/$process/dataaccess";
 		$fileName = $filePath . '/' . $nodeName;
 		// var_dump($xmlDefinition);
 		if (file_exists ( $fileName ) && $override == 'true')

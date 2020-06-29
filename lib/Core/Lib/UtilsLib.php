@@ -61,11 +61,10 @@ substr ( $charid, 0, 8 ) . $hyphen . substr ( $charid, 8, 4 ) . $hyphen . substr
 		return $action_url;
 	}
 	function MoodleCourseUrl($params) {
-		global $KUINK_CFG;
 		if (count ( $params ) != 1)
 			throw new Exception ( 'MoodleCourseUrl must have one parameter that specifies the course id. ' );
 		$courseId = ( string ) $params [0];
-		$url = $KUINK_CFG->wwwRoot . "/course/view.php?id=" . $courseId;
+		$url = Configuration::getInstance()->web->www_root . "/course/view.php?id=" . $courseId;
 		return $url;
 	}
 	function ActionUrlLink($params) {

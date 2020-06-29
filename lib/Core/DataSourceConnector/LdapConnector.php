@@ -13,7 +13,6 @@ namespace Kuink\Core\DataSourceConnector;
 class LdapConnector extends \Kuink\Core\DataSourceConnector {
 	var $client; // The ldap client
 	function connect($noBind = false) {
-		global $KUINK_CFG;
 		
 		if (! $this->client) {
 			$server = $this->dataSource->getParam ( 'server', true );

@@ -17,7 +17,7 @@ class XmlConnector extends \Kuink\Core\DataSourceConnector {
 	var $fileName;
 	var $type;
 	function connect() {
-		global $KUINK_TRACE, $KUINK_CFG, $KUINK_APPLICATION;
+		global $KUINK_TRACE, $KUINK_APPLICATION;
 		
 		if (! $this->dom) {
 			$this->fileName = $this->dataSource->getParam ( 'filename', true );
@@ -32,11 +32,11 @@ class XmlConnector extends \Kuink\Core\DataSourceConnector {
 				$node = $split [2];
 				$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 				if ($this->type == 'nodes' || $this->type == 'lib' || $this->type == 'ui')
-					$this->fileName = $KUINK_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/' . $this->type . '/' . $this->type . '/' . $split [2] . '_' . $node . '.xml';
+					$this->fileName = Configuration::getInstance()->paths->apps .'/' . $appBase . '/' . $application . '/process/' . $process . '/' . $this->type . '/' . $this->type . '/' . $split [2] . '_' . $node . '.xml';
 				else if ($this->type == 'bpmn')
-					$this->fileName = $KUINK_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/' . $this->type . '/' . $node . '.' . $this->type;
+					$this->fileName = Configuration::getInstance()->paths->apps .'/' . $appBase . '/' . $application . '/process/' . $process . '/' . $this->type . '/' . $node . '.' . $this->type;
 				else
-					$this->fileName = $KUINK_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/' . $this->type . '/' . $node . '.xml';
+					$this->fileName = Configuration::getInstance()->paths->apps .'/' . $appBase . '/' . $application . '/process/' . $process . '/' . $this->type . '/' . $node . '.xml';
 			}
 			// var_dump($this->fileName);
 			

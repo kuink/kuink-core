@@ -176,8 +176,6 @@ class DateTime extends Formatter {
 	 * @return string the formatted date/time.
 	 */
 	private function neon_userdate($date, $format = '', $timezone = 99, $fixday = true, $fixhour = true) {
-		global $KUINK_CFG;
-		
 		if (empty ( $format )) {
 			$format = get_string ( 'strftimedaydatetime', 'langconfig' );
 		}

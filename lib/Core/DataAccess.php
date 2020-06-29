@@ -26,7 +26,7 @@ class DataAccess {
 	var $daApplication; // The app name of the dataaccess nid
 	var $user; //The current user executing this dataaccess	
 	function __construct($dataAccessNid, $appName, $processName, $dataSourceName = '') {
-		global $KUINK_CFG, $KUINK_TRACE, $KUINK_APPLICATION;
+		global $KUINK_TRACE, $KUINK_APPLICATION;
 		$this->application = $appName;
 		// DataSource can be specified in three different places:
 		// 1) on the DataAccess call <DataAccess execute="this,this,foo" datasource="target"/>
@@ -86,7 +86,6 @@ class DataAccess {
 	function execute($params = null) {
 		global $KUINK_DATASOURCES;
 		global $KUINK_TRACE;
-		global $KUINK_CFG;
 		$records = null;
 		// kuink_mydebug('Application', $this->application);
 		

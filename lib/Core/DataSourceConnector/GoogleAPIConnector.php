@@ -14,7 +14,7 @@ use Kuink\Core\Exception\ParameterNotFound;
  *
  * @author paulo.tavares
  */
-class GoogleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector {
+class GoogleAPIConnector extends \Kuink\Core\DataSourceConnector {
 	var $connector;
 	var $service;
 	var $accessToken;
@@ -26,7 +26,6 @@ class GoogleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector {
 	var $domain;
 	var $scopes;
 	function connect() {
-		global $KUINK_CFG;
 		
 		$this->connector = isset ( $this->connector ) ? $this->connector : '';
 		if (! $this->connector) {
@@ -36,12 +35,12 @@ class GoogleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector {
 			$this->domain = $this->dataSource->getParam ( 'domain', true );
 			$this->scopes = $this->dataSource->getParam ( 'scopes', true );
 			
-			if (! file_exists ( $KUINK_CFG->appRoot . '/apps/' . $this->keyfile ))
+			if (! file_exists ( Configuration::getInstance()->paths->apps . '/' . $this->keyfile ))
 				throw new \Exception ( __CLASS__ . ': invalid key file ' . $this->keyfile );
 			
 			$this->connector = new \Google_Client();
 			$this->connector->useApplicationDefaultCredentials();
-			$this->connector->setAuthConfig($KUINK_CFG->appRoot . '/apps/' . $this->keyfile);
+			$this->connector->setAuthConfig(Configuration::getInstance()->paths->apps . '/' . $this->keyfile);
 			$this->connector->setAccessType('offline');
 			$this->connector->setScopes($this->scopes );
 			$this->connector->setSubject($this->delegatedAdmin);

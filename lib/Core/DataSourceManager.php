@@ -24,7 +24,7 @@ class DataSourceManager {
 		$resultset = $dataAccess->execute ( $params );
 
 		foreach ( $resultset as $datasource ){
-			//kuink_mydebugObj($datasource ['xml_definition']);
+			var_dump($datasource ['xml_definition']);
 			self::addDataSourceXmlDefinition ( $datasource ['xml_definition'], DataSourceContext::DB );
 		}
 	
@@ -126,7 +126,7 @@ class DataSourceManager {
 			$server_info ['streamUrl'] = $configuration->web->www_root.'/stream.php';
 			$server_info ['guestUrl'] = $configuration->web->www_root;
 			$server_info ['baseUploadDir'] = $configuration->paths->upload_dir; //(isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)$this->nodeconfiguration [NodeConfKey::CONFIG] ['uploadFolderBase'] : '';
-			$server_info ['fullUploadDir'] = $configuration->paths->upload_dir; //$KUINK_CFG->dataRoot . '/' . $config;
+			$server_info ['fullUploadDir'] = $configuration->paths->upload_dir; 
 			$server_info ['environment'] = $configuration->environment;
 	
 			// evaluate the bypass expression

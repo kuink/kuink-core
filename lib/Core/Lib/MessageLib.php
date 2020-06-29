@@ -78,7 +78,6 @@ class MessageLib {
 		return json_encode ( $mailAux->getHeaders ()->toArray () );
 	}
 	function sendMessage($params) {
-		global $KUINK_CFG;
 		// print_object($params);
 		$msg = new Zend\Mail\Message ();
 		
@@ -101,7 +100,7 @@ class MessageLib {
 		$params ['body'] = mb_convert_encoding ( $params ['body'], $charset );
 		$msg->setBody ( $params ['body'] );
 		$msg->setHeaders ( $headers );
-		if ($KUINK_CFG->enableEmailSending) {
+		if (Configuration::getInstance()->mail->enable_sending) {
 			$transport = new Zend\Mail\Transport\Sendmail ();
 			$transport->send ( $msg );
 		}

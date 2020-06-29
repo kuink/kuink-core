@@ -53,7 +53,7 @@ class Core
      */
     public function run()
     {
-        global $KUINK_CFG, $KUINK_LAYOUT, $KUINK_TRACE, $KUINK_MANUAL_TRACE, $KUINK_DATABASES, $KUINK_DATASOURCES, $KUINK_TRANSLATION, $KUINK_APPLICATION;
+        global $KUINK_LAYOUT, $KUINK_TRACE, $KUINK_MANUAL_TRACE, $KUINK_DATABASES, $KUINK_DATASOURCES, $KUINK_TRANSLATION, $KUINK_APPLICATION;
 
         $kuink_session_active = isset ($_SESSION ['KUINK_CONTEXT'] ['KUINK_SESSION_ACTIVE']) ? $_SESSION ['KUINK_CONTEXT'] ['KUINK_SESSION_ACTIVE'] : 0;
         if ($kuink_session_active != 1 && isset($_GET ['startnode']) && $_GET ['startnode'] != '')
@@ -136,7 +136,7 @@ class Core
      */
     public function call($function)
     {
-        global $KUINK_CFG, $KUINK_LAYOUT, $KUINK_TRACE, $KUINK_MANUAL_TRACE, $KUINK_DATABASES, $KUINK_DATASOURCES, $KUINK_TRANSLATION, $KUINK_APPLICATION;
+        global $KUINK_LAYOUT, $KUINK_TRACE, $KUINK_MANUAL_TRACE, $KUINK_DATABASES, $KUINK_DATASOURCES, $KUINK_TRANSLATION, $KUINK_APPLICATION;
         $function = isset ($_GET ['neonfunction']) ? ( string )$_GET ['neonfunction'] : '';
         $functionParsed = explode(',', $function);
         $idcontext = (isset ($_GET ['idcontext'])) ? $_GET ['idcontext'] : null;
@@ -195,7 +195,8 @@ class Core
      */
     public function stream($type, $guid)
     {
-        global $KUINK_CFG, $KUINK_LAYOUT, $KUINK_TRACE, $KUINK_MANUAL_TRACE, $KUINK_DATABASES, $KUINK_DATASOURCES, $KUINK_TRANSLATION, $KUINK_APPLICATION;
+        global $KUINK_LAYOUT, $KUINK_TRACE, $KUINK_MANUAL_TRACE, $KUINK_DATABASES, $KUINK_DATASOURCES, $KUINK_TRANSLATION, $KUINK_APPLICATION;
+        $configuration = Configuration::getInstance();
 
         switch ($type) {
             case "photo" :
@@ -227,7 +228,7 @@ class Core
 
                 $base = $KUINK_APPLICATION->appManager->getApplicationBase('framework');
 
-                $filename = $KUINK_CFG->appRoot . 'apps/' . $base . '/' . $application . '/process/' . $process . '/bpmn/' . $bpmn . '.png';
+                $filename = $configuration->paths->apps . '/' . $base . '/' . $application . '/process/' . $process . '/bpmn/' . $bpmn . '.png';
                 ob_clean();
                 header('Content-Type: image/png');
                 header('Content-Length: ' . filesize($filename));
@@ -248,10 +249,10 @@ class Core
                     $file = (string)$fileRecord['name'];
                     $path = (string)$fileRecord['path'];
 
-                    /* corect the file path based on $KUINK_CFG->uploadVirtualPrefix temporary key*/
-                    $path = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $path);
+                    /* corerct the file path based on  temporary key*/
+                    $path = str_replace($configuration->compatibility->upload_virtual_prefix, '', $path);
 
-                    $pathName = $KUINK_CFG->uploadRoot . $path . '/' . $file;
+                    $pathName = $onfiguration->paths->upload_dir . $path . '/' . $file;
 
                 } else {
                     // Without guid
@@ -273,7 +274,7 @@ class Core
                 break;
 
             case "tmp" :
-                $pathName = $KUINK_CFG->dataRoot . '/kuink/files/tmp/' . $guid;
+                $pathName = $onfiguration->paths->data . '/kuink/files/tmp/' . $guid;
                 if (file_exists($pathName) and !is_dir($pathName)) {
                     ob_clean();
                     $mimeType = mime_content_type($pathName);

@@ -96,7 +96,7 @@ class Factory {
 	 * @param unknown_type $type        	
 	 */
 	static function getLayoutElement($type) {
-		// TODO STI:Create object of the layoutElement given it's type
+		// TODO:Create object of the layoutElement given it's type
 		return;
 	}
 	static function getDataSourceConnector($type, $dataSource) {

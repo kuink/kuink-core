@@ -15,8 +15,6 @@ class LogInstruction extends \Kuink\Core\Instruction {
 	 * @see \Kuink\Core\DataSourceConnector::connect()
 	 */
 	static public function execute($instManager, $instructionXmlNode) {
-		global $KUINK_CFG;
-		
 		$type = self::getAttribute ( $instructionXmlNode, 'type', $instManager->variables, true );//$this->get_inst_attr ( $instruction_xmlnode, 'type', $variables, true );
 		$key = self::getAttribute ( $instructionXmlNode, 'key', $instManager->variables, true );//$this->get_inst_attr ( $instruction_xmlnode, 'key', $variables, true );
 		$action = self::getAttribute ( $instructionXmlNode, 'action', $instManager->variables, false, $instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::ACTION] );//$this->get_inst_attr ( $instruction_xmlnode, 'action', $variables, false, $nodeconfiguration [NodeConfKey::ACTION] );

@@ -602,13 +602,12 @@ class SoapConnector extends \Kuink\Core\DataSourceConnector{
   var $soapClient; //The soapClient object
 
   function connect( $cacheWsdl=true) {
-  	global $KUINK_CFG;
 	//neon_mydebug(__CLASS__, __METHOD__);
 
      if (! $this->soapClient) {
 			$wsdl = $this->dataSource->getParam('wsdl', true);
 			if (substr( $wsdl, 0, 4 ) !== "http")
-				$wsdl=$KUINK_CFG->appRoot.'/apps/'.$wsdl;
+				$wsdl=Configuration::getInstance()->paths->apps .'/'.$wsdl;
       $user = $this->dataSource->getParam('user', true);
 			$passwd = $this->dataSource->getParam('passwd', true);
 

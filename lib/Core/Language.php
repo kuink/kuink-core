@@ -109,7 +109,6 @@ class Language {
 	}
 	static private function loadLaguageFile($app_name, $lang) {
 		global $KUINK_TRACE;
-		global $KUINK_CFG;
 		global $KUINK_APPLICATION;
 		$neon_lang_file = null;
 		

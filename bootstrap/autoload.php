@@ -1,5 +1,5 @@
 <?php
-global $KUINK_INCLUDE_PATH, $KUINK_CFG;
+global $KUINK_INCLUDE_PATH;
 //var_dump($KUINK_INCLUDE_PATH);
 require_once ($KUINK_INCLUDE_PATH . 'kuink_config.php');
 //require_once ('locallib.php');
@@ -19,7 +19,7 @@ spl_autoload_register(function ($class) {
     foreach ( glob ( $KUINK_INCLUDE_PATH . 'lib/core/*.php' ) as $filename ) {
       include_once $filename;
     }
-    
+
     // Kuink::libs
     foreach ( glob ( $KUINK_INCLUDE_PATH . 'lib/lib/*.php' ) as $filename ) {
       include_once $filename;

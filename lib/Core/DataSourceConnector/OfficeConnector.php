@@ -19,8 +19,6 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 	var $fileName;
 	var $idFile;
 	function connect() {
-		global $KUINK_CFG;
-		
 		if (! $this->conn) {
 			$this->conn = new \clsTinyButStrong (); // new instance of TBS
 			$this->conn->Plugin(TBS_INSTALL, OPENTBS_PLUGIN); // load the OpenTBS plugin
@@ -42,7 +40,7 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 				
 				if (count ( $fileRecord ) == 0)
 					throw new \Exception ( 'Invalid file ' . $this->idFile );
-				$template = $KUINK_CFG->uploadRoot . '/' . $fileRecord ['path'] . '/' . $fileRecord ['name'];
+				$template = Configuration::getInstance()->paths->upload_dir . '/' . $fileRecord ['path'] . '/' . $fileRecord ['name'];
 				//print_object($template);
 			}
 			
@@ -109,7 +107,6 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 	 * @param array $params        	
 	 */
 	function save($params) {
-		global $KUINK_CFG;
 		$this->connect ();
 		
 		$fileName = ( string ) $this->getParam ( $params, 'filename', false, '' );
@@ -128,8 +125,8 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 			if (count ( $fileRecord ) == 0)
 				throw new \Exception ( 'Invalid file ' . $this->idFile );
 			$newName = str_replace ( '.', date ( 'Y-m-d-h-i' ), $fileRecord ['name'] );
-			$outputFileName = $KUINK_CFG->uploadRoot . '/' . $fileRecord ['path'] . '/' . $newName;
-			$originalFileName = $KUINK_CFG->uploadRoot . '/' . $fileRecord ['path'] . '/' . $fileRecord ['name'];
+			$outputFileName = Configuration::getInstance()->paths->upload_dir . '/' . $fileRecord ['path'] . '/' . $newName;
+			$originalFileName = Configuration::getInstance()->paths->upload_dir . '/' . $fileRecord ['path'] . '/' . $fileRecord ['name'];
 			
 			// save the file with a different name, delete the previous file, replace the file with the updated one
 			$this->conn->Show ( OPENTBS_FILE, $outputFileName ); // Also merges all [onshow] automatic fields.

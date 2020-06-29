@@ -33,8 +33,6 @@ class Reflection {
 	 * Retuns all the applications
 	 */
 	static function getApplications($base) {
-		global $KUINK_CFG;
-		
 		$applications = array ();
 		$apps = self::directoryContents ( Configuration::getInstance()->paths->apps . '/' . $base );
 		foreach ( $apps as $app )
@@ -51,7 +49,7 @@ class Reflection {
 	 * @param string $application        	
 	 */
 	static function isPhysicalApplication($base, $application) {
-		global $KUINK_CFG, $KUINK_APPLICATION;
+		global $KUINK_APPLICATION;
 		// print_object($base.' - '.$application);
 		// print_object(file_exists($NEON_CFG->appRoot.'/apps/'.$base.'/'.$application.'/application.xml' ));
 		
@@ -68,12 +66,13 @@ class Reflection {
 	 * @param unknown_type $application        	
 	 */
 	static function getApplicationProcesses($application) {
-		global $KUINK_CFG, $KUINK_APPLICATION;
-		
+		global $KUINK_APPLICATION;
+
+		$configuration = Configuration::getInstance();
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 		
 		$processes = array ();
-		$procs = self::directoryContents ( $KUINK_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process' );
+		$procs = self::directoryContents ( $configuration->paths->apps . $appBase . '/' . $application . '/process' );
 		
 		foreach ( $procs as $proc )
 			$processes [] = array (
@@ -90,7 +89,7 @@ class Reflection {
 	 * @param unknown_type $process        	
 	 */
 	static function getProcessLibraries($application, $process) {
-		global $KUINK_CFG, $KUINK_APPLICATION;
+		global $KUINK_APPLICATION;
 		
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 		
@@ -113,11 +112,11 @@ class Reflection {
 	 * @param unknown_type $process        	
 	 */
 	static function getProcessNodes($application, $process) {
-		global $KUINK_CFG, $KUINK_APPLICATION;
+		global $KUINK_APPLICATION;
 		
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 		
-		$nodes = self::directoryContents ( $KUINK_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/nodes' );
+		$nodes = self::directoryContents ( $configuration->paths->apps . '/' . $appBase . '/' . $application . '/process/' . $process . '/nodes' );
 		
 		$cleanNodes = array ();
 		
@@ -134,11 +133,11 @@ class Reflection {
 	 * @param unknown_type $process        	
 	 */
 	static function getProcessUI($application, $process) {
-		global $KUINK_CFG, $KUINK_APPLICATION;
+		global $KUINK_APPLICATION;
 		
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 		
-		$nodes = self::directoryContents ( $KUINK_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/ui' );
+		$nodes = self::directoryContents ( $configuration->paths->apps . '/' . $appBase . '/' . $application . '/process/' . $process . '/ui' );
 		
 		$cleanNodes = array ();
 		
@@ -155,11 +154,11 @@ class Reflection {
 	 * @param unknown_type $process        	
 	 */
 	static function getProcessDataaccess($application, $process) {
-		global $KUINK_CFG, $KUINK_APPLICATION;
+		global $KUINK_APPLICATION;
 		
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 		
-		$nodes = self::directoryContents ( $KUINK_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/dataaccess' );
+		$nodes = self::directoryContents ( $configuration->paths->apps . '/' . $appBase . '/' . $application . '/process/' . $process . '/dataaccess' );
 		
 		return $nodes;
 	}
@@ -175,7 +174,6 @@ class Reflection {
 	 * @return multitype:multitype:string multitype:multitype:string
 	 */
 	static function getGenericNodeMetadata($application, $process, $node, $type) {
-		// global $KUINK_CFG;
 		$nodeMetadata = array ();
 		
 		// load the node
@@ -306,7 +304,7 @@ class Reflection {
 		return $fxRet;
 	}
 	static private function loadNode($application, $process, $node, $type) {
-		global $KUINK_CFG, $KUINK_APPLICATION;
+		global $KUINK_APPLICATION;
 		
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 		

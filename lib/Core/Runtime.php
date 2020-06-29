@@ -36,8 +36,6 @@ class ActionType {
 }
 class User {
 	function getUser() {
-		global $KUINK_CFG;
-		//var_dump($KUINK_CFG->auth->user);
 		if (isset($_SESSION['kuink.logged.user']))
 			$kuinkUser = $_SESSION['kuink.logged.user'];
 		else
@@ -119,7 +117,7 @@ class Runtime {
 	var $show_source; // Should the source code be exported to the output?
 	var $is_fw_admin; // This user is framework.admin?
 	function __construct($node, $node_type, $nodeconfiguration, $display = true, $params = null) {
-		global $KUINK_CFG, $SESSION, $KUINK_APPLICATION;
+		global $SESSION, $KUINK_APPLICATION;
 
 		$this->app_name = $node->application;
 		$this->process_name = $node->process;
@@ -184,7 +182,7 @@ class Runtime {
 		$server_info ['guestUrl'] = $configuration->web->www_root;
 		$server_info ['baseUploadDir'] = $configuration->paths->upload_dir; //(isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)$this->nodeconfiguration [NodeConfKey::CONFIG] ['uploadFolderBase'] : '';
 		//$config = (isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)($this->nodeconfiguration [NodeConfKey::CONFIG] ['uploadFolderBase']) : '';
-		$server_info ['fullUploadDir'] = $configuration->paths->upload_dir; //$KUINK_CFG->dataRoot . '/' . $config;
+		$server_info ['fullUploadDir'] = $configuration->paths->upload_dir;
 		$server_info ['environment'] = $configuration->environment;
 
 		$this->variables ['SYSTEM'] = $server_info;
@@ -215,8 +213,6 @@ class Runtime {
 	 *        	configuration roles
 	 */
 	public function buildAllCapabilities($idAcl=null, $aclCode=null, $force=false){
-		Global $KUINK_CFG;
-
 			$roles = isset($this->nodeconfiguration[NodeConfKey::ROLES]) ? $this->nodeconfiguration[NodeConfKey::ROLES] : null;
 			$capabilities = isset($this->nodeconfiguration[NodeConfKey::CAPABILITIES]) ? $this->nodeconfiguration[NodeConfKey::CAPABILITIES] : null;
 
@@ -619,7 +615,7 @@ class Runtime {
 
 			// Add the roles stored in session:
 			$new_roles = isset($this->nodeconfiguration [NodeConfKey::ROLES]) ? $this->nodeconfiguration [NodeConfKey::ROLES] : null;
-			global $SESSION, $KUINK_CFG;
+			global $SESSION;
 
 			$currentStackRoles = ProcessOrchestrator::getNodeRoles ();
 
@@ -1001,7 +997,7 @@ class Runtime {
 	function action_execute(&$nodeconfiguration, $nodexml, $action_xmlnode, $actionname, &$variables) {
 		global $KUINK_TRACE;
 		global $KUINK_MANUAL_TRACE;
-		global $KUINK_CFG;
+		$configuration = Configuration::getInstance();
 		//kuink_mydebug('Executing action', $actionname);
 
 		$context = ProcessOrchestrator::getContext ();
@@ -1057,7 +1053,7 @@ class Runtime {
 			// var_dump($nodeconfiguration);
 			$pars = array (
 					'table' => 'log',
-					'id_user' => $KUINK_CFG->auth->user->id,
+					'id_user' => $variables['USER']['id'],
 					'type' => $log_level,
 					'application' => $nodeconfiguration [NodeConfKey::APPLICATION],
 					'process' => $nodeconfiguration [NodeConfKey::PROCESS],
@@ -1222,7 +1218,6 @@ class Runtime {
 
 				// var_dump( $course );
 				$url = Tools::getWWWRoot ();
-				global $KUINK_CFG;
 
 				$layout = \Kuink\UI\Layout\Layout::getInstance ();
 				$breadcrumbEntries = array ();
@@ -1230,10 +1225,10 @@ class Runtime {
 					'label' => Language::getString ( 'home' ),
 					'href' => $url
 				);
-				if (isset($KUINK_CFG->trigger->url))
+				if (isset(Configuration::getInstance()->trigger->url))
 					$breadcrumbEntries[] = array (
-						'label' => $KUINK_CFG->trigger->label,
-						'href'  => $KUINK_CFG->trigger->url,
+						'label' => Configuration::getInstance()->trigger->label,
+						'href'  => Configuration::getInstance()->trigger->url,
 						'last'  => false
 					);
 				$breadcrumbEntries[] = array (

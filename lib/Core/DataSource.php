@@ -28,7 +28,6 @@ class DataSource {
 	var $datasourcexml_domobject;
 	var $curr_db_prefix;
 	function __construct($screen_domobject, $datasourcename, $appname, $processname, $databasename = '', $databaseApp = '') {
-		global $KUINK_CFG;
 		global $KUINK_APPLICATION;
 		// If the $screen_domobject is null then the $datasourcename has the method name
 		$this->application = $appname;
@@ -99,8 +98,8 @@ class DataSource {
     function execute($params = null) {
 		global $KUINK_DATABASES;
 		global $KUINK_TRACE;
-		global $KUINK_CFG;
-		
+
+		$configuration = Configuration::getInstance();		
 		if (Configuration::getInstance()->kuink->use_new_data_access_infrastructure) {
 			// Use the DataAccess Instead...
 			$dataAccess = new DataAccess ( $this->methodName, $this->application, $this->process, $this->database );
@@ -127,9 +126,9 @@ class DataSource {
 		$type = '';
 		// Getting database object
 		if ($database_name == '') {
-			$this->curr_db_prefix = $KUINK_DATABASES [$KUINK_CFG->defaultDataSourceName]->prefix;
-			$type = $KUINK_DATABASES [$KUINK_CFG->defaultDataSourceName]->type;
-			$database = $KUINK_DATABASES [$KUINK_CFG->defaultDataSourceName]->db;
+			$this->curr_db_prefix = $KUINK_DATABASES [$configuration->defaults->datasource_name]->prefix;
+			$type = $KUINK_DATABASES [$configuration->defaults->datasource_name]->type;
+			$database = $KUINK_DATABASES [$configuration->defaults->datasource_name]->db;
 		} else {
 			// Check if there is allready a connection active to this database
 			if (isset ( $KUINK_DATABASES [$database_name] )) {

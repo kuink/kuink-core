@@ -1419,8 +1419,7 @@ class Form extends Control {
 		return $expr;
 	}
 	private function getDataSourceUrl($datasource, $datasourceParams) {
-		global $KUINK_CFG;
-		$url = $KUINK_CFG->apiUrl . '&neonfunction=' . $datasource . '&' . $datasourceParams;
+		$url = Configuration::getInstance()->web->api . '&neonfunction=' . $datasource . '&' . $datasourceParams;
 		return $url;
 	}
 	private function getDataSourceParams($datasourceParams) {

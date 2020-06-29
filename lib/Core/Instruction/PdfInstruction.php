@@ -21,8 +21,6 @@ class PdfInstruction extends \Kuink\Core\Instruction {
 	}
 
 	static public function create($instManager, $instructionXmlNode) {
-		global $KUINK_CFG;
-		
 		$paper = (string) self::getAttribute ( $instructionXmlNode, 'paper', $instManager->variables, false, 'a4'); //$this->get_inst_attr ( $instruction_xmlnode, 'paper', $instManager->variables, false, 'a4' );
 		$orientation = (string) self::getAttribute ( $instructionXmlNode, 'orientation', $instManager->variables, false, 'portrait'); //$this->get_inst_attr ( $instruction_xmlnode, 'orientation', $instManager->variables, false, 'portrait' );
 		$unit = (string) self::getAttribute ( $instructionXmlNode, 'unit', $instManager->variables, false, 'mm'); //$this->get_inst_attr ( $instruction_xmlnode, 'unit', $instManager->variables, false, 'mm' );
@@ -147,7 +145,7 @@ class PdfInstruction extends \Kuink\Core\Instruction {
 		
 		$config = $instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::CONFIG];
 		
-		$baseUpload = $KUINK_CFG->uploadRoot;
+		$baseUpload = Configuration::getInstance()->paths->upload_dir;
 		$uploadDir = $baseUpload . '/' . $path;
 		
 		// Handle dupplication of slashes in configurations

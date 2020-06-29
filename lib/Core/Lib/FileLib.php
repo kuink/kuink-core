@@ -32,7 +32,6 @@ class FileLib {
 	// Param: fileContents - the actual file binary
 	// Param: unzip - true (1) if to retrieve the file uncompressed, false (0) if compressed
 	function uploadFromCompressedDownload($params) {
-		global $KUINK_CFG;
 		
 		$compressedFileName = $params ['compressedFileName'];
 		$compressedFileExtension = $params ['compressedFileExtension'];
@@ -43,7 +42,7 @@ class FileLib {
 		$result = array ();
 		
 		$config = $this->nodeconfiguration ['config'];
-		$base_upload = $KUINK_CFG->uploadRoot;
+		$base_upload = Configuration::getInstance()->paths->upload_dir;
 		$upload_dir = $base_upload . $upload_folder;
 		$path = $upload_dir . 'tmp/';
 		$compressedFilePath = $path . $compressedFileName . '.' . $compressedFileExtension;
@@ -77,8 +76,7 @@ class FileLib {
 	}
 	
     public function getTmpPath( $params ) {
-        global $KUINK_CFG;
-        return $KUINK_CFG->tmpRoot;
+        return Configuration::getInstance()->paths->tmp;
     }
 
 	// Param: UploadFolder - The folder under moodledata where the file is to be copied
@@ -87,7 +85,6 @@ class FileLib {
 	// Param: ValidExtensions - comma separated list of valid extensions
 	function upload($params) {
 		// global $msg_manager;
-		global $KUINK_CFG;
 		global $KUINK_TRACE;
 		// global $_Files;
 		
@@ -110,7 +107,7 @@ class FileLib {
 		// print('UPLOAD FOLDER:'.$upload_folder );
 		$config = $this->nodeconfiguration ['config'];
 		
-		$base_upload = $KUINK_CFG->uploadRoot;
+		$base_upload = Configuration::getInstance()->paths->upload_dir;
 		$upload_dir = $base_upload . $upload_folder;
 		//kuink_mydebug('uploaddir', $upload_dir);
 		
@@ -226,10 +223,9 @@ class FileLib {
 	 * This function will register a file, which allready is in filesystem in file
 	 */
 	function register($original_name, $path, $name, $size, $ext, $mime, $id_user, $desc, $guid = '') {
-		global $KUINK_CFG;
 		// Grava o ficheiro na base de dados na tabela ficheiro
 		$config = $this->nodeconfiguration ['config'];
-		$path = $KUINK_CFG->uploadVirtualPrefix .$path;
+		$path = Configuration::getInstance()->compatibility->upload_virtual_prefix.$path;
 
 		$utils = new UtilsLib ( $this->nodeconfiguration, $this->msg_manager );
 		$guid = ($guid == '') ? $utils->GuidClean () : $guid;
@@ -260,7 +256,6 @@ class FileLib {
 	 * @throws Exception
 	 */
 	function unlink($params) {
-		global $KUINK_CFG;
 		if (! isset ( $params [0] ))
 			throw new Exception ( 'unlink needs the id of the file.' );
 		$id = ( string ) $params [0];
@@ -271,7 +266,7 @@ class FileLib {
 		) );
 		// var_dump($file);
 		// print($CFG->dataRoot.'/'.$file->path.'/'.$file->name);
-		$filename = $KUINK_CFG->uploadRoot . '/' . $file ['path'] . '/' . $file ['name'];
+		$filename = Configuration::getInstance()->paths->upload_dir . '/' . $file ['path'] . '/' . $file ['name'];
 		// kuink_mydebug('file',$filename);
 		if (file_exists($filename))
 			unlink ( $filename );
@@ -297,23 +292,16 @@ class FileLib {
 	}
 		
 	function download($params) {
-		global $KUINK_CFG;
-		// disable moodle specific debug messages and any errors in output
-		// define('NO_DEBUG_DISPLAY', true);
-		
-		// require_once('../../config.php');
-		// require_once('../../lib/filelib.php');
-		
 		$path = ($params [0]) ? $params [0] : '';
 		$file = ($params [1]) ? $params [1] : '';
 		
-		/* corect the file path based on $KUINK_CFG->uploadVirtualPrefix temporary key*/
-		$path = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $path);		
+		/* correct the file path based on uploadVirtualPrefix temporary key*/
+		$path = str_replace(Configuration::getInstance()->compatibility->upload_virtual_prefix, '', $path);		
 		
 		// ========================================
 		// send the file
 		// ========================================
-		$pathName = $KUINK_CFG->uploadRoot . '/' . $path . '/' . $file;
+		$pathName = Configuration::getInstance()->paths->upload_dir . '/' . $path . '/' . $file;
 
 		// print('pathname:'.$pathname);
 		if (file_exists ( $pathName ) and ! is_dir ( $pathName )) {
@@ -331,14 +319,12 @@ class FileLib {
 	
 	function downloadTmp($params)
 	{
-		global $KUINK_CFG;
-
 		$file = ($params[0]) ? (string)$params[0] : '';
 
 		// ========================================
 		// send the file
 		// ========================================
-		$pathname = $KUINK_CFG->tmpRoot.'/'.$file;
+		$pathname = Configuration::getInstance()->paths->tmp.'/'.$file;
 
 		if (file_exists($pathname) and !is_dir($pathname)) {
 			ob_clean();
@@ -364,19 +350,17 @@ class FileLib {
 	* @since 2016-02-04
 	**/
 	function copyFolder($params) {
-			global $KUINK_CFG;
-
 			$config = $this->nodeconfiguration['config'];
 
-			$baseUploadDir = $KUINK_CFG->uploadRoot;
+			$baseUploadDir = Configuration::getInstance()->paths->upload_dir;
 
 			$source = isset($params['source']) ? $params['source'] : false;
-			$source = $KUINK_CFG->dataRoot.'/'.$baseUploadDir.$source;
+			$source = Configuration::getInstance()->paths->data.'/'.$baseUploadDir.$source;
 
 			$result = 0;
 			if($source != false) {
 				$destination = isset($params['destination']) ? $params['destination'] : false;
-				$destination = $KUINK_CFG->dataRoot.'/'.$baseUploadDir.$destination;
+				$destination = Configuration::getInstance()->paths->data.'/'.$baseUploadDir.$destination;
 
 				if($destination != false) {
 					if(!is_dir($destination)){
@@ -417,11 +401,9 @@ class FileLib {
 	 *       
 	 */
 	function copyFile($params) {
-		global $KUINK_CFG;
-		
 		$config = $this->nodeconfiguration ['config'];
 		
-		$baseUploadDir = $KUINK_CFG->uploadRoot;
+		$baseUploadDir = Configuration::getInstance()->paths->upload_dir;
 		                                                  
 		// === params ===
 		                                                  
@@ -444,7 +426,7 @@ class FileLib {
 		) );
 		
 		// full origin path
-		$originalFile = $KUINK_CFG->uploadRoot . '/' . $file ['path'] . '/' . $file ['name'];
+		$originalFile = Configuration::getInstance()->paths->upload_dir . '/' . $file ['path'] . '/' . $file ['name'];
 		$originalFile = str_replace ( '//', '/', $originalFile );
 		
 		// full destination path
@@ -484,10 +466,8 @@ class FileLib {
 	 *       
 	 */
 	function createFolder($params) {
-		global $KUINK_CFG;
-		
 		$config = $this->nodeconfiguration ['config'];
-		$baseUploadDir = $KUINK_CFG->uploadRoot;
+		$baseUploadDir = Configuration::getInstance()->paths->upload_dir;
 		                                                  
 		// folder's path
 		$folderPath = ( string ) $params ['path'];
@@ -515,10 +495,8 @@ class FileLib {
 	 *       
 	 */
 	function moveFiles($params) {
-		global $KUINK_CFG;
-		
 		$config = $this->nodeconfiguration ['config'];
-		$baseUploadDir = $KUINK_CFG->uploadRoot;
+		$baseUploadDir = Configuration::getInstance()->paths->upload_dir;
 		                                                  
 		// path to the original folder
 		$originalPath = ( string ) $params ['originalPath'];
@@ -526,7 +504,7 @@ class FileLib {
 		if ($pos === FALSE)
 			$originalFullPath =  $baseUploadDir . '/' . $originalPath;
 		else
-			$originalFullPath = $KUINK_CFG->uploadRoot . '/' . $originalPath;
+			$originalFullPath = Configuration::getInstance()->paths->upload_dir . '/' . $originalPath;
 		
 		$originalFullPath = str_replace ( '//', '/', $originalFullPath ); // full original path
 		                                                               
@@ -535,12 +513,6 @@ class FileLib {
 		$pos = strpos ( $destinationPath . '/', $baseUploadDir );
 
 		$destinationFullPath = $baseUploadDir . $destinationPath;
-		/*
-		if ($pos === FALSE)
-			$destinationFullPath = $KUINK_CFG->dataRoot . '/' . $baseUploadDir . '/' . $destinationPath;
-		else
-			$destinationFullPath = $KUINK_CFG->dataRoot . '/' . $destinationPath;
-		*/
 		$destinationFullPath = str_replace ( '//', '/', $destinationFullPath ); // full destination path
 		                                                                     
 		$pos = strpos ( $originalFullPath . '/', $baseUploadDir );
@@ -579,10 +551,8 @@ class FileLib {
 	 *       
 	 */
 	function createFile($params) {
-		global  $KUINK_CFG;
-		
 		$config = $this->nodeconfiguration ['config'];
-		$baseUploadDir = $KUINK_CFG->uploadRoot;
+		$baseUploadDir = Configuration::getInstance()->paths->upload_dir;
 		$register = isset($params ['register']) ? (int) $params ['register'] : 1; //This file is to register or not? Defaults to register.
 		// content
 		$content = ( string ) $params ['content'];
@@ -637,8 +607,6 @@ class FileLib {
 		return $record;
 	}
 	function getFileChecksum($params) {
-		global $KUINK_CFG;
-		
 		$id = ( string ) $params ['id'];
 		// load file
 		$datasource = new Kuink\Core\DataSource ( null, 'framework,generic,load', 'framework', 'generic' );
@@ -648,7 +616,7 @@ class FileLib {
 		) );
 		
 		// full origin path
-		$originalFile = $KUINK_CFG->uploadRoot . '/' . $file ['path'] . '/' . $file ['name'];
+		$originalFile = Configuration::getInstance()->paths->upload_dir . '/' . $file ['path'] . '/' . $file ['name'];
 		$originalFile = str_replace ( '//', '/', $originalFile );
 		
 		return md5_file ( $originalFile );
@@ -658,11 +626,9 @@ class FileLib {
 	 * Get the sub dirs of a given dir
 	 */
 	function getSubDirs($params) {
-		GLOBAL $KUINK_CFG;
-		
 		$path = ( string ) $params ['path'];
 		
-		$base = $KUINK_CFG->appRoot . 'apps/';
+		$base = Configuration::getInstance()->paths->apps .'/';
 		$base = str_replace ( '//', '/', $base );		
 		$pathName = realpath ( $base . $path );
 		//$pos = strpos ( $pathName . '/', $base );
@@ -677,11 +643,9 @@ class FileLib {
 	 * Get the files
 	 */
 	function getFiles($params) {
-		GLOBAL $KUINK_CFG;
-		
 		$path = ( string ) $params ['path'];
 		
-		$base = $KUINK_CFG->appRoot . 'apps/';
+		$base = Configuration::getInstance()->paths->apps .'/';
 		$pathName = realpath ( $base . $path );
 		//$pos = strpos ( $pathName . '/', $base );
 		//if ($pos === FALSE)
@@ -691,12 +655,10 @@ class FileLib {
 		return $contents;
 	}
 	function createFileOrDirectory($params) {
-		GLOBAL $KUINK_CFG;
-		
 		$path = ( string ) $params ['path'];
 		$name = ( string ) $params ['name'];
 		
-		$base = $KUINK_CFG->appRoot . 'apps/';
+		$base = Configuration::getInstance()->paths->apps .'/';
 		$pathName = realpath ( $base . $path );
 		$pos = strpos ( $pathName . '/', $base );
 		if ($pos === FALSE)
@@ -718,12 +680,10 @@ class FileLib {
 		return true;
 	}
 	function renameFileOrDirectory($params) {
-		GLOBAL $KUINK_CFG;
-		
 		$oldName = ( string ) $params ['oldName'];
 		$newName = ( string ) $params ['newName'];
 		
-		$base = $KUINK_CFG->appRoot . 'apps/';
+		$base = Configuration::getInstance()->paths->apps .'/';
 		$pathName = realpath ( $base . $oldName );
 		$pos = strpos ( $pathName . '/', $base );
 		if ($pos === FALSE)
@@ -733,11 +693,9 @@ class FileLib {
 		return $result;
 	}
 	function deleteFileOrDirectory($params) {
-		GLOBAL $KUINK_CFG;
-		
 		$path = ( string ) $params ['path'];
 		
-		$base = $KUINK_CFG->appRoot . 'apps/';
+		$base = Configuration::getInstance()->paths->apps .'/';
 		$pathName = realpath ( $base . $path );
 		$pos = strpos ( $pathName . '/', $base );
 		if ($pos === FALSE)
@@ -750,11 +708,9 @@ class FileLib {
 		return true;
 	}
 	function getFileType($params) {
-		GLOBAL $KUINK_CFG;
-		
 		$path = ( string ) $params ['path'];
 		
-		$base = $KUINK_CFG->appRoot . 'apps/';
+		$base = Configuration::getInstance()->paths->apps .'/';
 		$pathName = realpath ( $base . $path );
 		$pos = strpos ( $pathName . '/', $base );
 		if ($pos === FALSE)
@@ -783,12 +739,10 @@ class FileLib {
 		return 'error';
 	}
 	function getLevel($params) {
-		GLOBAL $KUINK_CFG;
-		
 		$path = ( string ) $params ['path'];
 		
-		$base = $KUINK_CFG->appRoot . 'apps/';
-		$base2 = $KUINK_CFG->appRoot . 'apps';
+		$base = Configuration::getInstance()->paths->apps .'/';
+		$base2 = Configuration::getInstance()->paths->apps;
 		$pathName = realpath ( $base . $path );
 		
 		// Remove the base to get the level only for the path
@@ -803,11 +757,9 @@ class FileLib {
 	 * Get the files
 	 */
 	function getFileContent($params) {
-		GLOBAL $KUINK_CFG;
-		
 		$path = ( string ) $params ['path'];
 		
-		$base = $KUINK_CFG->appRoot . 'apps/';
+		$base = Configuration::getInstance()->paths->apps .'/';
 		$pathName = realpath ( $base . $path );
 		//$pos = strpos ( $pathName . '/', $base );
 		//if ($pos === FALSE)
@@ -817,12 +769,10 @@ class FileLib {
 		return $contents;
 	}
 	function setFileContent($params) {
-		GLOBAL $KUINK_CFG;
-		
 		$path = ( string ) $params ['path'];
 		$content = ( string ) $params ['content'];
 		
-		$base = $KUINK_CFG->appRoot . 'apps/';
+		$base = Configuration::getInstance()->paths->apps .'/';
 		$pathName = realpath ( $base . $path );
 		$pos = strpos ( $pathName . '/', $base );
 		if ($pos === FALSE)

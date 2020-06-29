@@ -23,7 +23,8 @@ class Icon extends Formatter {
 		return $this->small ( $value, $params );
 	}
 	function simpleIcon($value, $params = null) {
-		$icon = ( string ) $this->getParam ( $params, $value, false, 'default' );
+		$default = (string) $value;
+		$icon = ( string ) $this->getParam ( $params, $value, false, $default );
 		$size = ( string ) $this->getParam ( $params, 'size', true, '' );
 		//return '<i class="fa fa-' . $icon . '" style="font-size: ' . $size . 'px"></i>';
 		return '<i class="fa fa-' . $icon . '"></i>';

@@ -38,7 +38,7 @@ class NodeManager {
 	var $loaded; // is this node loaded?
 	var $inherits; // from which this node inherits
 	function __construct($application, $process, $type, $node) {
-		global $KUINK_CFG, $KUINK_APPLICATION;
+		global $KUINK_APPLICATION;
 		$this->application = $application;
 		$this->process = $process;
 		$this->type = $type;
@@ -195,16 +195,13 @@ class NodeManager {
 		) );
 	}
 	public function validateSchema() {
-		global $KUINK_CFG;
-		var_dump ( 'validating schema ' . $this->type );
-		
 		// Enable user error handling
 		libxml_use_internal_errors ( true );
 		
 		// We have to use the DomDocument for this and reload the node
 		$domXml = new \DOMDocument ();
 		$domXml->load ( $this->nodeFilename );
-		$xsdFilename = $KUINK_CFG->appRoot . '/apps/framework/framework/schema/' . $this->type . '.xsd';
+		$xsdFilename = $configuration->paths->apps . '/framework/framework/schema/' . $this->type . '.xsd';
 		var_dump ( $this->nodeFilename );
 		var_dump ( $xsdFilename );
 		$isValid = $domXml->schemaValidate ( $xsdFilename );

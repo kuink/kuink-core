@@ -21,7 +21,6 @@ class DocumentConverterConnector extends \Kuink\Core\DataSourceConnector {
 
 	function execute($params) {
 		global $KUINK_TRACE;
-		global $KUINK_CFG;
 		$this->connect();
 		
 		$idFile = (int)$this->getParam($params, 'id');
@@ -37,14 +36,14 @@ class DocumentConverterConnector extends \Kuink\Core\DataSourceConnector {
 		) );
 		
 		// full origin path
-		$source = $KUINK_CFG->dataRoot . '/' . $file['path'] . '/' . $file['name'];
+		$source = Configuration::getInstance()->paths->data . '/' . $file['path'] . '/' . $file['name'];
 		$source = str_replace ( '//', '/', $source );
 		
 		// full destination path
 		$newName = ($newName == '') ? str_replace($file['ext'], $format, $file['name']) : $newName.'.'.$format;
 		
 		$path = ($path == '') ? $file['path'] : $path;
-		$target = $KUINK_CFG->dataRoot . '/' . $path . '/' . $newName;
+		$target = Configuration::getInstance()->paths->data . '/' . $path . '/' . $newName;
 		$target = str_replace ( '//', '/', $target );
 				
 		//Expand the params into the command

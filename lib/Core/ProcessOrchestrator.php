@@ -164,8 +164,6 @@ class ProcessOrchestrator
 
     static function addContext($baseApplicationName, $contextId = null)
     {
-        global $KUINK_CFG;
-
         $contextId = (isset ($contextId)) ? $contextId : self::getContextId();
 
         $currentContext = self::getContext($contextId);
@@ -313,8 +311,6 @@ class ProcessOrchestrator
 
     static function addNode($node, $contextId = null)
     {
-        global $KUINK_CFG;
-
         $contextId = (isset ($contextId)) ? $contextId : self::getContextId();
 
         // Check if the node is already in the stack with the same RWX or IMPERSONATE
@@ -739,7 +735,6 @@ class ProcessOrchestrator
 
     static function processEvent($roles, $flow)
     {
-        global $KUINK_CFG;
         global $KUINK_APPLICATION;
 
         $appBase = $KUINK_APPLICATION->appManager->getApplicationBase($flow->application);
@@ -847,9 +842,7 @@ class ProcessOrchestrator
      */
     static function setCompany()
     {
-        global $KUINK_CFG;
-        // unset( $_SESSION['KUINK_CONTEXT']['idCompany'] );
-
+        $configuration = Configuration::getInstance();
         $context = self::getContext();
         // check if there's a company set
         if (isset ($_GET ['idCompany'])) {
@@ -864,7 +857,7 @@ class ProcessOrchestrator
 
             self::setContext($context);
             // Redirect to home page...
-            redirect($KUINK_CFG->wwwRoot);
+            redirect($configuration->web->www_root);
         } else if (!isset ($context->idCompany)) {
             // Load the user companies
             $datasource = new \Kuink\Core\DataSource (null, 'framework/framework,user,user.getCompanies', 'framework', 'user');
