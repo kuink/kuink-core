@@ -297,6 +297,7 @@ class Smarty extends \Smarty {
 		//kuink_mydebug( 'HEY', __DIR__.'/../../theme/'.$this->theme.'/ui/control/'.$template_name );
 		
 		//$output = $smarty->fetch ( __DIR__ . '/../../theme/' . $this->theme . '/ui/control/' . $template_name );
+		//var_dump($KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$this->themeName.'/ui/control/' . $template_name);
 		$output = $smarty->fetch ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$this->themeName.'/ui/control/' . $template_name );
 		
 		//var_dump( __DIR__ . '/../../theme/' . $this->theme . '/ui/control/' . $template_name);

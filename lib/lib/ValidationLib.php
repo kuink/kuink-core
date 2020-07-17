@@ -96,7 +96,7 @@ class ValidationLib {
 		
 		$tax_number = ( string ) $params [0];
 		$is_valid = false;
-		$regex = '/^[125689]\d{8}$/';
+		$regex = '/^[1235689]\d{8}$/';
 		
 		if (! preg_match ( $regex, $tax_number )) {
 			$is_valid = false;

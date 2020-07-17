@@ -214,15 +214,12 @@ class EvalExpr {
 		$result = FALSE;
 		if ($boolean) {
 			// TODO: Handle quotes in expr
-			$functionRef = create_function ( '', "return (" . $expr . ") ? 1 : 0;" );
-			$result = $functionRef ();
+			//$functionRef = create_function ( '', "return (" . $expr . ") ? 1 : 0;" );
+			//$result = $functionRef ();
+			$result = eval(sprintf("return (%s) ? 1 : 0;", $expr));
 		} else if ($string) {
 			$result = $expr;
 		} else {
-			// Math Expression
-			// $functionRef = create_function('', "return (".$expr.");");
-			// safely evaluate expressions. To avoid php injection
-			
 			$parser = new \Kuink\Core\EvalMath ();
 			$parser->evaluate ( 'y(x) = ' . $expr );
 			$result = $parser->e ( 'y(0)' );

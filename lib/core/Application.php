@@ -325,7 +325,7 @@ class Application {
 		$menu = array ();
 		$menuitemscount = count ( $flowMenu );
 		$counter = 1;
-		while ( list ( , $node ) = each ( $flowMenu ) ) {
+		foreach ($flowMenu as $node) {
 			
 			$templname = ($node ['template'] != '') ? $node ['template'] : 'default';
 			

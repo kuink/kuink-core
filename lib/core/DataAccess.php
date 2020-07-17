@@ -114,14 +114,21 @@ class DataAccess {
 					else {
 						// implode to use with IN
 						$arrayValues = array ();
+						$KUINK_TRACE[] = 'Expand Parameter '.$key.' to use in IN';
+						$KUINK_TRACE[] =  var_export($value, true);
 						foreach ( $value as $arrayValue ) {
-							if (is_string($arrayValue))
+							//$KUINK_TRACE[] =  'Numeric: '.$arrayValue.' - '.is_numeric($arrayValue);
+							if (is_numeric($arrayValue))
+								$arrayValues [] = (int)$arrayValue;
+							else if (is_string($arrayValue))
 								$arrayValues [] = '\'' . $arrayValue . '\'';
 							else
 								$arrayValues [] = '\'' . (count(array_filter(array_keys($arrayValue), 'is_string')) > 0) ? '__array' : $arrayValue . '\'';
 						}
-						
-						$newParams [$key] = implode ( ',', $arrayValues );
+						$KUINK_TRACE[] =  var_export($arrayValues, true);
+						//$newParams [$key] = implode ( ',', $arrayValues );
+						$newParams [$key] = $arrayValues;
+
 						//Remove the first and last ' chars to avoid erros in bind params
 						//$newParams [$key] = substr($newParams [$key],1,strlen($newParams [$key])-2);
 						//print_object($newParams [$key]);

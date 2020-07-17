@@ -495,11 +495,13 @@ private function encloseIdentifier($identifier) {
 		
 		$record = (count ( $records ) > 0) ? $records [0] : null;
 		// add the multilang data if it is set
-		if (count ( $multilangTransformedRecords > 0 )) {
-			foreach ( $multilangTransformedRecords as $key => $multilangData )
-			if ($key != 'id')
-				$record[$key] = $multilangData;
+		if (!empty($multilangTransformedRecords)) {
+			if (count ( $multilangTransformedRecords > 0 )) {
+				foreach ( $multilangTransformedRecords as $key => $multilangData )
+				if ($key != 'id')
+					$record[$key] = $multilangData;
 
+			}
 		}
 		
 		return $record;

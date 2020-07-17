@@ -74,7 +74,7 @@ class VarInstruction extends \Kuink\Core\Instruction {
 		}
 		
 		if ($set) {
-			$value = $instManager->executeInnerInstruction ( $instructionXmlNode, true ); //If there's an inner value directly get it as string
+			$value = $instManager->executeInnerInstruction ( $instructionXmlNode, true ); //If there's an inner value directly get it
 		} else if ($setValue != '') {
 			// Parse the value!!
 			$eval = new \Kuink\Core\EvalExpr ();
@@ -87,8 +87,8 @@ class VarInstruction extends \Kuink\Core\Instruction {
 		}
 		
 		// Cleanup unncessary spaces
-		$value = (! is_array ( $value ) && (! is_object ( $value ))) ? trim ( $value ) : $value;
-		
+		$value= (!is_array($value) && (!is_object($value)) && $value != null) ? trim($value) : $value;
+
 		// Dumping variable
 		if ($dump == 'true') {
 			$dumpVarName = ($key != '') ? $varname.'['.$key.']' : $varname;
@@ -108,9 +108,15 @@ class VarInstruction extends \Kuink\Core\Instruction {
 				if ($key != '')
 					$instManager->variables[$varname] = self::setVarKeyInDepth($instManager, $var, $keys, $value);
 				else {
-					if ($keyIsSet && $key == '')
-						$instManager->variables[$varname][] = $value;
-					else
+					//We want to add a new key to an array
+					if ($keyIsSet && $key == '') {
+						if (isset($instManager->variables[$varname]) && ($instManager->variables[$varname] != ''))
+							$var = $instManager->variables[$varname];
+						else
+							$var = array();
+						$var[]= (is_array($value)) ? $value : (string)$value;
+						$instManager->variables[$varname] = $var;
+					} else
 						$instManager->variables[$varname] = $value;
 				}
 			}

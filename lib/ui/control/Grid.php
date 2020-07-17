@@ -1354,29 +1354,34 @@ class Grid extends Control {
 	 * }
 	 */
 	function getHtml() {
-		$this->build ();
-		
-		$visible = ( string ) $this->getProperty ( $this->name, GridProperty::VISIBLE, false, GridDefaults::VISIBLE, null, true );
-		
-		if ($visible != 'true')
-			return;
-		
-		$cols = '';
-		foreach ( $this->tableheaders as $col ) {
-			$cols .= '<th><strong>' . htmlentities ( $col, ENT_QUOTES, 'UTF-8' ) . '</strong></th>';
-		}
-		$rows = '';
-		foreach ( $this->databind as $bind_data )
-			foreach ( $bind_data as $row ) {
-				$rows .= '<tr >';
-				foreach ( ( array ) $row as $row_col )
-					$rows .= '<td style="font-size: 10pt; white-space: nowrap;">' . $row_col ['value'] . '</td>';
-				$rows .= '</tr>';
-			}
-		
-		$html = '
+        $this->build();
+
+        $visible = (string) $this->getProperty($this->name, GridProperty::VISIBLE, false, GridDefaults::VISIBLE, null, true);
+
+        if ($visible != 'true')
+            return;
+
+        $cols = '';
+        $colLength = count($this->tableheaders) -1;
+        $currentCol = 0;
+        foreach ($this->tableheaders as $col) {
+            if ($currentCol < $colLength) {
+                $cols .= '<th><strong>' . htmlentities($col, ENT_QUOTES, 'UTF-8') . '</strong></th>';
+                $currentCol++;
+            }
+        }
+        $rows = '';
+        foreach ($this->databind as $bind_data)
+            foreach ($bind_data as $row) {
+                $rows .= '<tr >';
+                foreach ((array) $row as $row_col)
+                    $rows .= '<td style="font-size: 10pt; white-space: nowrap;">' . $row_col['value'] . '</td>';
+                $rows .= '</tr>';
+            }
+
+        $html = '
 		&nbsp;
-		<table cellpadding="2" border="1" width="100%" >
+		<table style="table-layout: fixed; font-size: 9pt" cellpadding="2" border="1"  >
 				<thead>
 				<tr>
 				' . $cols . '
@@ -1484,9 +1489,7 @@ class Grid extends Control {
 		$params ['type'] = $chart_type;
 		$params ['title'] = $this->title;
 		$params ['exportable'] = $this->exportable;
-		$params ['exportTypes'] = array (
-				'csv' 
-		);
+		$params ['exportTypes'] = array ('CSV', 'PDF-L', 'PDF-P');
 		
 		$params ['refreshable'] = $this->refreshable;
 		$params ['refreshInterval'] = $this->refreshInterval;
@@ -1655,9 +1658,7 @@ class Grid extends Control {
 		$params ['globalActions'] = $globalActions;
 		$params ['exportable'] = $this->exportable;
 		$params ['extendEdit'] = $this->extendEdit;
-		$params ['exportTypes'] = array (
-				'csv' 
-		);
+		$params ['exportTypes'] = array ('CSV', 'PDF-L', 'PDF-P');
 		$params ['sort'] = $this->sort;
 		
 		$params ['action'] = isset ( $_GET ['action'] ) ? ( string ) $_GET ['action'] : 'init';
@@ -1690,78 +1691,95 @@ class Grid extends Control {
 		$this->render ( $params );
 		return;
 	}
+
 	public function export($type) {
-		global $KUINK_CFG;
-		
-		$this->setProperty ( array (
-				$this->name,
-				'freeze',
-				'true' 
-		) );
-		$this->build ();
-		
-		$utils = new \UtilsLib ( $this->nodeconfiguration, null );
-		$file_guid = $utils->GuidClean ( null );
-		
-		$config = $this->nodeconfiguration ['config'];
-		
-		$base_upload = $KUINK_CFG->uploadRoot;
-		$upload_dir = $base_upload . '/tmp/';
-		
-		// Handle dupplication of slashes in configurations
-		$upload_dir = str_replace ( '//', '/', $upload_dir );
-		$filePath = $upload_dir;
-		$fileName = $file_guid . '.' . $type;
-		$myFile = $filePath . $fileName;
-		
-		// kuink_mydebug('Exporting...', $myFile);
-		
-		if (! $handle = fopen ( $myFile, 'x+' )) {
-			throw new \Exception ( "Grid export: Cannot open file ($myFile)" );
-			return;
-		}
-		
-		// write headers
-		$fixed_headers = array ();
-		foreach ( $this->tableheaders as $header ) {
-			$fixed_headers [] = '"' . str_replace ( '"', '""', html_entity_decode ( strip_tags ( $header ) ) ) . '"';
-		}
-		$headers = implode ( "\t", $fixed_headers );
-		$headers .= "\n";
-		if (fwrite ( $handle, $headers ) === FALSE) {
-			throw new \Exception ( "Cannot write to file ($myFile)" );
-			exit ();
-		}
-		
-		// Write data
-		foreach ( $this->databind as $data ) {
-			foreach ( $data as $row_key => $row_value ) {
-				$fixed_data = array ();
-				foreach ( $row_value as $key => $value ) {
-					$fixed_data [] = '"' . str_replace ( '"', '""', html_entity_decode ( strip_tags ( $value ['value'] ) ) ) . '"';
-				}
-				$write_data = implode ( "\t", $fixed_data );
-				$write_data .= "\n";
-				if (fwrite ( $handle, $write_data ) === FALSE) {
-					throw new \Exception ( "Cannot write to file ($myFile)" );
-					exit ();
-				}
-			}
-		}
-		
-		fclose ( $handle );
-		
-		if (file_exists ( $myFile ) and ! is_dir ( $myFile )) {
-			ob_clean ();
-			header ( 'Content-Type: text/csv;charset=utf-8' );
-			send_file ( $myFile, $fileName );
-		} else {
-			header ( 'HTTP/1.0 404 not found' );
-			print_error ( 'filenotfound', 'error' ); // this is not displayed on IIS??
-		}
-		
-		return;
-	}
+        global $CFG;
+
+        $this->setProperty(array($this->name,'freeze','true'));
+        $this->build();
+
+
+        $utils = new \UtilsLib($this->nodeconfiguration, null);
+        $file_guid = $utils->GuidClean(null);
+
+        $config = $this->nodeconfiguration['config'];
+
+        $base_upload = $config['neonUploadFolderBase'];
+        $upload_dir = $base_upload . '/tmp/';
+
+        //Handle dupplication of slashes in configurations
+        $upload_dir = str_replace('//', '/', $upload_dir);
+        $filePath = $CFG->dataroot.'/'.$upload_dir;
+
+        //neon_mydebug('Exporting...', $myFile);
+
+        if ($type == 'CSV') {
+            $fileName = $file_guid.'.csv';
+            $myFile = $filePath.$fileName;
+    
+            if (!$handle = fopen($myFile, 'x+')) {
+                throw new \Exception("Grid export: Cannot open file ($myFile)");
+                return;
+            }
+
+            //write headers
+            $fixed_headers = array();
+            foreach ($this->tableheaders as $header) {
+                $fixed_headers[] = '"' . str_replace('"', '""', html_entity_decode(strip_tags($header))) . '"';
+            }
+            $headers = implode("\t", $fixed_headers);
+            $headers .= "\n";
+            if (fwrite($handle, $headers) === FALSE) {
+                throw new \Exception("Cannot write to file ($myFile)");
+                exit;
+            }
+
+            //Write data
+            foreach ($this->databind as $data) {
+                foreach ($data as $row_key => $row_value) {
+                    $fixed_data = array();
+                    foreach ($row_value as $key => $value) {
+                        $fixed_data[] = '"' . str_replace('"', '""', html_entity_decode(strip_tags($value['value']))) . '"';
+                    }
+                    $write_data = implode("\t", $fixed_data);
+                    $write_data .= "\n";
+                    if (fwrite($handle, $write_data) === FALSE) {
+                        throw new \Exception("Cannot write to file ($myFile)");
+                        exit;
+                    }
+                }
+            }
+            fclose($handle);
+        } else if (($type=='PDF-L') || ($type=='PDF-P')) {
+            $orientation = 'portrait';
+            if ($type=='PDF-L') {
+                $orientation = 'landscape';
+            }
+            $fileName = $file_guid.'.pdf';
+            $myFile = $filePath.$fileName;            
+            //pdf
+            $html = '<body style="font-family: sans-serif; font-size:10px">' . $this->getHtml() . '</body>';
+            $pdf = new \KuinkPDF($orientation, 'mm', 'a4', true, 'UTF-8', false, false);
+            $pdf->AddPage();
+            $pdf->writeHTML($html,true,false,true,false,'');
+            $fh = fopen($myFile, 'x+') or die("can't open file. The file is not marked to be overriden.");
+            $stringData = $pdf->Output('example_001.pdf', 'S');
+            fwrite($fh, $stringData);
+            fclose($fh);
+        }
+
+        if (file_exists($myFile) and !is_dir($myFile)) {
+            ob_clean();
+            header('Content-Type: text/csv;charset=utf-8');
+            send_file($myFile, $fileName);
+        } else {
+            header('HTTP/1.0 404 not found');
+            print_error('filenotfound', 'error'); //this is not displayed on IIS??
+        }
+
+        return;
+    }
+
 	private function displayCalendar($view) {
 		$params ['refreshable'] = $this->refreshable;
 		$params ['refreshInterval'] = $this->refreshInterval;

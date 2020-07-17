@@ -362,13 +362,16 @@ class ProcessOrchestrator {
 		return;
 	}
 	static function getSessionVariable($variable, $key = '', $contextId = null) {
-		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();
+		$contextId = (isset($contextId)) ? $contextId : self::getContextId();
 		$value = '';
-		if ($key == '')
-			$value = isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->sessionVars [$variable]) ? $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->sessionVars [$variable] : '';
+		if ($key=='')
+			$value = $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable];
 		else
-			$value = isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->sessionVars [$variable] [$key]) ? $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->sessionVars [$variable] [$key] : '';
-		
+			$value = $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable][$key];
+	
+		return $value;
+					
+
 		return $value;
 	}
 	static function registerAPI($api, $contextId = null) {
@@ -422,6 +425,7 @@ class ProcessOrchestrator {
 				// var_dump($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->processVars[$currentProcessGuid][$variable]);
 			}
 			
+			if (!empty($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid]))
 			if (count ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] ) == 0)
 				unset ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] );
 		}
@@ -430,14 +434,22 @@ class ProcessOrchestrator {
 		return;
 	}
 	static function getProcessVariable($variable, $key = '', $contextId = null) {
-		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();
-		$currentNode = self::getCurrentNode ( $contextId );
+
+		$contextId = (isset($contextId)) ? $contextId : self::getContextId();
+		$currentNode =self::getCurrentNode($contextId);
 		$currentProcessGuid = $currentNode->processGuid;
-		//var_dump($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]);
-		if ($key == '')
-			$value = isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable]) ? $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] : null;
+	
+		if ($key==''){
+			if (isset($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->processVars[$currentProcessGuid][$variable]))
+				$value = $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->processVars[$currentProcessGuid][$variable];
+			else
+				$value = null;
+		}
 		else
-			$value = isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] [$key]) ? $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->processVars [$currentProcessGuid] [$variable] [$key] : null;
+		 if (isset($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->processVars[$currentProcessGuid][$variable][$key]))
+		  	$value = $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->processVars[$currentProcessGuid][$variable][$key];
+		else
+			$value = null;
 		
 		/**
 		 * Ugly workaround for unset process variables with arrays
@@ -702,7 +714,7 @@ class ProcessOrchestrator {
 				$nodeToExecute = self::processEvent ( $roles, $exitProcessFlow );
 			} else {
 				// redirect to the current node
-				redirect ( $currentNode->url, '', 0 );
+				redirect ( $currentNode->url.'&modal=embed', '', 0 );
 			}
 		}
 		

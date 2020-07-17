@@ -727,7 +727,7 @@ class Runtime {
 			$html .= '<br/>Manual Trace » ';
 			$html .= '<a href="javascript:;" onmousedown="if(document.getElementById(\'manualTrace\').style.display == \'none\'){ document.getElementById(\'manualTrace\').style.display = \'block\'; }else{ document.getElementById(\'manualTrace\').style.display = \'none\'; }">Show/Hide</a><br/> ';
 			
-			if (count ( $KUINK_MANUAL_TRACE ) == 0)
+			if (!empty($KUINK_MANUAL_TRACE) && count ( $KUINK_MANUAL_TRACE ) == 0)
 				$html_display = 'none';
 			else
 				$html_display = 'block';
@@ -1278,7 +1278,7 @@ class Runtime {
 							// var_dump($uielem->name .' '. $uielem->type);
 							if ($refreshControlName == $uielem->name)
 								$uielem->setRefreshing ();
-
+							
 							$uielem->display ( true );
 						}
 					} else // Collect the html

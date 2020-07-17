@@ -986,16 +986,21 @@ class Form extends Control {
 			// var_dump( $options );
 			
 			// Put all dynamic field properties in the property array
-			foreach ( $dynamic_field as $key => $value )
-				parent::setProperty ( array (
-						$id,
-						$key,
-						$value 
-				) );
+			foreach ( $dynamic_field as $key => $value ) {
+				//kuink_mydebug('setProperty id('.$id.') key('.$key.') value('.$value.')', '');
+				
+				if ($value !== null)
+					parent::setProperty ( array (
+							$id,
+							$key,
+							$value 
+					) );
+			}
 				
 				// If there are options, then create a datasource and set it
 			if (! is_null ( $options )) {
 				$datasource = $dyn . '.' . $id;
+
 				parent::setProperty ( array (
 						$id,
 						'datasource',
@@ -1122,7 +1127,7 @@ class Form extends Control {
 		if (count ( $this->bind_data ) == 0) {
 			// No bind data
 			// print_object('NO POST DATA');
-			if (count ( $storedData ) > 0) {
+			if (is_array($storedData) && count ( $storedData ) > 0) {
 				// Set context Data
 				// print_object('SET CONTEXT DATA');
 				// $this->bind_data = $storedData;

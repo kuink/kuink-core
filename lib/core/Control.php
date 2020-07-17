@@ -199,8 +199,10 @@ abstract class Control {
 	 * @throws Exception
 	 */
 	function getParam($params, $num, $mandatory, $default = null) {
-		if (! isset ( $params [$num] ) && $mandatory)
+		if (! isset ( $params [$num] ) && $mandatory) {
+			var_dump($params);
 			throw new \Exception ( $this->type . '->' . $this->name . ': Required parameter ' . $num . ' not found.' );
+		}
 		
 		if (! isset ( $params [$num] ))
 			return $default;
