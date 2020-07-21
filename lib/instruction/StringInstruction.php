@@ -189,6 +189,16 @@ class StringInstruction extends \Kuink\Core\Instruction {
 		return $lines;
 	}
 
+
+	/**
+	 * Trims a string (removes white spaces from left and right)
+	 */
+	static public function trim( $instManager, $instructionXmlNode ) {
+		$content = $instManager->executeInnerInstruction( $instructionXmlNode );
+		return trim($content);
+	}
+
+
 }
 
 ?>
