@@ -1130,7 +1130,8 @@ private function encloseIdentifier($identifier) {
  					c.column_key as 'key',
  					k.referenced_table_name as 'datasource',
  					k.referenced_column_name as 'bindid',
- 					c.extra
+					 c.extra,
+					 c.column_comment as comment
  				FROM
  					INFORMATION_SCHEMA.COLUMNS c
  					LEFT JOIN information_schema.KEY_COLUMN_USAGE k ON (c.column_name = k.column_name AND c.table_name = k.table_name)
@@ -1547,7 +1548,8 @@ private function encloseIdentifier($identifier) {
 				$phKey = $this->getAttribute ( $physicalAttr, 'key', false, 'physical' );
 				$phDatasource = $this->getAttribute ( $physicalAttr, 'datasource', false, 'physical' );
 				$phBindId = $this->getAttribute ( $physicalAttr, 'bindid', false, 'physical' );
-				$phDefault = $this->getAttribute ( $physicalAttr, 'default', false, 'physical' );
+				$phDefault = str_replace("'","",$this->getAttribute ( $physicalAttr, 'default', false, 'physical' ));
+				$phComment = $this->getAttribute ( $physicalAttr, 'comment', false, '' );
 				
 				$phDebug = 'Name: ' . $phName . '; ';
 				$phDebug = $phDebug . 'Required: ' . $phRequired . '; ';
@@ -1557,12 +1559,13 @@ private function encloseIdentifier($identifier) {
 				$phDebug = $phDebug . 'Datasource: ' . $phDatasource . '; ';
 				$phDebug = $phDebug . 'BindId: ' . $phBindId . '; ';
 				$phDebug = $phDebug . 'Default: ' . $phDefault . '; ';
+				$phDebug = $phDebug . 'Comment: ' . $phComment . '; ';
 				// print_object('PHYSYCAL- '.$phDebug);
 				
 				// The corresponding entity model
 				$entAttr = isset($entity [$phName]) ? $entity [$phName] : null; // $entity->xpath('Attributes/Attribute[@name="'.$phName.'"]');
-				                             // $entAttr = @$entAttr[0];
-				                             // print_object($entAttr);
+				// $entAttr = @$entAttr[0];
+				// print_object($entAttr);
 				
 				$attrChanges = DDChanges::NOTHING;
 				if (isset ( $entAttr )) {
@@ -1593,6 +1596,7 @@ private function encloseIdentifier($identifier) {
 					$attr ['type'] = isset($domain ['type']) ? $domain ['type'] : ''; $attr ['type'] = isset($entAttr ['type']) ? $entAttr ['type'] : $attr['type'];
 					$attr ['size'] = isset($domain ['size']) ? $domain ['size'] : ''; $attr ['size'] = isset($entAttr ['size']) ? $entAttr ['size'] : $attr['size'];
 					$attr ['default'] = isset($domain ['default']) ? $domain ['default'] : ''; $attr ['default'] = isset($entAttr ['default']) ? $entAttr ['default'] : $attr['default'];
+					$attr ['comment'] = isset($domain ['comment']) ? $domain ['comment'] : ''; $attr ['comment'] = isset($entAttr ['doc']) ? $entAttr ['doc'] : $attr['doc'];
 					
 					// Compare the domain to see if there is any changes
 					$domType = ( string ) $domain ['type'];
@@ -1613,8 +1617,9 @@ private function encloseIdentifier($identifier) {
 					$check ['required'] = ($attr ['required'] != '') ? ( string ) $attr ['required'] : ( string ) $domain ['required'];
 					$check ['required'] = ($check ['required'] != '') ? ( string ) $check ['required'] : 'false';
 					$check ['default'] = ($attr ['default'] != '') ? ( string ) $attr ['default'] : ( string ) $domain ['default'];
+					$check ['comment'] = ($attr ['comment'] != '') ? ( string ) $attr ['comment'] : ( string ) $domain ['comment'];
 					
-					if ($check ['type'] != $phType || $check ['length'] != $phLength || $check ['required'] != $phRequired || $check ['default'] != $phDefault) {
+					if ($check ['type'] != $phType || $check ['length'] != $phLength || $check ['required'] != $phRequired || (($check ['default'] != $phDefault) && ($phDefault != 'NULL')) || $check ['comment'] != $phComment ) {
 						$change = DDChanges::CHANGE;
 						$attrChanges = DDChanges::CHANGE;
 					} else
@@ -1634,12 +1639,14 @@ private function encloseIdentifier($identifier) {
 						$attr ['debug'] .= ' autonumber';
 					if ($attr ['default'] != '')
 						$attr ['debug'] .= ' default(' . $attr ['default'] . ')';
+					$attr ['debug'] .= ' comment(' . $attr ['comment'] . ')';
 					
 					if ($attrChanges == DDChanges::CHANGE) {
 						$phRequiredStr = ($phRequired == 'true') ? 'required' : '';
 						$attr ['debug'] .= ' <i>from&nbsp;</i>' . $phName . ' ' . $phType . '(' . $phLength . ') ' . $phRequiredStr;
 						if ($phDefault != '')
 							$attr ['debug'] .= ' default(' . $phDefault . ')';
+						$attr ['debug'] .= ' comment(' . $phComment . ')';
 					}
 					// print_object($attr['debug']);
 				} else {
@@ -1681,6 +1688,7 @@ private function encloseIdentifier($identifier) {
 		//print_object($name);
 		//print_object($entAttrs);
 		
+		$previousAttr = null;
 		foreach ( $entAttrs as $entAttr ) {
 			$attrName = $entAttr ['name'];
 			// Check if the attr is in physical definition, if not add it to the entity
@@ -1723,7 +1731,8 @@ private function encloseIdentifier($identifier) {
 				$attr ['type'] = isset($domain ['type']) ? $domain ['type'] : ''; $attr ['type'] = isset($entAttr ['type']) ? $entAttr ['type'] : $attr['type'];
 				$attr ['size'] = isset($domain ['size']) ? $domain ['size'] : ''; $attr ['size'] = isset($entAttr ['size']) ? $entAttr ['size'] : $attr['size'];
 				$attr ['default'] = isset($domain ['default']) ? $domain ['default'] : ''; $attr ['default'] = isset($entAttr ['default']) ? $entAttr ['default'] : $attr['default'];
-								
+				$attr ['comment'] = isset($domain ['comment']) ? $domain ['comment'] : ''; $attr ['comment'] = isset($entAttr ['doc']) ? $entAttr ['doc'] : $attr['doc'];
+
 				$domType = ( string ) $domain ['type'];
 				$typeConverted = isset ( $types [$domType] ) ? $types [$domType] : Array ();
 				$domain ['convType'] = $typeConverted ['type'];
@@ -1750,6 +1759,7 @@ private function encloseIdentifier($identifier) {
 				if ($attr ['changes'] == DDChanges::ADD) {
 					// $phRequiredStr = ($phRequired == 'true') ? 'required' : '';
 					$attr ['debug'] .= ' <i class="fa fa-plus-circle" style="color:#5bb75b">&nbsp;Add&nbsp;</i>';
+					$attr['after'] = isset($previousAttr) ? $previousAttr['name'] : '';
 				}
 				$attr ['debug'] .= '<strong>' . $entAttr ['name'] . '</strong> ' . $domain ['convType'] . '(' . $domain ['convLength'] . ')';
 				if ($check ['required'] == 'true')
@@ -1760,7 +1770,8 @@ private function encloseIdentifier($identifier) {
 					$attr ['debug'] .= ' autonumber';
 				if ($attr ['default'] != '')
 					$attr ['debug'] .= ' default(' . $attr ['default'] . ')';
-				
+				$attr ['debug'] .= ' comment(' . $attr ['comment'] . ')';
+
 				$attrMultiLang = $this->getAttribute ( $attr, 'multilang', false, 'multilang', 'false' );
 				$attrMultiLang = ($attrMultiLang == '') ? 'false' : $attrMultiLang;
 				// print_object($attrMultiLang);
@@ -1776,6 +1787,7 @@ private function encloseIdentifier($identifier) {
 					$attrs [$attrName] = $attr;
 				}
 			}
+			$previousAttr = $entAttr;
 		}
 		
 		$data ['entity'] = $name;
@@ -1832,6 +1844,7 @@ private function encloseIdentifier($identifier) {
 				$sqlAttribute .= ($attribute ['required'] == 'true') ? ' NOT NULL' : '';
 				$sqlAttribute .= ($attribute ['autonumber'] == 'true') ? ' AUTO_INCREMENT' : '';
 				$sqlAttribute .= ($attribute ['default'] != '') ? ' DEFAULT \'' . ( string ) $attribute ['default'] . '\'' : '';
+				$sqlAttribute .= ' COMMENT \'' . ( string ) $attribute ['comment'] . '\'';
 				$pk = $this->getAttribute ( $attribute, 'pk', false, null, 'false' );
 				if ($pk == 'true') {
 					$sqlPrimaryKeysArray [] = $attribute ['name'];
@@ -1873,8 +1886,12 @@ private function encloseIdentifier($identifier) {
 				// print_object($attribute);
 				if ($attribute ['changes'] == DDChanges::ADD && $entity ['change'] == DDChanges::ADD)
 					$sqlAttributesArray [] = $sqlAttribute;
-				else if ($attribute ['changes'] == DDChanges::ADD && $entity ['change'] == DDChanges::CHANGE)
-					$sqlAttributesArray [] = 'ADD ' . $sqlAttribute . ' '; // . (($previousAttribute) ? ' AFTER '.$this->encloseIdentifier($previousAttribute['name']) : '');
+				else if ($attribute ['changes'] == DDChanges::ADD && $entity ['change'] == DDChanges::CHANGE) {
+					$sqlAttributePlain = 'ADD ' . $sqlAttribute . ' ';
+					if ($attribute ['after'] != '') 
+						$sqlAttributePlain .= ' AFTER '.$this->encloseIdentifier($attribute['after']);
+					$sqlAttributesArray [] = $sqlAttributePlain;
+				}
 				else if ($attribute ['changes'] == DDChanges::CHANGE)
 					$sqlAttributesArray [] = 'MODIFY ' . $sqlAttribute;
 				else if ($attribute ['changes'] == DDChanges::REMOVE) {
