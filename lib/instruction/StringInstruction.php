@@ -198,7 +198,14 @@ class StringInstruction extends \Kuink\Core\Instruction {
 		return trim($content);
 	}
 
-
+	/**
+	 * Replaces the new line char to a space char
+	 */
+	static public function nl2sp( $instManager, $instructionXmlNode ) {
+		$content = $instManager->executeInnerInstruction( $instructionXmlNode );
+		$content = trim(preg_replace('/\s+/', ' ', $content));
+		return $content;
+	}	
 }
 
 ?>

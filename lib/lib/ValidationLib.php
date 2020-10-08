@@ -228,7 +228,47 @@ class ValidationLib {
 		}
 		return ( int ) $is_valid;
 	}
-	
+
+    /**
+     * Validates a portuguese SS number
+     * @param  Array $params Parameters Array. The tax number to validate is in this array
+     * @return Boolean True is is a valid pt ss number, False otherwise
+     */
+    function pt_ss_number( $params ){
+        if (count($params)!=1)
+            throw new Exception("PT Niss Number validation: must have one parameter that specifies the niss number");
+        $weigth = array(29, 23, 19, 17, 13, 11, 7, 5, 3, 2); //prime numbers
+
+        $ss_number = (string)$params[0];
+        $is_valid=false;
+        //11 digits starting with 1 or 2
+        $regex = '/^[12]\d{10}$/';
+
+        if (!preg_match($regex, $ss_number)) {
+            $is_valid = false;
+        }
+        else{
+            $checkDigit = 0;
+
+            for ($i = 0; $i < 11; $i++){
+                $checkDigit += $ss_number[$i] * $weigth[$i];
+                //var_dump($checkDigit);
+            }
+
+            $checkDigit = 9 - ($checkDigit % 10);
+            //var_dump($checkDigit);
+
+            //Compara o digito de controle com o último numero do NISS
+            //Se igual, o NISS é válido.
+            if($checkDigit == $ss_number[10])
+                $is_valid=true;
+        }
+        if (!$is_valid){
+            $this->msg_manager->add(\Neon\Core\MessageType::ERROR, neon_get_string("invalid_pt_ss_number"));
+        }
+        return (int)$is_valid;
+    }    	
+
 	/**
 	 * This is an auxiliar function to validate pt civil card number
 	 * 
