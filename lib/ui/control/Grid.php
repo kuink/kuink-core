@@ -889,7 +889,7 @@ class Grid extends Control {
 							if (!in_array($key, $this->tablecolumns) && !in_array($key, $this->tablecolnotvisible)) { // && (strpos($key, '__infer_') > 0)
 									$this->tableinfercolumns[] = $key;
 									$this->tablecolumns[] = $key;
-									$this->tableheaders[] = $key;
+									$this->tableheaders[] = Core\Language::getString($key, $this->nodeconfiguration[Core\NodeConfKey::APPLICATION]);
 							}
 					}
 				}
@@ -1362,7 +1362,7 @@ class Grid extends Control {
             return;
 
         $cols = '';
-        $colLength = count($this->tableheaders) -1;
+        $colLength = count($this->tableheaders);
         $currentCol = 0;
         foreach ($this->tableheaders as $col) {
             if ($currentCol < $colLength) {
@@ -1749,7 +1749,8 @@ class Grid extends Control {
                     }
                 }
             }
-            fclose($handle);
+			fclose($handle);
+			$header = 'Content-Type: text/csv;charset=utf-8';
         } else if (($type=='PDF-L') || ($type=='PDF-P')) {
             $orientation = 'portrait';
             if ($type=='PDF-L') {
@@ -1765,12 +1766,13 @@ class Grid extends Control {
             $fh = fopen($myFile, 'x+') or die("can't open file. The file is not marked to be overriden.");
             $stringData = $pdf->Output('example_001.pdf', 'S');
             fwrite($fh, $stringData);
-            fclose($fh);
+			fclose($fh);
+			$header = 'Content-Type: application/pdf';
         }
 
         if (file_exists($myFile) and !is_dir($myFile)) {
             ob_clean();
-            header('Content-Type: text/csv;charset=utf-8');
+            header($header);
             send_file($myFile, $fileName);
         } else {
             header('HTTP/1.0 404 not found');

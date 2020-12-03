@@ -188,7 +188,7 @@ class FileLib {
 
 						//kuink_mydebug('$full_path_normalizado',$full_path_normalizado);
 						//kuink_mydebug('$full_path_original',$full_path_original);
-					//This rename is unecessary, because the file was uploaded with the $full_path_normalizado
+						//This rename is unecessary, because the file was uploaded with the $full_path_normalizado
 						//rename ( $full_path_original, $full_path_normalizado );
 						
 						//var_dump($full_path_normalizado);

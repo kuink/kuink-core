@@ -13,7 +13,6 @@ use Kuink\Core\NodeType;
 use Kuink\Core\Exception\ParameterNotFound;
 use Kuink\Core\Exception\DomainNotFound;
 use Kuink\Core\Exception\PhysicalTypeNotFound;
-use Kuink\Core\DataSourceConnector\DDChanges;
 
 class DDChanges {
 	const ADD = 'Add';
@@ -1118,7 +1117,7 @@ private function encloseIdentifier($identifier) {
 		$database = $this->dataSource->getParam ( 'database', true );
 		
 		$entName = ( string ) $params ['_entity'];
-		
+		$this->db->exec ('SET GLOBAL innodb_stats_on_metadata=0;');
 		$sql = "
   			SELECT
  					c.ordinal_position as 'id',

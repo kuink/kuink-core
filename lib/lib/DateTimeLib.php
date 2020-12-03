@@ -196,6 +196,7 @@ class DateTimeLib {
 	 * Get timestamp
 	 */
 	function toTimestamp($params) {
+		global $KUINK_BRIDGE_CFG;
 		$year = ( string ) $params ['year'];
 		$month = ( string ) $params ['month'];
 		$day = ( string ) $params ['day'];
@@ -203,12 +204,39 @@ class DateTimeLib {
 		$minute = ( string ) $params ['minute'];
 		$second = ( string ) $params ['second'];
 		$applyOffset = (isset ( $params ['applyOffset'] ) && $params ['applyOffset'] == 1) ? 1 : 0;
-		date_default_timezone_set ( 'UTC' );
-		$returnValue = mktime ( $hour, $minute, $second, $month, $day, $year );
-		if ($applyOffset == 1)
-			return $returnValue - $this->getTzOffset ();
-		else
-			return $returnValue;
+		$useLocalTimezone = (isset($params['useLocalTimezone']) && $params['useLocalTimezone'] == 1) ? 1 : 0;
+        $timezone = (string)$params['timezone'];
+
+        if ($timezone != '') {
+            //The user supplies a timezone
+            $datetime = $year.'-'.$month.'-'.$day.' '.$hour.':'.$minute.':'.$second;
+            $given = new \DateTime($datetime, new \DateTimeZone($timezone));
+            //Convert it to UTC
+            $given->setTimezone(new \DateTimeZone('UTC'));
+            $returnValue = $given->getTimestamp();
+        }
+        else if ($useLocalTimezone) {
+            //date_default_timezone_set($NEON_CFG->serverTimezone);
+            $datetime = $year.'-'.$month.'-'.$day.' '.$hour.':'.$minute.':'.$second;
+            //Get hierarchy timezones: USER | TODO: COMPANY | SERVER
+            $kuinkUser = new \Kuink\Core\User();
+            $kuink_user = $kuinkUser->getUser();
+			$localTimeZone = (($kuink_user['timezone'] != null) && ($kuink_user['timezone'] != '')) ? $kuink_user['timezone'] : $KUINK_BRIDGE_CFG->serverTimezone;
+            $given = new \DateTime($datetime, new \DateTimeZone($localTimeZone));
+            $given->setTimezone(new \DateTimeZone('UTC'));
+            $returnValue = $given->getTimestamp();
+        }
+        else {
+            //Compatibility
+            date_default_timezone_set('UTC');
+            $returnValue = mktime ($hour, $minute, $second, $month, $day, $year);
+        }
+
+        if ($applyOffset == 1)
+            //Compatibility
+           	return $returnValue - $this->getTzOffset();
+        else
+			return $returnValue;	
 	}
 	
 	/**

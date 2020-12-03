@@ -48,7 +48,7 @@ $KUINK_CFG->apiCompleteUrl = $wwwroot . '/' . $KUINK_CFG->apiUrl . '&neonfunctio
 $KUINK_CFG->guestUrl = $wwwroot . '/mod/kuink/auth_guest.php';
 $KUINK_CFG->dataRoot = $KUINK_BRIDGE_CFG->dataRoot;
 $KUINK_CFG->appRoot = $KUINK_BRIDGE_CFG->appRoot;
-$KUINK_CFG->uploadRoot = $KUINK_CFG->appRoot . 'files/';
+$KUINK_CFG->uploadRoot = $KUINK_BRIDGE_CFG->uploadRoot . 'files/';
 $KUINK_CFG->uploadVirtualPrefix = $KUINK_BRIDGE_CFG->uploadVirtualPrefix;//Only for neon compatibility. Leave blank in a fresh install.
 
 $KUINK_CFG->layoutCache = false;
@@ -72,24 +72,27 @@ $KUINK_CFG->environment = str_replace ( array (
 switch ($KUINK_CFG->environment) {
 	case 'dev' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
-		$KUINK_CFG->imageRemote = 'https://moodle.cscm-lx.pt/mod/neon/theme/default/img/';
+		$KUINK_CFG->imageRemote = '';
 		$KUINK_CFG->enableEmailSending = false;
 		$KUINK_CFG->useGlobalACL = false;
-		$KUINK_CFG->displayNativeErrors = false;		
+		$KUINK_CFG->displayNativeErrors = false;
+		$KUINK_CFG->serverTimezone = 'Europe/Lisbon';
 		break;
 	case 'test' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = 'theme/' . $KUINK_CFG->theme . '/img/';
 		$KUINK_CFG->enableEmailSending = false;
 		$KUINK_CFG->useGlobalACL = false;		
-		$KUINK_CFG->displayNativeErrors = false;		
+		$KUINK_CFG->displayNativeErrors = false;
+		$KUINK_CFG->serverTimezone = 'Europe/Lisbon';	
 		break;
 	case 'prod' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = 'theme/' . $KUINK_CFG->theme . '/img/';
 		$KUINK_CFG->enableEmailSending = true;
 		$KUINK_CFG->useGlobalACL = false;		
-		$KUINK_CFG->displayNativeErrors = false;		
+		$KUINK_CFG->displayNativeErrors = false;
+		$KUINK_CFG->serverTimezone = 'Europe/Lisbon';	
 		break;
 	default :
 		throw new \Exception ( 'Invalid environment' . $KUINK_CFG->environment, 1 );

@@ -364,10 +364,13 @@ class ProcessOrchestrator {
 	static function getSessionVariable($variable, $key = '', $contextId = null) {
 		$contextId = (isset($contextId)) ? $contextId : self::getContextId();
 		$value = '';
-		if ($key=='')
-			$value = $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable];
+		if ($key=='') {
+			if (isset($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable]))
+				$value = $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable];
+		}
 		else
-			$value = $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable][$key];
+			if (isset($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable][$key]))
+				$value = $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable][$key];
 	
 		return $value;
 					
