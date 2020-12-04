@@ -72,7 +72,7 @@ $KUINK_CFG->environment = str_replace ( array (
 switch ($KUINK_CFG->environment) {
 	case 'dev' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
-		$KUINK_CFG->imageRemote = '';
+		$KUINK_CFG->imageRemote = 'https://portal.cscm-lx.pt/mod/neon/theme/adminlte/img/';
 		$KUINK_CFG->enableEmailSending = false;
 		$KUINK_CFG->useGlobalACL = false;
 		$KUINK_CFG->displayNativeErrors = false;

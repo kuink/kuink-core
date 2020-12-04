@@ -24,7 +24,12 @@ spl_autoload_register(function ($class) {
     foreach ( glob ( $KUINK_INCLUDE_PATH . 'lib/lib/*.php' ) as $filename ) {
       include_once $filename;
     }
-    
+
+    // Kuink::connectors
+    foreach ( glob ( $KUINK_INCLUDE_PATH . 'lib/connector/*.php' ) as $filename ) {
+      require_once $filename;
+    }    
+
     // Kuink::Tools
     require_once ($KUINK_INCLUDE_PATH . 'lib/tools/zend_libs/autoload.php');
     require_once ($KUINK_INCLUDE_PATH . 'lib/tools/tcpdf_min/config/lang/eng.php');

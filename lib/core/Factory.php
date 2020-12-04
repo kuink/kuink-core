@@ -100,16 +100,16 @@ class Factory {
 		return;
 	}
 	static function getDataSourceConnector($type, $dataSource) {
-		global $KUINK_INCLUDE_PATH;
+		//global $KUINK_INCLUDE_PATH;
 		
-		require_once ($KUINK_INCLUDE_PATH . 'lib/connector/' . $type . '.php');
+		//require_once ($KUINK_INCLUDE_PATH . 'lib/connector/' . $type . '.php');
 		$class = '\\Kuink\\Core\\DataSourceConnector\\' . $type;
 		return new $class ( $dataSource );
 	}
 	static function getInstruction($name, $runtime) {
-		global $KUINK_INCLUDE_PATH;
+		//global $KUINK_INCLUDE_PATH;
 		
-		require_once ($KUINK_INCLUDE_PATH . 'lib/instruction/' . $name . 'Instruction.php');
+		//require_once ($KUINK_INCLUDE_PATH . 'lib/instruction/' . $name . 'Instruction.php');
 		$class = '\\Kuink\\Core\\Instruction\\' . $name . 'Instruction';
 		return new $class ( $runtime );
 	}

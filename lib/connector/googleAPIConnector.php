@@ -14,7 +14,7 @@ use Kuink\Core\Exception\ParameterNotFound;
  *
  * @author paulo.tavares
  */
-class GoogleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector {
+class GoogleAPIConnector extends \Kuink\Core\DataSourceConnector {
 	var $connector;
 	var $service;
 	var $accessToken;
