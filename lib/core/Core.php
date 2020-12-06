@@ -69,7 +69,7 @@ class Core {
 
 
 		if (isset ( $_GET ['idWidget'] )) {
-			$KUINK_APPLICATION = new Kuink\Core\Application ( $application, $lang, $configuration, $this );
+			$KUINK_APPLICATION = new \Kuink\Core\Application ( $application, $lang, $configuration, $this );
 			
 			$idWidget = ( string ) $_GET ['idWidget'];
 			$node = new \Kuink\Core\Node ( 'framework', 'widget', 'api' );
@@ -108,9 +108,9 @@ class Core {
 				$KUINK_APPLICATION->run ();
 			} catch (\Exception $e) {
 				print($e->getMessage());
-			} catch (Throwable $t) {
+			} catch (\Throwable $t) {
 				print($t->getMessage());
-				print_object($KUINK_TRACE);
+				//print_object($KUINK_TRACE);
 			}
 
 		// Render the screen
@@ -124,7 +124,7 @@ class Core {
 	 * Call an api
 	 */
 	public function call($function) {
-		global $KUINK_CFG, $KUINK_LAYOUT, $KUINK_TRACE, $KUINK_MANUAL_TRACE, $KUINK_DATABASES, $KUINK_DATASOURCES, $KUINK_TRANSLATION, $KUINK_APPLICATION;
+		global $KUINK_CFG, $KUINK_LAYOUT, $KUINK_TRACE, $KUINK_MANUAL_TRACE, $KUINK_DATABASES, $KUINK_DATASOURCES, $KUINK_TRANSLATION, $KUINK_APPLICATION, $USER;
 		$function = isset ( $_GET ['neonfunction'] ) ? ( string ) $_GET ['neonfunction'] : '';
 		$functionParsed = explode ( ',', $function );
 		$idcontext = (isset ( $_GET ['idcontext'] )) ? $_GET ['idcontext'] : null;
@@ -182,7 +182,7 @@ class Core {
 	 * Streams a file to the client
 	 */
 	public function stream($type, $guid) {
-		global $KUINK_CFG, $KUINK_LAYOUT, $KUINK_TRACE, $KUINK_MANUAL_TRACE, $KUINK_DATABASES, $KUINK_DATASOURCES, $KUINK_TRANSLATION, $KUINK_APPLICATION;
+		global $KUINK_CFG, $KUINK_LAYOUT, $KUINK_TRACE, $KUINK_MANUAL_TRACE, $KUINK_DATABASES, $KUINK_DATASOURCES, $KUINK_TRANSLATION, $KUINK_APPLICATION, $USER;
 
 		switch ($type) {
 			case "photo" :
@@ -212,7 +212,7 @@ class Core {
 				$process = $split [1];
 				$bpmn = $split [2];
 				$KUINK_DATASOURCES = array ();
-				$KUINK_APPLICATION = new Kuink\Core\Application ( 'framework', $USER->lang, null, this );
+				$KUINK_APPLICATION = new \Kuink\Core\Application ( 'framework', $USER->lang, null, $this );
 				
 				$base = $KUINK_APPLICATION->appManager->getApplicationBase ( 'framework' );
 				
@@ -245,7 +245,7 @@ class Core {
 				} else {
 					// Without guid
 					header ( 'HTTP/1.0 404 not found' );
-					print_error ( 'Not Allowed', 'error' );
+					//print_error ( 'Not Allowed', 'error' );
 				}
 				
 				if (file_exists ( $pathName ) and ! is_dir ( $pathName )) {
@@ -257,7 +257,7 @@ class Core {
 					readfile ( $pathName );
 				} else {
 					header ( 'HTTP/1.0 404 not found' );
-					print_error ( 'filenotfound', 'error' );
+					//print_error ( 'filenotfound', 'error' );
 				}
 				break;
 			
@@ -272,12 +272,12 @@ class Core {
 					readfile ( $pathName );
 				} else {
 					header ( 'HTTP/1.0 404 not found' );
-					print_error ( 'filenotfound', 'error' );
+					//print_error ( 'filenotfound', 'error' );
 				}
 				break;
 			case "daily":
-				$pathName = realPath($NEON_CFG->dataRoot.'/kuink/files/daily/'.$guid);
-				if ((file_exists($pathName) and !is_dir($pathName)) and (strpos($pathName, $NEON_CFG->dataRoot.'/kuink/files/daily/') !== false)) {
+				$pathName = realPath($KUINK_CFG->dataRoot.'/kuink/files/daily/'.$guid);
+				if ((file_exists($pathName) and !is_dir($pathName)) and (strpos($pathName, $KUINK_CFG->dataRoot.'/kuink/files/daily/') !== false)) {
 					ob_clean();
 					$mimeType = mime_content_type($pathName);
 					header('Content-Type: '.$mimeType);
@@ -286,7 +286,7 @@ class Core {
 					readfile($pathName);	
 				} else {
 					header('HTTP/1.0 404 not found');
-					print_error('filenotfound', 'error'); //this is not displayed on IIS??
+					//print_error('filenotfound', 'error'); //this is not displayed on IIS??
 				}
 				break;
 		}		
