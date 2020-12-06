@@ -50,12 +50,13 @@ class Core {
 		$kuink_session_active = isset ( $_SESSION ['KUINK_CONTEXT'] ['KUINK_SESSION_ACTIVE'] ) ? $_SESSION ['KUINK_CONTEXT'] ['KUINK_SESSION_ACTIVE'] : 0;
 		if ($kuink_session_active != 1 && isset($_GET ['startnode']) && $_GET ['startnode'] != '')
 			redirect ( $KUINK_CFG->wwwRoot, 0 );
-		
+		print('aa');	
 		if (isset($KUINK_CFG->displayNativeErrors) && $KUINK_CFG->displayNativeErrors) {
 			error_reporting(E_ALL);
 			ini_set('display_errors', 1);
 		}
 		
+
 		// If so then the application will be given by the widget istead of the kuink configuration in moodle
 		$application = $KUINK_CFG->application;
 		$configuration = $KUINK_CFG->configuration;
