@@ -47,7 +47,6 @@ class Core {
 	 */
 	public function run() {
 		global $KUINK_CFG, $KUINK_LAYOUT, $KUINK_TRACE, $KUINK_MANUAL_TRACE, $KUINK_DATABASES, $KUINK_DATASOURCES, $KUINK_TRANSLATION, $KUINK_APPLICATION;
-		die('RUN');
 		$kuink_session_active = isset ( $_SESSION ['KUINK_CONTEXT'] ['KUINK_SESSION_ACTIVE'] ) ? $_SESSION ['KUINK_CONTEXT'] ['KUINK_SESSION_ACTIVE'] : 0;
 		if ($kuink_session_active != 1 && isset($_GET ['startnode']) && $_GET ['startnode'] != '')
 			redirect ( $KUINK_CFG->wwwRoot, 0 );
