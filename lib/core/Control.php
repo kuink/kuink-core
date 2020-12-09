@@ -441,12 +441,15 @@ abstract class Control {
 		// return $renderer;
 	}
 	public function setContextVariable($key, $value) {
+		//kuink_mydebugObj('Set: '.$key, $value);
 		$currentNode = \Kuink\Core\ProcessOrchestrator::getCurrentNode ();
 		\Kuink\Core\ProcessOrchestrator::setProcessVariable ( '_' . $currentNode->nodeGuid . '_' . $this->type . '_' . $this->name, $key, $value );
 	}
 	public function getContextVariable($key) {
 		$currentNode = \Kuink\Core\ProcessOrchestrator::getCurrentNode ();
 		$value = \Kuink\Core\ProcessOrchestrator::getProcessVariable ( '_' . $currentNode->nodeGuid . '_' . $this->type . '_' . $this->name, $key );
+		//kuink_mydebugObj('Get: ('.'_' . $currentNode->nodeGuid . '_' . $this->type . '_' . $this->name.')::'.$key, $value);
+
 		return $value;
 	}
 }

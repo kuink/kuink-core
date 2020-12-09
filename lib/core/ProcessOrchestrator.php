@@ -458,8 +458,8 @@ class ProcessOrchestrator {
 		 * Ugly workaround for unset process variables with arrays
 		 * Joao Patricio | 25-09-2014
 		 */
+		/*
 		if (is_array ( $value )) {
-			
 			$copy = array ();
 			foreach ( $value as $k => $val ) {
 				if ($val !== '' && $val !== null)
@@ -470,6 +470,8 @@ class ProcessOrchestrator {
 		} else {
 			return $value;
 		}
+		*/
+		return $value;
 	}
 	static function numberOfProcessesInStack($contextId = null) {
 		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();

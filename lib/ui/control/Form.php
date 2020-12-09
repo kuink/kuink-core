@@ -569,10 +569,11 @@ class Form extends Control {
 		// (1)bind data: Data bound by the action
 		// (2)context stored data: stored data in a process variable
 		// (3)default data: if none of the above set the
+		$currentData = null;
 		$persist = $this->getProperty ( $this->name, FormProperty::PERSIST, false, FormPropertyDefaults::PERSIST );
 		$storedData = $this->getContextVariable ( $this->name . '_contextData' );
+		//var_dump($storedData);
 		// print_object($this->name.'_contextData');
-		// print_object($storedData);
 		if (count ( $this->bind_data ) > 0) {
 			// print_object('currentData::POSTDATA');
 			// print_object($this->bind_data);
@@ -581,18 +582,21 @@ class Form extends Control {
 				foreach ( $bind_data as $newBindKey => $newBindData )
 					$newBindDataArray [$newBindKey] = $newBindData;
 				// print_object($newBindDataArray);
-			return $newBindDataArray;
+			$currentData = $newBindDataArray;
 			// return $this->bind_data[0];
-		}
+		} else
 		if (count ( $storedData ) > 0) {
 			// print_object('currentData::CONTEXT');
 			// return $storedData[0];
-			return $storedData;
-		}
+			$currentData =  $storedData;
+		} else
 		if (count ( $this->defaultData ) > 0) {
 			// print_object('currentData::DEFAULT');
-			return $this->defaultData;
+			$currentData =  $this->defaultData;
 		}
+		//var_dump($storedData);
+		//var_dump($currentData);
+		return $currentData;
 	}
 	
 	/**
@@ -1146,7 +1150,7 @@ class Form extends Control {
 						foreach ( $bind_data as $newBindKey => $newBindData )
 							$newStoredData [$newBindKey] = $newBindData;
 				}
-					// print_object($newStoredData);
+				//kuink_mydebugObj('Setting...', $newStoredData);
 				$this->setContextVariable ( $this->name . '_contextData', $newStoredData );
 			}
 		

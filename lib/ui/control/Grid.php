@@ -281,8 +281,8 @@ class Grid extends Control {
 			$this->page = 0;
 		else
 			$this->page = isset ( $currentStoredPage ) ? $currentStoredPage : 0;
-			
-			// Handle dynamic sorting of the table
+		
+		// Handle dynamic sorting of the table
 		$this->sort = $this->getContextVariable ( GridContextVariables::PAGE_SORT );
 		if (isset ( $_GET [$this->name . '_' . GridContextVariables::PAGE_SORT] )) {
 			
