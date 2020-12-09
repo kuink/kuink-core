@@ -25,6 +25,9 @@ class DataAccess {
 	var $directMethod; // call directly this method from the connector
 	var $daApplication; // The app name of the dataaccess nid
 	var $user; //The current user executing this dataaccess	
+	var $cacheType;
+	var $cacheKey;
+	
 	function __construct($dataAccessNid, $appName, $processName, $dataSourceName = '') {
 		global $KUINK_CFG, $KUINK_TRACE, $KUINK_APPLICATION;
 		$this->application = $appName;
@@ -79,15 +82,33 @@ class DataAccess {
 			}
 		}
 	}
+
+	function setCache($cacheType, $cacheKey) {
+		$this->cacheType = $cacheType;
+		$this->cacheKey = $cacheKey;
+	}
+
 	function setUser($user) {
 		$this->user = $user;
 	}
+
 	function execute($params = null) {
 		global $KUINK_DATASOURCES;
 		global $KUINK_TRACE;
 		global $KUINK_CFG;
 		$records = null;
 		// kuink_mydebug('Application', $this->application);
+
+		$cacheManager = \Kuink\Core\CacheManager::getInstance();
+		
+		//Get from Cache
+		if (($this->cacheType != \Kuink\Core\CacheType::NONE) && ($KUINK_CFG->useCache)) {
+			$exists = $cacheManager->exists($this->cacheKey, $this->cacheType);
+			if ($exists) {
+				$KUINK_TRACE[] = 'Getting from cache...';
+				return $cacheManager->get($this->cacheKey, $this->cacheType);
+			}
+		}
 		
 		$dataSourceName = $this->dataSourceName;
 		
@@ -238,6 +259,13 @@ class DataAccess {
 				throw new \Exception ( 'DataSource ' . $dataSourceName . ' not found. Check for definition in framework.xml, application.xml, or the node it self.' );
 			$connector = $dataSource->connector;
 			$records = $connector->$connectorInstruction ( $newParams );
+		}
+		//Set in cache
+		if (($this->cacheType != \Kuink\Core\CacheType::NONE) && ($KUINK_CFG->useCache)) {
+			if (!$cacheManager->exists($this->cacheKey, $this->cacheType)) {
+				$KUINK_TRACE[] = 'Setting in cache...';
+				$cacheManager->add($this->cacheKey, $records, $this->cacheType);
+			}
 		}
 		
 		// var_dump( $records );

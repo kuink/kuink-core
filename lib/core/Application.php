@@ -226,15 +226,15 @@ class Application {
 		// Load the roles
 		try {
 			if ($KUINK_CFG->useGlobalACL) {	
-			  $datasource = new \Kuink\Core\DataSource( null, 'framework/framework,acl,getRoles','framework', 'user');
+			  $da = new \Kuink\Core\DataAccess('framework/framework,acl,getRoles','framework', 'user');
 			  $pars=array( 'acl_code'=>'_global', 'id_person'=>$idNumber, 'id_company' => $idCompany );
 			} else {
-			  $datasource = new \Kuink\Core\DataSource( null, 'framework/framework,user,user.getRoles','framework', 'user');
+			  $da = new \Kuink\Core\DataAccess('framework/framework,user,user.getRoles','framework', 'user');
 			  $pars=array( 'id_person'=>$idNumber, 'id_company' => $idCompany );
 			}
-			$alocs = $datasource->execute($pars);
-		  
-     	if (isset($alocs))
+			$da->setCache(\Kuink\Core\CacheType::SESSION, 'core/application::userRoles');
+			$alocs = $da->execute($pars);
+     		if (isset($alocs))
 				foreach ( $alocs as $aloc ) {
 					if ($KUINK_CFG->useNewDataAccessInfrastructure)
 						$this->addRole ( ( string ) $aloc ['code'] );

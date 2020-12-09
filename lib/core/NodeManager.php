@@ -37,12 +37,15 @@ class NodeManager {
 	var $nodeXml;
 	var $loaded; // is this node loaded?
 	var $inherits; // from which this node inherits
+	var $cacheType; //Type of cache used to cache the node
+
 	function __construct($application, $process, $type, $node) {
 		global $KUINK_CFG, $KUINK_APPLICATION;
 		$this->application = $application;
 		$this->process = $process;
 		$this->type = $type;
 		$this->node = $node;
+		$this->cacheType = \Kuink\Core\CacheType::NONE;
 		// var_dump($process.'::'. $type);
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 		if ($this->process != '') {
@@ -58,7 +61,7 @@ class NodeManager {
 		return file_exists ( $this->fileName );
 	}
 	public function load($validateXml = false, $validateSchema = false) {
-		global $KUINK_TRACE;
+		global $KUINK_TRACE, $KUINK_CFG;
 		
 		if (! file_exists ( $this->nodeFilename ))
 			throw new \Exception ( 'Error opening node file ' . $this->nodeFilename );
@@ -67,7 +70,23 @@ class NodeManager {
 		if ($validateXml)
 			libxml_use_internal_errors ( true );
 		
-		$this->nodeXml = simplexml_load_file ( $this->nodeFilename );
+		//$this->nodeXml = simplexml_load_file( $this->nodeFilename, LIBXML_COMPACT );
+		$cacheManager = \Kuink\Core\CacheManager::getInstance();
+		//Get from Cache
+		if ($KUINK_CFG->useCache && ($this->cacheType != \Kuink\Core\CacheType::NONE)) {
+			if ($cacheManager->exists($this->nodeFilename, $this->cacheType)) {
+				$KUINK_TRACE[] = 'Getting node from cache...';
+				$nodeXmlStr = $cacheManager->get($this->nodeFilename, $this->cacheType);
+				$this->nodeXml = simplexml_load_string( $nodeXmlStr, 'SimpleXmlElement', LIBXML_COMPACT | LIBXML_NOCDATA);
+			} else {
+				$this->nodeXml = simplexml_load_file( $this->nodeFilename, 'SimpleXmlElement', LIBXML_COMPACT | LIBXML_NOCDATA);
+				$KUINK_TRACE[] = 'Setting node in cache...';
+				$cacheManager->add($this->nodeFilename, $this->nodeXml->asXml() ,$this->cacheType);
+			}
+		} else {
+			$this->nodeXml = simplexml_load_file( $this->nodeFilename, 'SimpleXmlElement', LIBXML_COMPACT | LIBXML_NOCDATA);
+		}
+
 		
 		if ($validateXml)
 			$errors = libxml_get_errors ();

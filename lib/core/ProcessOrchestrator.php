@@ -373,9 +373,6 @@ class ProcessOrchestrator {
 				$value = $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable][$key];
 	
 		return $value;
-					
-
-		return $value;
 	}
 	static function registerAPI($api, $contextId = null) {
 		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();

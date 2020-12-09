@@ -13,6 +13,7 @@
     "files": [
       "kuink_config.php",
       "lib/core/Control.php",
+      "lib/core/CacheManager.php",
       "lib/core/Runtime.php",
       "lib/core/Formatter.php",
       "lib/core/Factory.php",

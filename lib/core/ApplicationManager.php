@@ -34,10 +34,11 @@ class ApplicationManager {
 	 */
 	public function load() {
 		$da = new DataAccess ( 'getAll', '', '' );
+		$da->setCache(\Kuink\Core\CacheType::SESSION, 'core/application::getAll');		
 		$params = array ();
 		$params ['_entity'] = 'fw_application';
 		$apps = $da->execute ( $params );
-		
+	
 		foreach ( $apps as $app )
 			$this->applications [$app ['code']] = $app;
 	}

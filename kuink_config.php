@@ -74,6 +74,7 @@ switch ($KUINK_CFG->environment) {
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = 'https://portal.cscm-lx.pt/mod/neon/theme/adminlte/img/';
 		$KUINK_CFG->enableEmailSending = false;
+		$KUINK_CFG->useCache = true; //Use caching system in framework
 		$KUINK_CFG->useGlobalACL = false;
 		$KUINK_CFG->displayNativeErrors = false;
 		$KUINK_CFG->serverTimezone = 'Europe/Lisbon';
@@ -82,6 +83,7 @@ switch ($KUINK_CFG->environment) {
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = 'theme/' . $KUINK_CFG->theme . '/img/';
 		$KUINK_CFG->enableEmailSending = false;
+		$KUINK_CFG->useCache = true; //Use caching system in framework
 		$KUINK_CFG->useGlobalACL = false;		
 		$KUINK_CFG->displayNativeErrors = false;
 		$KUINK_CFG->serverTimezone = 'Europe/Lisbon';	
@@ -90,6 +92,7 @@ switch ($KUINK_CFG->environment) {
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
 		$KUINK_CFG->imageRemote = 'theme/' . $KUINK_CFG->theme . '/img/';
 		$KUINK_CFG->enableEmailSending = true;
+		$KUINK_CFG->useCache = true; //Use caching system in framework
 		$KUINK_CFG->useGlobalACL = false;		
 		$KUINK_CFG->displayNativeErrors = false;
 		$KUINK_CFG->serverTimezone = 'Europe/Lisbon';	

@@ -264,7 +264,7 @@ class ValidationLib {
                 $is_valid=true;
         }
         if (!$is_valid){
-            $this->msg_manager->add(\Neon\Core\MessageType::ERROR, neon_get_string("invalid_pt_ss_number"));
+            $this->msg_manager->add(\Kuink\Core\MessageType::ERROR, neon_get_string("invalid_pt_ss_number"));
         }
         return (int)$is_valid;
     }    	

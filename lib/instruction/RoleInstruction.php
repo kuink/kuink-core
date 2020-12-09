@@ -41,7 +41,7 @@ class RoleInstruction extends \Kuink\Core\Instruction {
         $instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::ACTION_PERMISSIONS] = $actionPermissions;
         $instManager->runtime->nodeconfiguration = $instManager->nodeConfiguration;
 
-		$instManager->runtime->buildAllCapabilities ();
+		$instManager->runtime->buildAllCapabilities (null, null, true);
 		$instManager->variables['ROLES'] = $instManager->runtime->nodeconfiguration[\Kuink\Core\NodeConfKey::ROLES];
 		$instManager->variables['CAPABILITIES'] = $instManager->runtime->nodeconfiguration[\Kuink\Core\NodeConfKey::CAPABILITIES];		
 		return $value;

@@ -68,6 +68,7 @@ class User {
 		// Load the person from fw_person
 		// Set the public key
 		$personDa = new DataAccess ( 'framework,user,person.get', 'framework', 'user' );
+		$personDa->setCache(\Kuink\Core\CacheType::SESSION, 'core/runtime::userGet');
 		$personData = array (
 				'id_person' => $kuinkUser ['id'],
 				'id_company' => ProcessOrchestrator::getCompany () 
@@ -232,7 +233,7 @@ class Runtime {
 					//print_object($rolesFilterStr);
 						
 					if (!($KUINK_CFG->useGlobalACL))
-						$this->buildCapabilitiesOfList($rolesFilterStr);
+						$this->buildCapabilitiesOfList($rolesFilterStr, $force);
 						
 					if ($idAcl || $aclCode) {
 						$this->buildCapabilitiesOfAcl($idAcl, $aclCode);
@@ -273,16 +274,15 @@ class Runtime {
 	 * @param $roles list
 	 *        	of roles
 	 */
-	public function buildCapabilitiesOfList($roles) {
+	public function buildCapabilitiesOfList($roles, $force=false) {
 		if ($roles != '') {
 			// get the value from fw_config
 			$dataAccess = new \Kuink\Core\DataAccess ( 'framework/framework,user.role,getCapabilitiesOfList', 'framework', 'role' );
+			if (!$force) //Use cache if not force rebuilding permissions
+				$dataAccess->setCache(\Kuink\Core\CacheType::REQUEST, 'core/runtime::userCapabilitiesOfList');
 			$rolesCleaned = str_replace("'", '"', $roles); // substr($roles,1,strlen($roles)-2);
 			$params ['role_codes'] = $rolesCleaned;
 			$resultset = $dataAccess->execute ( $params );
-			//print_object($resultset);
-			//print_object($rolesCleaned);
-
 			if ($resultset) {
 				foreach ( $resultset as $capability ) {
 					$this->addCapability ( $capability );
