@@ -117,6 +117,7 @@ class TemplateLib {
 					}
 					
 					$parsedValue = $eval->e ( $keyValue, $cleanedData, FALSE, TRUE, FALSE ); // Eval and return a value without ''
+					$parsedValue = str_replace('\"','"',$parsedValue); //To prevent bad urls on hyperlinks
 				}
 			}
 			$result [$keyName] = $parsedValue;

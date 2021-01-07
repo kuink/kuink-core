@@ -49,9 +49,10 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			//Connect with specific drivers
 			switch ($type) {
 				case 'sqlsrv':
-					$dsn = "$type:server=$server;database=$database;";
+					$dsn = $type.':Server='.stripslashes($server).';Database='.$database;
 					$options = array();//;array('Authentication'=>'SqlPassword');
-					$this->db = new \PDO ("sqlsrv:server=$server;database=$database;", $user, $passwd, $options);
+					//$this->db = new \PDO ("sqlsrv:server=$server;database=$database;", $user, $passwd, $options);
+					$this->db = new \PDO("$dsn", $user, $passwd, $options);
 					$this->db->setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION ); 
 					$this->db->exec ( "SET NOCOUNT ON;" );
 					break;
