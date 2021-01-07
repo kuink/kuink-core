@@ -182,37 +182,49 @@ class NodeManager {
 		// var_dump($object);
 		return $object;
 	}
+
+	public function getFilePath() {
+		return $this->nodeFilename;
+	}
+
 	public function getEntities() {
 		$this->requireLoad ();
 		$entities = $this->nodeXml->xpath ( '/Node/Entities/Entity' );
 		return $entities;
 	}
+
 	public function getDomains() {
 		$this->requireLoad ();
 		$entities = $this->nodeXml->xpath ( '/Node/Domains' );
 		return $entities;
 	}
+
 	public function getEntity($name) {
 		return $this->getNodeObject ( $name, NodeType::DATA_DEFINITION, NodeObject::ENTITY_RECURSIVE, 'name' );
 	}
+
 	public function getDomain($name) {
 		return $this->getNodeObject ( $name, NodeType::DATA_DEFINITION, NodeObject::DOMAIN, 'name' );
 	}
+
 	public function getTemplate($name) {
 		return $this->getNodeObject ( $name, NodeType::DATA_DEFINITION, NodeObject::TEMPLATE, 'name' );
 	}
+
 	public function getScreen($name) {
 		return $this->getNodeObject ( $name, NodeType::NODE, NodeObject::SCREEN, array (
 				'id',
 				'name' 
 		) );
 	}
+
 	public function getScreenControls($name) {
 		return $this->getNodeObject ( $name, NodeType::NODE, NodeObject::SCREEN . '[@name = "' . $name . '"]/*', array (
 				'id',
 				'name' 
 		) );
 	}
+	
 	public function validateSchema() {
 		global $KUINK_CFG;
 		var_dump ( 'validating schema ' . $this->type );

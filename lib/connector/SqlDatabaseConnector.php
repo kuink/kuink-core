@@ -622,11 +622,11 @@ private function encloseIdentifier($identifier) {
 		}
 		// Here we have some parameters
 		$query = $this->db->prepare ( $sql );
+
 		if (!$query) {
 			$KUINK_TRACE [] = 'Database error';
 			$KUINK_TRACE [] = $sql;
-			$KUINK_TRACE [] = $errorInfo [0] . '|' . $errorInfo [1];
-			throw new \Exception ( 'Error preparing query ('.$errorInfo [0].') - '.$errorInfo [1] );
+			throw new \Exception ( 'Error preparing query ');
 		}
 		//if ($query === FALSE)
 		//var_dump($query);
@@ -717,8 +717,8 @@ private function encloseIdentifier($identifier) {
 		unset ( $params ['_pageNum'] );
 		unset ( $params ['_pageSize'] );
 		unset ( $params ['_pk'] );
-  	unset ( $params ['_acl'] );
-  	unset ( $params ['_aclPermissions'] );
+  		unset ( $params ['_acl'] );
+  		unset ( $params ['_aclPermissions'] );
 		
 		
 		$where = (count ( $params ) > 0) ? ' WHERE ' : '';
@@ -726,7 +726,7 @@ private function encloseIdentifier($identifier) {
 		foreach ( $params as $key => $value ) {
 			if ($count > 0)
 				$where .= ' AND ';
-			$where .= $encloseIdentifier($key) . ' = ' . ':' . $key . ' ';
+			$where .= $this->encloseIdentifier($key) . ' = ' . ':' . $key . ' ';
 			$count ++;
 		}
 		
@@ -1084,7 +1084,7 @@ private function encloseIdentifier($identifier) {
 				try {
 					$result = $eval->e ( $condition, $params, TRUE );
 				} catch ( \Exception $e ) {
-					print_object ( 'Exception: eval' );
+					var_dump( 'Exception: eval' );
 					die ();
 				}
 				if ($result)
@@ -1457,9 +1457,9 @@ private function encloseIdentifier($identifier) {
 		foreach ( $entAttr->attributes () as $key => $value )
 			$attr [$key] = ( string ) $value;
 		
-		return $this->getExpandedAttribute ( $attr, $nodeManager );
+		return $this->getExpandedAttribute ( $attr, $nodeManager, $entityName );
 	}
-	private function getExpandedAttribute($attr, $nodeManager) {
+	private function getExpandedAttribute($attr, $nodeManager, $entityName) {
 		$types = $this->getTypeConversion ();
 		
 		// The domain of entity attribute
@@ -1488,7 +1488,7 @@ private function encloseIdentifier($identifier) {
 			// print_object($refEntity);
 			// print_object($refEntityObj);
 			if (! isset ( $refEntityObj )) {
-				print_object ( 'Entity ' . $refEntity . ' not found' );
+				var_dump( 'Entity ' . $refEntity . ' not found' );
 			}
 		}
 		
@@ -1858,7 +1858,7 @@ private function encloseIdentifier($identifier) {
 						// This is an entity that is in another data definition node
 						$splitedName = explode ( ',', $refEntity );
 						if (count ( $splitedName ) != 3)
-							throw new InvalidName ( __CLASS__, $name );
+							throw new \Kuink\Core\Exception\InvalidName ( __CLASS__, $refEntity );
 						$application = $splitedName [0];
 						$node = $splitedName [1];
 						$refEntityName = $splitedName [2];
@@ -1902,10 +1902,10 @@ private function encloseIdentifier($identifier) {
 			}
 			// print_object($sqlAttributesArray);
 			
-			$sqlAttributes = implode ( $sqlAttributesArray, ',' );
+			$sqlAttributes = implode ( $sqlAttributesArray, array(',') );
 			if ($entity ['change'] == DDChanges::ADD) {
 				if (count ( $sqlPrimaryKeysArray ) > 0) {
-					$sqlPrimarykeys = implode ( $sqlPrimaryKeysArray, ',' );
+					$sqlPrimarykeys = implode ( $sqlPrimaryKeysArray, array(',') );
 					$sqlPrimarykeys = ' ,PRIMARY KEY (' . $sqlPrimarykeys . ')';
 				} else {
 					throw new \Kuink\Core\Exception\PrimaryKeyNotFound ( __CLASS__, $entity ['name'] );

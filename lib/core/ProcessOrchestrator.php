@@ -584,15 +584,17 @@ class ProcessOrchestrator {
 			$vars = isset($context->processVars [$stackNode->processGuid]) ? var_export ( $context->processVars [$stackNode->processGuid], true ) : '';
 			$sessionVars = ''; // var_export($context->sessionVars, true);
 			$roles = var_export ( $stackNode->roles, true );
-      $stackProcessStack = isset($stackNode->stack) ? $stackNode->stack : null;
-      $idCompany = isset($context->idCompany) ? $context->idCompany : '';
+			$stackProcessStack = isset($stackNode->stack) ? $stackNode->stack : null;
+			$idCompany = isset($context->idCompany) ? $context->idCompany : '';
+			$nodeManager = new \Kuink\Core\NodeManager($stackNode->application, $stackNode->process, 'nodes', $stackNode->node);
 			$html .= '
           <li class="span2">
             <span class="thumbnail" style="display: inline-table">
             <p><strong>' . $contextId . '::' . $context->baseApplication . '(' . $idCompany . ')' . '</strong></p>
             <p><strong>' . $stackNode->processGuid . '</strong></p>
             <p>' . $app . ',' . $proc . '</p>
-            <p><a href="' . $stackNode->url . '">' . $stackNode->node . '</a></p>
+			<p><a href="' . $stackNode->url . '">' . $stackNode->node . '</a></p>
+			<p><a href="vscode://file'.$nodeManager->getFilePath().'">Open in VSCode</a></p>			
             <p> API::' . implode ( ',', $stackNode->registeredAPI ) . '</p>
             <p>Event:' . $stackNode->event . ' Action:' . $stackNode->action . ' Value:' . $stackNode->actionValue . '</p>
             <p>Roles:' . $roles . '</p>

@@ -64,17 +64,23 @@ class DataAccess {
 			$daProcessName = ($daProcessName == 'this') ? $processName : $daProcessName;
 			
 			$this->daApplication = $daAppName;
-			$KUINK_TRACE [] = 'DataAccess: ' . $daAppName . ',' . $daProcessName . ',' . $daName;
-			
-			// kuink_mydebug('METHOD PATH','apps/'.$daAppName.'/process/'.$daProcessName.'/dataaccess/'.$daName.'.xml');
-			
-			$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $daAppName ) : '';
-			// var_dump($appBase.' - '.$daAppName.' - '.$daProcessName.' - '.$daName.' - '.$dataSourceName);
-			libxml_use_internal_errors ( true );
-			$this->dataAccessXml_domobject = simplexml_load_file ( $KUINK_CFG->appRoot . 'apps/' . $appBase . '/' . $daAppName . '/process/' . $daProcessName . '/dataaccess/' . $daName . '.xml', 'SimpleXMLElement', LIBXML_NOCDATA );
+
+			$appBase = isset($NEON_APPLICATION) ? $NEON_APPLICATION->appManager->getApplicationBase($daAppName):'';
+
+			//print_object($appBase.' - '.$daAppName.' - '.$daProcessName.' - '.$daName.' - '.$dataSourceName);
+			$nodeFullPath = $KUINK_CFG->appRoot.'apps/'.$appBase.'/'.$daAppName.'/process/'.$daProcessName.'/dataaccess/'.$daName.'.xml';
+			$KUINK_TRACE[] = 'DataAccess: '.$daAppName.','.$daProcessName.','.$daName.'  <a href="vscode://file'.$nodeFullPath.'">Open in VSCode</a>'; 			
+			//libxml_use_internal_errors(true);
+			//$this->dataAccessXml_domobject = simplexml_load_file($nodeFullPath, 'SimpleXMLElement', LIBXML_NOCDATA);
+
+			$nodeManager = new NodeManager($daAppName, $daProcessName, 'dataaccess', $daName);
+			$nodeManager->load(false, false); //Don't validate the xml neither the schema
+			$this->dataAccessXml_domobject = $nodeManager->nodeXml;
+
 			if ($this->dataAccessXml_domobject == null) {
 				// Register the error
 				echo "Failed loading XML\n";
+				echo $nodeFullPath;
 				foreach ( libxml_get_errors () as $error ) {
 					echo "\t", $error->message;
 				}
