@@ -581,7 +581,7 @@ class Form extends Control {
 			foreach ( $this->bind_data as $bind_data )
 				foreach ( $bind_data as $newBindKey => $newBindData )
 					$newBindDataArray [$newBindKey] = $newBindData;
-				// print_object($newBindDataArray);
+			//print_object($newBindDataArray);
 			$currentData = $newBindDataArray;
 			// return $this->bind_data[0];
 		} else
@@ -1232,6 +1232,7 @@ class Form extends Control {
 				$this->fields[$index] = $field;
 			}
 		}
+		
 
 		foreach ( $bind_data as $key => $value ) {
 			// If this is a static bind, then expand the value from the datasource
@@ -1240,6 +1241,8 @@ class Form extends Control {
 
 			$static_bind = isset ( $this->static_bind [( string ) $key] ) ? $this->static_bind [( string ) $key] : '';
 			//kuink_mydebug($key,$value.'::'.$static_bind);
+			//kuink_mydebugobj('Key',$key);
+			//kuink_mydebugobj('Value',$value);
 			
 			if ($static_bind != '') {
 				//kuink_mydebug( $static_bind );
@@ -1257,9 +1260,9 @@ class Form extends Control {
 					$datasource_value = isset ( $datasource [$value] ) ? ( array ) $datasource [$value] : array ();
 					// if (empty($datasource_value))
 					$new_value = $this->datasourceFindValue ( $datasource, $bindid, $bindvalue, $value ); // print_object($datasource_value);
-																																															// else
-																																															// $new_value = (string)$datasource_value[$bindvalue];
-																																															// neon_mydebug( $key, $value.'::'.htmlentities(utf8_decode($new_value)) );
+					// else
+					// $new_value = (string)$datasource_value[$bindvalue];
+					// neon_mydebug( $key, $value.'::'.htmlentities(utf8_decode($new_value)) );
 					//kuink_mydebug($key.'.'.$value.'.', $new_value);
 					if ($new_value != '')
 						$bind_data [$key] = $new_value;
@@ -1290,7 +1293,10 @@ class Form extends Control {
 					}
 					
 					$new_value = ( string ) $this->callFormatter ( $f_name, $value, $attributes, $bind_data );
-					
+					//kuink_mydebugobj('Key',$key);
+					//kuink_mydebugobj('value',$value);
+					//kuink_mydebugobj('Value',$new_value);
+
 					// neon_mydebug($key, $new_value);
 					// $bind_data[$key] = htmlentities(utf8_decode($new_value));
 					$bind_data [$key] = $new_value;
@@ -1332,7 +1338,7 @@ class Form extends Control {
 		$this->build ();
 		$this->bindData ();
 		$this->updateValues ();
-		$this->calculateRows();		
+		$this->calculateRows();	
 		
 		$kuinkUser = new \Kuink\Core\User ();
 		$user = $kuinkUser->getUser ();

@@ -29,7 +29,7 @@ class FormatterLib {
 	function format($params) {
 		$formatter = ( string ) $params [0];
 		$method = ( string ) $params [1];
-		$value = (is_array ( $params [2] )) ? $params [2] : ( string ) $params [2];
+		$value = (is_array ( $params [2] ) || is_bool($params [2])) ? $params [2] : (string) ($params [2]);
 		$params = (isset ( $params [3] )) ? $params [3] : null;
 		
 		$params ['method'] = $method;

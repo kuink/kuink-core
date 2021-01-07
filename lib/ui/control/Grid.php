@@ -929,7 +929,7 @@ class Grid extends Control {
 			$new_data = array ();
 			foreach ( $records as $record ) {
 				$record = ( array ) $record;
-				// var_dump($record);
+				//var_dump($record);
 				$inline = false;
 				$datatoinsert = array ();
 				$current_key = null;

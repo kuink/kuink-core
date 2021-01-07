@@ -355,7 +355,7 @@ abstract class Control {
 
 	function callFormatter($formatter_name, $value, $formatter_params = null, $formatter_params_expand_data = null)
 	{
-		//neon_mydebug($formatter_name, $value);
+		//kuink_mydebugobj($formatter_name, $value);
 		//Expand the formatter params data
 		
 		//Check if ther's a condition and evaluate 
@@ -372,7 +372,7 @@ abstract class Control {
 				//print_object($conditionResult);
 				 
 			} catch ( \Exception $e) {
-				print_object('Exception: eval');
+				var_dump('Exception: eval');
 				die();
 			}
 			
