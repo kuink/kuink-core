@@ -29,6 +29,7 @@ class StringInstruction extends \Kuink\Core\Instruction {
 		$content = $eval->e ( $content, $instManager->variables, false, true, false, true ); // Eval and return a value without ''
 		
 		$content = str_replace ( '{EOL}', PHP_EOL, $content ); // replace the special end of line
+		$content = str_replace('\"','"',$content); //To prevent bad urls on hyperlinks
 		
 		return ( string ) $content;
 	}
