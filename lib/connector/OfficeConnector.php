@@ -39,10 +39,11 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 				$params ['_entity'] = 'fw_file';
 				$params ['id'] = $this->idFile;
 				$fileRecord = $dataAccess->execute ( $params );
+				$path = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $fileRecord ['path']);
 				
 				if (count ( $fileRecord ) == 0)
 					throw new \Exception ( 'Invalid file ' . $this->idFile );
-				$template = $KUINK_CFG->uploadRoot . '/' . $fileRecord ['path'] . '/' . $fileRecord ['name'];
+				$template = $KUINK_CFG->uploadRoot . '/' . $path . '/' . $fileRecord ['name'];
 				//print_object($template);
 			}
 			
@@ -124,12 +125,15 @@ class OfficeConnector extends \Kuink\Core\DataSourceConnector {
 			$params ['_entity'] = 'fw_file';
 			$params ['id'] = $this->idFile;
 			$fileRecord = $dataAccess->execute ( $params );
-			
+
+			//Compatibility
+			$path = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $fileRecord ['path']);
+
 			if (count ( $fileRecord ) == 0)
 				throw new \Exception ( 'Invalid file ' . $this->idFile );
 			$newName = str_replace ( '.', date ( 'Y-m-d-h-i' ), $fileRecord ['name'] );
-			$outputFileName = $KUINK_CFG->uploadRoot . '/' . $fileRecord ['path'] . '/' . $newName;
-			$originalFileName = $KUINK_CFG->uploadRoot . '/' . $fileRecord ['path'] . '/' . $fileRecord ['name'];
+			$outputFileName = $KUINK_CFG->uploadRoot . '/' . $path . '/' . $newName;
+			$originalFileName = $KUINK_CFG->uploadRoot . '/' . $path . '/' . $fileRecord ['name'];
 			
 			// save the file with a different name, delete the previous file, replace the file with the updated one
 			$this->conn->Show ( OPENTBS_FILE, $outputFileName ); // Also merges all [onshow] automatic fields.

@@ -102,8 +102,10 @@ class FieldProperty {
 	const EVENT = 'event';
 	const DECORATION = 'decoration';
 	const INPUT_SIZE = 'inputsize';
-	const LABEL_SIZE = 'labelsize';
-	const LABEL_POSITION = 'labelposition';	
+	const LABEL_SIZE = 'label-size';
+	const LABEL_POSITION = 'label-position';
+	const LABEL_URL = 'label-url';
+	const LABEL_URL_DESCRIPTION = 'label-url-description';
 	const MODAL = 'modal';
 	const SEARCHABLE = 'searchable';
 	const PRINTABLE = 'printable';
@@ -165,6 +167,8 @@ class FieldPropertyDefaults {
 	const INPUT_SIZE = 'large';
 	const LABEL_SIZE = 'small';
 	const LABEL_POSITION = 'left';	
+	const LABEL_URL = '';
+	const LABEL_URL_DESCRIPTION = '';	
 	const MODAL = 'false';
 	const SEARCHABLE = 'false';
 	const PRINTABLE = 'true';
@@ -530,6 +534,8 @@ class Form extends Control {
 		$attributes [FieldProperty::INPUT_SIZE] = $this->getProperty ( $id, FieldProperty::INPUT_SIZE, false, FieldPropertyDefaults::INPUT_SIZE, $formfield );
 		$attributes [FieldProperty::LABEL_SIZE] = $this->getProperty($id, FieldProperty::LABEL_SIZE, false, FieldPropertyDefaults::LABEL_SIZE, $formfield);
 		$attributes [FieldProperty::LABEL_POSITION] = $this->getProperty($id, FieldProperty::LABEL_POSITION, false, FieldPropertyDefaults::LABEL_POSITION, $formfield);
+		$attributes [FieldProperty::LABEL_URL] = $this->getProperty($id, FieldProperty::LABEL_URL, false, FieldPropertyDefaults::LABEL_URL, $formfield);
+		$attributes [FieldProperty::LABEL_URL_DESCRIPTION] = $this->getProperty($id, FieldProperty::LABEL_URL_DESCRIPTION, false, FieldPropertyDefaults::LABEL_URL_DESCRIPTION, $formfield);
 		$attributes [FieldProperty::DEFAULT_BUTTON] = $this->getProperty ( $id, FieldProperty::DEFAULT_BUTTON, false, FieldPropertyDefaults::DEFAULT_BUTTON, $formfield );
 		$attributes [FieldProperty::MODAL] = $this->getProperty ( $id, FieldProperty::MODAL, false, FieldPropertyDefaults::MODAL, $formfield );
 		$attributes [FieldProperty::SEARCHABLE] = $this->getProperty ( $id, FieldProperty::SEARCHABLE, false, FieldPropertyDefaults::SEARCHABLE, $formfield );

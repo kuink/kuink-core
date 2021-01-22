@@ -1483,6 +1483,7 @@ private function encloseIdentifier($identifier) {
 		$this->checkRequiredAttribute ( $attr, 'type', $entityName );
 		
 		$refEntity = $this->getAttribute ( $attr, 'refentity', false, null, '' );
+
 		if ($refEntity != '') {
 			$refEntityObj = $nodeManager->getEntity ( $refEntity );
 			// print_object($refEntity);
@@ -1902,10 +1903,10 @@ private function encloseIdentifier($identifier) {
 			}
 			// print_object($sqlAttributesArray);
 			
-			$sqlAttributes = implode ( $sqlAttributesArray, array(',') );
+			$sqlAttributes = implode ( ',', $sqlAttributesArray );
 			if ($entity ['change'] == DDChanges::ADD) {
 				if (count ( $sqlPrimaryKeysArray ) > 0) {
-					$sqlPrimarykeys = implode ( $sqlPrimaryKeysArray, array(',') );
+					$sqlPrimarykeys = implode ( ',', $sqlPrimaryKeysArray);
 					$sqlPrimarykeys = ' ,PRIMARY KEY (' . $sqlPrimarykeys . ')';
 				} else {
 					throw new \Kuink\Core\Exception\PrimaryKeyNotFound ( __CLASS__, $entity ['name'] );

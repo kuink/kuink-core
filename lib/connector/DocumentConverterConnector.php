@@ -43,6 +43,9 @@ class DocumentConverterConnector extends \Kuink\Core\DataSourceConnector {
 		$newName = ($newName == '') ? str_replace($file['ext'], $format, $file['name']) : $newName.'.'.$format;
 		
 		$path = ($path == '') ? $file['path'] : $path;
+		//Compatibility
+		$path = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $path);
+
 		$target = $KUINK_CFG->dataRoot . '/' . $path . '/' . $newName;
 		$target = str_replace ( '//', '/', $target );
 				

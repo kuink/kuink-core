@@ -172,7 +172,7 @@ class FileLib {
 					//var_dump($db_filename);
 
 					//kuink_mydebug('filename', $filename);			
-					//kuink_mydebug('no Error', '');			
+					//kuink_mydebug('Error', $error);
 					if (! $error) {
 						//kuink_mydebug('dest filename', $upload_dir);
 
@@ -182,6 +182,7 @@ class FileLib {
 						
 						//move the file
 						move_uploaded_file($file['tmp_name'], $full_path_normalizado);
+						$KUINK_TRACE[] = 'Uploading file to: '.$full_path_normalizado;
 						
 						// Altera o nome para o nome normalizado GUID
 						$full_path_original = str_replace ( " ", "\ ", $full_path_original );
@@ -545,7 +546,10 @@ class FileLib {
 		if (!is_dir(dirname ( $destinationFullPath )))
 			mkdir ( dirname ( $destinationFullPath ), 0755, true );
 
-			// move folder to final destination
+		
+		// move folder to final destination
+		//kuink_mydebug('', $originalFullPath);
+		//kuink_mydebug('', $destinationFullPath);
 		if(rename( $originalFullPath, $destinationFullPath ))
 			return 1;
 		else

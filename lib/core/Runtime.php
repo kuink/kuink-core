@@ -183,7 +183,8 @@ class Runtime {
 		$server_info ['apiUrl'] = $KUINK_CFG->apiUrl;
 		$server_info ['streamUrl'] = $KUINK_CFG->streamUrl;
 		$server_info ['guestUrl'] = $KUINK_CFG->guestUrl;
-		$server_info ['baseUploadDir'] = $KUINK_CFG->uploadRoot; //(isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)$this->nodeconfiguration [NodeConfKey::CONFIG] ['uploadFolderBase'] : '';
+		$server_info ['baseUploadDir'] = $KUINK_CFG->uploadRoot; 
+		$server_info ['baseUploadDirVirtualPrefix'] = $KUINK_CFG->uploadVirtualPrefix; 
 		//$config = (isset($this->nodeconfiguration ) && isset($this->nodeconfiguration [NodeConfKey::CONFIG])) ? (string)($this->nodeconfiguration [NodeConfKey::CONFIG] ['uploadFolderBase']) : '';
 		$server_info ['fullUploadDir'] = $KUINK_CFG->uploadRoot; //$KUINK_CFG->dataRoot . '/' . $config;
 		$server_info ['environment'] = $KUINK_CFG->environment;

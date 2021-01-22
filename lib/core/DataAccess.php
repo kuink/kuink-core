@@ -65,10 +65,11 @@ class DataAccess {
 			
 			$this->daApplication = $daAppName;
 
-			$appBase = isset($NEON_APPLICATION) ? $NEON_APPLICATION->appManager->getApplicationBase($daAppName):'';
+			$appBase = isset($KUINK_APPLICATION) ? $KUINK_APPLICATION->appManager->getApplicationBase($daAppName):'';
 
 			//print_object($appBase.' - '.$daAppName.' - '.$daProcessName.' - '.$daName.' - '.$dataSourceName);
 			$nodeFullPath = $KUINK_CFG->appRoot.'apps/'.$appBase.'/'.$daAppName.'/process/'.$daProcessName.'/dataaccess/'.$daName.'.xml';
+			//kuink_mydebugobj('AppName', $daAppName);
 			$KUINK_TRACE[] = 'DataAccess: '.$daAppName.','.$daProcessName.','.$daName.'  <a href="vscode://file'.$nodeFullPath.'">Open in VSCode</a>'; 			
 			//libxml_use_internal_errors(true);
 			//$this->dataAccessXml_domobject = simplexml_load_file($nodeFullPath, 'SimpleXMLElement', LIBXML_NOCDATA);

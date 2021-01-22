@@ -32,7 +32,6 @@ spl_autoload_register(function ($class) {
 
     // Kuink::Tools
     require_once ($KUINK_INCLUDE_PATH . 'lib/tools/zend_libs/autoload.php');
-    require_once ($KUINK_INCLUDE_PATH . 'lib/tools/tcpdf_min/config/lang/eng.php');
     require_once ($KUINK_INCLUDE_PATH . 'lib/tools/KuinkPDF/KuinkPDF.php');
     require_once ($KUINK_INCLUDE_PATH . 'lib/tools/imapMailbox/ImapMailbox.php');
     require_once ($KUINK_INCLUDE_PATH . 'lib/tools/securimage/securimage.php');
