@@ -99,12 +99,14 @@ class DataAccess {
 		$this->user = $user;
 	}
 
-	function execute($params = null) {
+	function execute($params = null, $operators = null) {
 		global $KUINK_DATASOURCES;
 		global $KUINK_TRACE;
 		global $KUINK_CFG;
 		$records = null;
 		// kuink_mydebug('Application', $this->application);
+		if (count($operators) != 0 )
+			kuink_mydebugobj('operators', $operators);
 
 		$cacheManager = \Kuink\Core\CacheManager::getInstance();
 		
@@ -265,7 +267,7 @@ class DataAccess {
 			if (! (isset ( $dataSource )))
 				throw new \Exception ( 'DataSource ' . $dataSourceName . ' not found. Check for definition in framework.xml, application.xml, or the node it self.' );
 			$connector = $dataSource->connector;
-			$records = $connector->$connectorInstruction ( $newParams );
+			$records = $connector->$connectorInstruction ( $newParams, $operators );
 		}
 		//Set in cache
 		if (($this->cacheType != \Kuink\Core\CacheType::NONE) && ($KUINK_CFG->useCache)) {

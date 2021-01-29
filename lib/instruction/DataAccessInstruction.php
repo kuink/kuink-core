@@ -21,6 +21,7 @@ class DataAccessInstruction extends \Kuink\Core\Instruction {
 		$KUINK_TRACE [] = 'DataAccess Execute: ' . $dataAccessNid;
 		
 		$paramsvar = ( string ) self::getAttribute ( $instructionXmlNode, 'params', $instManager->variables, false );
+		$paramsOperators = array(); //If the param specifies an operator, then collect them here
 		
 		$appName = $instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::APPLICATION];
 		$processName = $instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::PROCESS];
@@ -32,6 +33,10 @@ class DataAccessInstruction extends \Kuink\Core\Instruction {
 		foreach ( $paramsxml as $param ) {
 			$paramName = ( string ) self::getAttribute( $param, 'name',$instManager->variables, true );
 			$paramWildcard = ( string )  self::getAttribute( $param, 'wildcard',$instManager->variables, false );
+			$paramOperator = ( string )  self::getAttribute( $param, 'op',$instManager->variables, false );
+			if ($paramOperator != '') 
+				$paramsOperators[$paramName] = $paramOperator;
+
 			//$pk = isset ( $param ['pk'] ) ? ( string ) $param ['pk'] : '';
 			$pk = (string) self::getAttribute( $param, 'pk',$instManager->variables, false );
 			$paramValue = ( string ) self::getAttribute( $param, 'value',$instManager->variables, false, '' );
@@ -129,7 +134,7 @@ class DataAccessInstruction extends \Kuink\Core\Instruction {
 		}
 		$dataAccess = new \Kuink\Core\DataAccess ( $dataAccessNid, $appName, $processName, $dataSourceName );
 		$dataAccess->setUser($instManager->variables['USER']);
-		$resultset = $dataAccess->execute ( $params );
+		$resultset = $dataAccess->execute ( $params, $paramsOperators );
 		
 		return $resultset;	
 	}

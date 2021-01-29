@@ -68,6 +68,23 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	
 		}
 	}
+
+/***
+ * Get the operator to filter the data
+ */
+private function getOperator($operator) {
+	$result = '=';
+	switch($operator) {
+		case 'eq': $result = '='; break;
+		case 'neq': $result = '!='; break;
+		case 'gt': $result = '>'; break;
+		case 'gte': $result = '>='; break;
+		case 'lt': $result = '<'; break;
+		case 'lte': $result = '<='; break;
+	}
+	return $result;
+}
+
 /***
  * Depending on the database type, identifiers must be enclosed in different ways 
  */
@@ -453,7 +470,7 @@ private function encloseIdentifier($identifier) {
 		
 		return $resultdData;
 	}
-	function load($params) {
+	function load($params, $operators=null) {
 		// kuink_mydebug(__CLASS__, __METHOD__);
 		global $KUINK_TRACE;
 		
@@ -482,7 +499,7 @@ private function encloseIdentifier($identifier) {
 		if (isset ( $params ['_sql'] )) {
 			$sql = $this->prepareStatementToExecute ( $params );
 		} else {
-			$sql = $this->getPreparedStatementSelect ( $params, true );
+			$sql = $this->getPreparedStatementSelect ( $params, true, $operators );
 		}
 		
 		if ($this->db->inTransaction ())
@@ -533,7 +550,7 @@ private function encloseIdentifier($identifier) {
 		// print_object( $records );
 		return $records;
 	}
-	function getAll($params) {
+	function getAll($params, $operators=null) {
 		global $KUINK_TRACE;
 		
 		$this->connect ();
@@ -555,8 +572,8 @@ private function encloseIdentifier($identifier) {
 			}
 		} else {
 			if ($pageNum != 0 || $pageSize != 0)
-				$countSql = $this->getPreparedStatementSelectCount ( $params );
-			$sql = $this->getPreparedStatementSelect ( $params );
+				$countSql = $this->getPreparedStatementSelectCount ( $params, $operators );
+			$sql = $this->getPreparedStatementSelect ( $params, false, $operators );
 		}
 		
 		$totalRecords = 0;
@@ -641,8 +658,8 @@ private function encloseIdentifier($identifier) {
 		while ( preg_match ( "/[\:][a-zA-Z0-9_]+/", $sqlTmp, $matches ) ) {
 			$bindParamRaw = $matches [0];
 			$bindParam = substr($bindParamRaw, -(strlen($bindParamRaw)-1));
-			$bindParams[$bindParam] = $params[$bindParam];
-			$query->bindValue($bindParam, $params[$bindParam]);
+			$bindParams[$bindParam] = stripslashes($params[$bindParam]);
+			$query->bindValue($bindParam, $bindParams[$bindParam]);
 			$keys=array();
 			if (is_string($bindParam))
 				$keys[] = '/:'.$bindParam.'/';
@@ -701,7 +718,7 @@ private function encloseIdentifier($identifier) {
 		return $r;
 	}
 
-	private function getPreparedStatementSelectCount($params) {
+	private function getPreparedStatementSelectCount($params, $operators=null) {
 		$entity = $this->getParam ( $params, '_entity', true );
 		$attributes = $this->getParam ( $params, '_attributes', false, '*' );
 		$sort = isset ( $params ['_sort'] ) ? ' ORDER BY ' . $params ['_sort'] : '';
@@ -726,7 +743,8 @@ private function encloseIdentifier($identifier) {
 		foreach ( $params as $key => $value ) {
 			if ($count > 0)
 				$where .= ' AND ';
-			$where .= $this->encloseIdentifier($key) . ' = ' . ':' . $key . ' ';
+			$operator = isset($operators[$key]) ? $this->getOperator($operators[$key])  : '=';				
+			$where .= $this->encloseIdentifier($key) . ' '.$operator.' ' . ':' . $key . ' ';
 			$count ++;
 		}
 		
@@ -749,7 +767,8 @@ private function encloseIdentifier($identifier) {
 	
 		return $sql;
 	}
-	private function getPreparedStatementSelect($params, $ignoreNulls = false) {
+
+	private function getPreparedStatementSelect($params, $ignoreNulls = false, $operators=null) {
 		$entity = $this->getParam ( $params, '_entity', true );
 		$attributes = $this->getParam ( $params, '_attributes', false, '*' );
 		$sort = isset ( $params ['_sort'] ) ? ' ORDER BY ' . $params ['_sort'] : '';
@@ -780,7 +799,8 @@ private function encloseIdentifier($identifier) {
 			if (! $ignoreNulls || ($value != '')) {
 				if ($count > 0)
 					$whereClauses .= ' AND ';
-				$whereClauses .= $this->encloseIdentifier($key). ' = ' . ':' . $key . ' ';
+				$operator = isset($operators[$key]) ? $this->getOperator($operators[$key]) : '=';
+				$whereClauses .= $this->encloseIdentifier($key). ' '.$operator.' ' . ':' . $key . ' ';
 				$count ++;
 			}
 		}
@@ -1034,7 +1054,7 @@ private function encloseIdentifier($identifier) {
 			if (!is_array($param_value)) {
 				//$sql = str_replace('{param->'.$key.'}', $param_value , $sql);
 				//Prepare the statement for bind params
-				$sql = str_replace('{@param->'.$key.'}', $param_value , $sql);
+				$sql = str_replace('{@param->'.$key.'}', stripslashes($param_value) , $sql);
 				$sql = str_replace('{param->'.$key.'}', ':'.$key , $sql);
 				$sql = str_replace("':".$key."'", ':'.$key , $sql);
 			}
