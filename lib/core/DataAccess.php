@@ -105,9 +105,7 @@ class DataAccess {
 		global $KUINK_CFG;
 		$records = null;
 		// kuink_mydebug('Application', $this->application);
-		if (count($operators) != 0 )
-			kuink_mydebugobj('operators', $operators);
-
+		
 		$cacheManager = \Kuink\Core\CacheManager::getInstance();
 		
 		//Get from Cache
