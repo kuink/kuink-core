@@ -721,8 +721,7 @@ class Runtime {
 	function show_trace($show_trace) {
 		global $SESSION, $KUINK_TRACE, $KUINK_MANUAL_TRACE;
 		
-		if (1==1) {
-		//if ($show_trace == 'true' && $this->type == 'nodes' && $this->is_fw_admin) {
+		if ($show_trace == 'true' && $this->type == 'nodes' && $this->is_fw_admin) {
 			$html = '<div class="container-fluid"><div class="row-fluid"><div class="span12">';
 			$html .= '<h4><i class="fa fa-wrench fa-2x" ></i> Developer Tracing Tools</h4>';
 			$html .= '<br/>Manual Trace » ';
