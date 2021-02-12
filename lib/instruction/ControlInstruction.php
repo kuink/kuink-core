@@ -26,8 +26,10 @@ class ControlInstruction extends \Kuink\Core\Instruction {
 
 		if (method_exists ( $manager, $method ))
 			$result = $manager->$method ( $params );
-		else
+		else {
+			//kuink_mydebugObj('object', $instManager->variables);
 			throw new \Exception ( 'Control:: Invalid method in ' . $object.'->'.$method );		
+		}
 
 		return $result;
 	}

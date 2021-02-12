@@ -1783,18 +1783,20 @@ class Grid extends Control {
     }
 
 	private function displayCalendar($view) {
-		$params ['refreshable'] = $this->refreshable;
-		$params ['refreshInterval'] = $this->refreshInterval;
-		$params ['refreshUrl'] = $this->baseurl . '&action=' . $this->refreshAction . '&control=' . $this->name . '&modal=Control';
-		
-		$params ['titleField'] = (isset ( $this->view_params ['title'] )) ? $this->view_params ['title'] : 'title';
-		$params ['startDateField'] = (isset ( $this->view_params ['startDate'] )) ? $this->view_params ['startDate'] : 'start_date';
-		$params ['endDateField'] = (isset ( $this->view_params ['endDate'] )) ? $this->view_params ['endDate'] : 'end_date';
-		
-		$params ['calendarOptions'] = $this->view_params;
-		$params ['data'] = $this->databind;
-		$this->skeleton = '_calendar';
-		$this->render ( $params );
+
+        $params['refreshable'] = $this->refreshable;
+        $params['refreshInterval'] = $this->refreshInterval;
+    	$params['refreshUrl'] = $this->baseurl . '&action=' . $this->refreshAction .'&control='.$this->name.'&modal=Control';
+        $params['baseUrl'] = $this->baseurl . '&action=' . $this->pagingaction;
+
+        $params['titleField'] = (isset($this->view_params['title'])) ? $this->view_params['title'] : 'title';
+        $params['startDateField'] = (isset($this->view_params['startDate'])) ? $this->view_params['startDate'] : 'start_date';
+        $params['endDateField'] = (isset($this->view_params['endDate'])) ? $this->view_params['endDate'] : 'end_date';
+
+        $params['calendarOptions'] = $this->view_params;
+        $params['data'] = $this->databind;
+        $this->skeleton = '_calendar';
+        $this->render($params);
 		
 		/*
 		 * $dateItem = (isset($this->view_params['dateItem'])) ? $this->view_params['dateItem'] : '';

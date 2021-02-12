@@ -154,8 +154,9 @@ class DataAccess {
 								$arrayValues [] = '\'' . (count(array_filter(array_keys($arrayValue), 'is_string')) > 0) ? '__array' : $arrayValue . '\'';
 						}
 						$KUINK_TRACE[] =  var_export($arrayValues, true);
-						//$newParams [$key] = implode ( ',', $arrayValues );
-						$newParams [$key] = $arrayValues;
+						$newParams [$key] = implode ( ',', $arrayValues );
+						//$newParams [$key] = $arrayValues;
+						//kuink_mydebugObj($key, $arrayValues);
 
 						//Remove the first and last ' chars to avoid erros in bind params
 						//$newParams [$key] = substr($newParams [$key],1,strlen($newParams [$key])-2);

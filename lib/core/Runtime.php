@@ -1471,7 +1471,7 @@ class Runtime {
 		// kuink_mydebug('instruction', $instructionname);
 		$result = null;
 		
-		$KUINK_TRACE [] = "Instruction: " . $instructionname;
+		//$KUINK_TRACE [] = "Instruction: " . $instructionname;
 		
 		if ($instructionname == 'Var') {
 			// Hack: The unset of $variables[$varname][$key] is not working in inst_var so we had to move it here.

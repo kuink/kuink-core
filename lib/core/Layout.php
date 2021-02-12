@@ -155,6 +155,10 @@ class Layout {
 		return $this->layoutAdapter->expandTemplate($templateCode, $data);
 	}
 
+	public function setExecutionTime($time) {
+		$this->layoutAdapter->setExecutionTime ( $time );
+	}
+
 }
 
 ?>

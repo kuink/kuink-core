@@ -378,7 +378,7 @@ class ProcessOrchestrator {
 		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();
 		$currentNode = self::getCurrentNode ( $contextId );
 		
-		$currentNode->registeredAPI [] = $api;
+		$currentNode->registeredAPI[$api] = $api;
 		self::setNode ( $currentNode );
 		return;
 	}
@@ -595,11 +595,9 @@ class ProcessOrchestrator {
             <p>' . $app . ',' . $proc . '</p>
 			<p><a href="' . $stackNode->url . '">' . $stackNode->node . '</a></p>
 			<p><a href="vscode://file'.$nodeManager->getFilePath().'">Open in VSCode</a></p>			
-            <p> API::' . implode ( ',', $stackNode->registeredAPI ) . '</p>
-            <p>Event:' . $stackNode->event . ' Action:' . $stackNode->action . ' Value:' . $stackNode->actionValue . '</p>
+            <p> API::' . implode ( '<br/>', $stackNode->registeredAPI ) . '</p>
+            <p>Event:' . $stackNode->event . ' | Action:' . $stackNode->action . ' | Value:' . $stackNode->actionValue . '</p>
             <p>Roles:' . $roles . '</p>
-            <p>Vars:' . $vars . '</p>
-            <p>SessionVars:' . $sessionVars . '</p>
             <p>Params:' . var_export ( $stackNode->params, true ) . '</p>
                     <!-- <p>rwx: ' . $stackNode->rwx . '</p>
                     <p>idUserImp:: ' . $stackNode->idUserImpersonate . '</p>
@@ -607,6 +605,10 @@ class ProcessOrchestrator {
             </span>
           </li>
         ';
+		/*
+            <p>Vars:' . $vars . '</p>
+            <p>SessionVars:' . $sessionVars . '</p>
+		*/
 		}
 		$html .= '
         </ul>

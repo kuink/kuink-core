@@ -309,7 +309,6 @@ private function encloseIdentifier($identifier) {
 			$aclPermissions = str_replace(',', "','", $aclPermissions);
 			$aclPermissions = str_replace(' ', "", $aclPermissions);
 			$aclPermissions = "'".$aclPermissions."'";
-			//kuink_mydebug('SQL:', $sql);
 			//kuink_mydebug('ACL:', $aclPermissions);
 			//Try to load the record with the permissions
 			$record = $this->load($params);
@@ -318,7 +317,6 @@ private function encloseIdentifier($identifier) {
 			//var_dump($canDelete);
 			//var_dump($params);
 		}
-  	//kuink_mydebug('SQL:', $sql); 
 		if ($canDelete)
 			$this->executeSql($sql, $params);
 
@@ -353,7 +351,7 @@ private function encloseIdentifier($identifier) {
 		$sql = $this->prepareStatementToExecute ( $params );
 		
 		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $sql;
+		//$KUINK_TRACE [] = $sql;
 		
 		$records = $this->executeSql ( $sql, $params );
 		return $records;
@@ -590,8 +588,7 @@ private function encloseIdentifier($identifier) {
 			$KUINK_TRACE [] = 'Total: ' . $totalRecords;
 		}
 		
-		$KUINK_TRACE [] = $sql;
-		//kuink_mydebug('SQL:', $sql);
+		//$KUINK_TRACE [] = $sql;
 		
 		$records = $this->executeSql ( $sql, $params );
 		if ($pageNum != 0 || $pageSize != 0) {
@@ -666,17 +663,18 @@ private function encloseIdentifier($identifier) {
 			else
 				$keys[] = '/[?]/';
 			$sqlTmp = preg_replace($keys, $bindParams, $sqlTmp, 1, $count);//str_replace($matches[0],"'".$params[$bindParam]."'",$sqlTmp);			
-			//print_object($bindParam);
 		}
-		$KUINK_TRACE [] = $sqlTmp;//$this->interpolateQuery($sql, $params);
-		//print_object($sqlTmp);
-		//print_object($bindParams);
-		//$this->db->setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_WARNING );
-		//$query->execute ( $bindParams );
+
+		$performanceStart = microtime(true);
+
 		$query->execute ();
-		//print_r($this->db->errorInfo());
+
+		$performanceEnd = microtime(true);
+		$performanceTime = $performanceEnd - $performanceStart;		
+
 		$KUINK_TRACE [] = $this->pdoDebugStrParams($query); //$query->debugDumpParams();
-		
+		$KUINK_TRACE [] = 'SQL Execution - (Time: '. number_format($performanceTime, 5).')';
+
 		//var_dump($sql);
 		//var_dump(count($params));
 
@@ -685,7 +683,7 @@ private function encloseIdentifier($identifier) {
 		
 		// Handle the errors
 		$errorInfo = $query->errorInfo ();
-		$KUINK_TRACE [] = $errorInfo;
+		//$KUINK_TRACE [] = $errorInfo;
 		//kuink_mydebugObj('ErrorInfo', $errorInfo);
 		//if ($this->type == 'sqlsrv')
 		//	kuink_mydebugObj('ErrorInfo', $errorInfo);
@@ -694,8 +692,6 @@ private function encloseIdentifier($identifier) {
 			$KUINK_TRACE [] = 'Database error';
 			$KUINK_TRACE [] = $sql;
 			$KUINK_TRACE [] = $errorInfo [0] . '|' . $errorInfo [1];
-			//print_object($errorInfo);
-			//$KUINK_TRACE [] = $errorInfo [2]; //Verbose not needed
 			throw new \Exception ( 'Internal database error ('.$errorInfo [0].') - '.$errorInfo [1] );
 		}
 
@@ -847,7 +843,6 @@ private function encloseIdentifier($identifier) {
   				WHERE _aclBase.id_acl IN 
   					(SELECT _aclc.id_acl FROM _fw_access_control_list_capability _aclc
 						 WHERE _aclc.id_acl = _aclBase.id_acl AND _aclc.code IN (".$aclPermissions.") AND _aclc.id_person='".$this->user['id']."') ".$limit;
-			//kuink_mydebug('SQL:',$sql);
   	}
 
   	return $sql;
@@ -913,10 +908,10 @@ private function encloseIdentifier($identifier) {
 		
 		$entity = $this->encloseIdentifier($entity);
 		$sql = "DELETE FROM $entity WHERE $where";
-		//kuink_mydebug('SQL:', $sql);
 		
 		return $sql;
 	}
+
 	private function getPreparedStatementUpdate($params) {
 		$entity = $this->getParam ( $params, '_entity', true );
 		$pk = $this->getParam ( $params, '_pk', false, 'id' );
@@ -985,6 +980,7 @@ private function encloseIdentifier($identifier) {
 	// Returns sql query from xsql
 	// $count - replce select with select count(*) and remove order by
 	private function xsql($instruction, $params, $count = false) {
+		global $KUINK_TRACE;
   	$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
   	$acl = ($aclPermissions == 'false') ? 'false' : 'true';
 		$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::view.all' : $aclPermissions;
@@ -1059,7 +1055,8 @@ private function encloseIdentifier($identifier) {
 				$sql = str_replace("':".$key."'", ':'.$key , $sql);
 			}
 		}
-			$sql = str_replace('{table_prefix}', $tablePrefix , $sql);
+		$sql = str_replace('{table_prefix}', $tablePrefix , $sql);
+		$KUINK_TRACE[] = $sql;
 
   	if ($hasGroupBy && $count)
   		$sql = 'SELECT COUNT(*) as _total FROM ('.$sql.') __total';
@@ -1130,9 +1127,9 @@ private function encloseIdentifier($identifier) {
 		if ($sql == $sql_prefix . ' ')
 			$sql = $default . ' ';
 			
-			// print('<br/>SQL::'.$sql.'<br/>');
 		return $sql;
 	}
+
 	public function getEntity($params) {
 		$this->connect ();
 		$database = $this->dataSource->getParam ( 'database', true );

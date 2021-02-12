@@ -87,6 +87,7 @@ class Smarty extends \Smarty {
 	public function setAppTemplate($appTemplate) {
 		$this->appTemplate = $appTemplate;
 	}
+
 	public function setRedirectHeader($url) {
 		global $KUINK_CFG;
 		
@@ -150,11 +151,13 @@ class Smarty extends \Smarty {
 		// $this->assign("parts",$html);
 		// $this->display('html.tpl');
 	}
+
 	public function getString($params, $content, $smarty, &$repeat, $template) {
 		$appName = $params ['application'];
 		$identifier = $content;
 		return \Kuink\Core\Language::getString ( $identifier );
 	}
+
 	public function addHtml($html, $position) {
 		$this->positionsHtml [$position] [] = $html;
 	}
@@ -170,17 +173,21 @@ class Smarty extends \Smarty {
 		else
 			$this->caching = true;
 	}
+
 	public function addUserMessages($messages) {
 		$this->userMessages = $messages;
 	}
+
 	public function setBaseUrl($baseurl) {
 		$this->assign ( "baseurl", $baseurl );
 	}
+
 	public function setLogOut($userDisplayName, $userId, $sessKey) {
 		$this->assign ( "userDisplayName", $userDisplayName );
 		$this->assign ( "userId", $userId );
 		$this->assign ( "sessKey", $sessKey );
 	}
+
 	public function setAppMenu($appMenuEntries) {
 		if (isset($appMenuEntries) && is_array($appMenuEntries))
 			foreach ( $appMenuEntries as $item ) {
@@ -188,40 +195,51 @@ class Smarty extends \Smarty {
 			}
 		// $this->assign("appMenuEntries", $appMenuEntries);
 	}
+
 	public function setNodeMenu($nodeMenuEntries) {
 		$this->menuItems [] = $nodeMenuEntries;
 		
 		// $this->assign("nodeMenuEntries", $nodeMenuEntries);
 	}
+
 	public function setAppName($appName) {
 		$this->assign ( "appName", $appName );
 	}
+
 	public function setProcessName($processName) {
 		$this->assign ( "processName", $processName );
 	}
+
 	public function setNodeName($nodeName) {
 		$this->assign ( "nodeName", $nodeName );
 	}
+
 	public function setAdminMenu($menuEntries) {
 		$this->assign ( "hasAdminMenu", true );
 		$this->assign ( "adminMenuEntries", $menuEntries );
 	}
+
 	public function setBreadCrumb($breadcrumbEntries) {
 		$this->assign ( "breadcrumbEntries", $breadcrumbEntries );
 	}
+
 	public function setRefresh($actionUrl){
 		$this->assign("_refresh", $actionUrl);
 	}    
+
 	public function setGlobalVariable($name, $value) {
 		$this->assign ( $name, $value );
 	}
+
 	public function setScreenSource($screenSource) {
 		$this->assign ( '_showSource', true );
 		$this->assign ( '_screenSource', $screenSource );
 	}
+
 	public function setActionsSource($actionsSource) {
 		$this->assign ( '_actionsSource', $actionsSource );
 	}
+
 	static function getTemplate($templateName, $data, $themeName='') {
 		global $KUINK_BRIDGE_CFG;
 		
@@ -309,6 +327,9 @@ class Smarty extends \Smarty {
 		// print('THEME::'.$this->theme.' HELLO '.$this->type.'Control::skeleton,'.$this->skeleton.'::skin,'.$this->skin.'::position,'.$this->position);
 	}
 
+	public function setExecutionTime($time){
+		$this->assign("_executionTime", $time);
+	}    
 }
 
 ?>

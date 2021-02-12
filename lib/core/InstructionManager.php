@@ -47,10 +47,11 @@ class InstructionManager {
 		//kuink_mydebugObj('ActionXml', $this->actionXml);
 	}
 	public function execute($instructionXmlNode) {
+		global $KUINK_TRACE;
 		// var_dump($instructionXmlNode);
 		// Call this instruction
 		$instructionName = ( string ) $instructionXmlNode->getName ();
-		
+		$instructionDebug = $instructionName;
 		// Check if this is a composed instruction
 		if (strpos ( $instructionName, '.' ) === False)
 			$methodName = 'execute';
@@ -58,6 +59,7 @@ class InstructionManager {
 			$splitInstructionName = explode ( '.', $instructionName );
 			$instructionName = $splitInstructionName [0];
 			$methodName = $splitInstructionName [1];
+			$instructionDebug = $instructionName.'.'.$methodName.' ';
 		}
 		$fn = array (
 				'\\Kuink\\Core\\Instruction\\' . $instructionName . 'Instruction',
@@ -70,9 +72,19 @@ class InstructionManager {
 				$methodName 
 			);			
 		}
+		//Debug params
+		foreach($instructionXmlNode->attributes() as $a => $b) {
+			$instructionDebug .= ' '.$a.'="'.$b.'" ';
+		}		
 
+		$performanceStart = microtime(true);
+  
 		$value = call_user_func ( $fn, $this, $instructionXmlNode );
-		
+
+		$performanceEnd = microtime(true);
+		$performanceTime = $performanceEnd - $performanceStart;		
+		$KUINK_TRACE [] = 'Instruction: ' . $instructionDebug . '(Time: '. number_format($performanceTime, 5).')';
+
 		return $value;
 	}
 	

@@ -17,28 +17,32 @@
 namespace Kuink\UI\Formatter;
 
 class Trim extends Formatter {
-	function format($value, $params) {
-		if ($value == '')
-			return '';
-		$length = ( int ) $this->getParam ( $params, 'length', true, 30 );
-		$completeWord = ( string ) $this->getParam ( $params, 'completeWord', false, 'true' );
-		
-		$formattedValue = substr ( $value, 0, $length );
-		
-		if ($completeWord == 'true') {
-			if (isset($value [$length]) && $value [$length] != ' ') {
-				$i = $length;
-				$len = strlen ( $value );
-				while ( ($i < $len) && ($value [$i] != ' ') ) {
-					$i ++;
-				}
-				// print_object($formattedValue.'::'.substr($value, $length, $i-$length).'('.$length.','.$i.')'.$len);
-				$formattedValue .= substr ( $value, $length, $i - $length );
-			}
-		}
-		
-		return $formattedValue . ' (...)';
-	}
+    function format( $value, $params )
+    {
+    	if ($value == '')
+    		return '';
+    	$length = (int)$this->getParam($params, 'length', true, 30);
+    	$completeWord = (string)$this->getParam($params, 'completeWord', false, 'true');
+    	
+		if (strlen($value) <= $length)
+			return $value;
+
+    	$formattedValue = substr($value, 0, $length);
+    	
+    	if ($completeWord == 'true') {
+    		if ($value[$length] != ' ') {
+	    		$i = $length;
+	    		$len = strlen($value);
+	    		while (($i < $len) && ($value[$i] != ' ')) {
+	    			$i++;
+	    		}
+	    		//print_object($formattedValue.'::'.substr($value, $length, $i-$length).'('.$length.','.$i.')'.$len);
+	    		$formattedValue .= substr($value, $length, $i-$length);
+    		}
+    	}
+    		
+       	return $formattedValue.' (...)';
+    }
 }
 
 ?>
