@@ -1783,6 +1783,10 @@ class Grid extends Control {
     }
 
 	private function displayCalendar($view) {
+        //Check if there is an api or if the events are sent along
+        if (isset($this->view_params['api'])) {
+            \Kuink\Core\ProcessOrchestrator::registerAPI((string) $this->view_params['api']); 
+        }
 
         $params['refreshable'] = $this->refreshable;
         $params['refreshInterval'] = $this->refreshInterval;
@@ -1797,18 +1801,8 @@ class Grid extends Control {
         $params['data'] = $this->databind;
         $this->skeleton = '_calendar';
         $this->render($params);
-		
-		/*
-		 * $dateItem = (isset($this->view_params['dateItem'])) ? $this->view_params['dateItem'] : '';
-		 *
-		 * $html = $this->getHTMLCalendar(time(), $this->databind, $dateItem);
-		 * //$html = $this->getHTMLCalendar(mktime(0,0,0,10,1,2012), $this->databind, $dateItem);
-		 * $params['html'] = $html;
-		 *
-		 * $this->skeleton = '_calendar';
-		 * $this->render( $params );
-		 */
 	}
+
 	private function getDaysInMonth($thisYear, $thisMonth) {
 		$date = getdate ( mktime ( 0, 0, 0, $thisMonth + 1, 0, $thisYear ) );
 		
