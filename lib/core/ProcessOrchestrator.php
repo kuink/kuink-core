@@ -258,12 +258,20 @@ class ProcessOrchestrator {
 	}
 	static function getCurrentNode($contextId = null) {
 		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();
-		$context = self::getContext ( $contextId ); // end($_SESSION['KUINK_CONTEXT']['KUINK_PROCESS_STACK'][$contextId]);
+		$context = self::getContext ( $contextId );
 		$currentNode = isset($context->stack) ? end($context->stack) : null;
 		//$c = self::getContextId();
 		//var_dump($c);
 		return $currentNode;
 	}
+
+	static function getBaseNode($contextId=null) {
+		$contextId = (isset($contextId)) ? $contextId : self::getContextId();
+		$context = self::getContext($contextId); 
+		$baseNode = $context->stack[0];
+		return $baseNode;
+	  }	
+
 	static function updateCurrentNodeAction($action, $actionvalue) {
 		$lastNode = self::getCurrentNode ( $contextId );
 	}

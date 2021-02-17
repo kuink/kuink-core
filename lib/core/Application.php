@@ -299,6 +299,7 @@ class Application {
 	 * @by Joao Patricio - Show the menu in topbar naviagtion
 	 */
 	public function getMenuHtml() {
+		global $KUINK_CFG;
 		$layout = \Kuink\UI\Layout\Layout::getInstance ();
 		
 		$menu = array ();
@@ -307,9 +308,18 @@ class Application {
 		$currentRole = '';
 		if (isset ( $this->roles ['framework.admin'] ))
 			$currentRole = ($get_role == '') ? key ( $this->roles ) : $get_role;
-			
+
+		$xmlDefinition = $this->xmlDefinition;
+
+		$baseNode = ProcessOrchestrator::getBaseNode(); 
+		if ($baseNode->application != $this->name) {
+			//Get allways the base application menu!!
+			$baseAppBase = $this->appManager->getApplicationBase($baseNode->application);
+			$baseAppFileName = $KUINK_CFG->appRoot.'apps/'.$baseAppBase.'/' . $baseNode->application . '/application.xml';
+			$xmlDefinition = simplexml_load_file($baseAppFileName, 'SimpleXmlElement', LIBXML_COMPACT | LIBXML_NOCDATA);
+		}			
 			// Get the application top menu for the current role
-		$flowMenu = $this->xmlDefinition->xpath ( '/Application/Menus/Menu[contains(@role, \'' . $currentRole . '\') and not(@startuc=\'\')]' );
+		$flowMenu = $xmlDefinition->xpath ( '/Application/Menus/Menu[contains(@role, \'' . $currentRole . '\') and not(@startuc=\'\')]' );
 		$menu = $this->makeMenuItems ( $flowMenu );
 		
 		// var_dump($menu);
@@ -376,7 +386,7 @@ class Application {
 		$display_menu = isset ( $this->config ['HIDE_APP_MENU'] ) ? ! ($this->config ['HIDE_APP_MENU'] == 'true') : true;
 		
 		if ($display_menu)
-			print ($this->getMenuHtml ()) ;
+			$this->getMenuHtml () ;
 	}
 	
 	/**
