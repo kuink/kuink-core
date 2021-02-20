@@ -24,11 +24,20 @@ class ListInstruction extends \Kuink\Core\Instruction {
 	//Adds an element to a list
 	static public function add($instManager, $instructionXmlNode) {
 		$params = $instManager->getParams ( $instructionXmlNode );
+		$unique = (string) self::getAttribute ( $instructionXmlNode, 'unique', $instManager->variables, false, 'false');		
+		$separator = (string) self::getAttribute ( $instructionXmlNode, 'separator', $instManager->variables, false, ',');		
 		$element = $params [0];
 		$list = (string) $params [1];
-		$arr = ($list != '') ? explode(',', $list) : array();
-		$arr[] = $element;
-		$newList = implode(',', $arr);
+		$arr = ($list != '') ? explode($separator, $list) : array();
+		$new = ($element != '') ? explode($separator, $element) : array();
+
+		foreach($new as $newListItem) {
+			if (($unique=='true' && !in_array($newListItem, $arr)) || $unique=='false')
+				$arr[] = $newListItem;
+		}
+
+		$newList = implode($separator, $arr);
+
 		return (string)$newList;
 	}
 
