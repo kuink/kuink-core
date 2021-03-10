@@ -437,6 +437,12 @@ class DateTimeLib {
 		else
 			return $src;
 	}
+    
+	function convertFromString($params = null){
+        $src = (string)$params[0];
+        
+        return strtotime($src);
+    }	
 }
 
 ?>

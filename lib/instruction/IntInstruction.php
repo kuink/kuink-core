@@ -25,7 +25,7 @@ class IntInstruction extends \Kuink\Core\Instruction {
 		$content = $instManager->executeInnerInstruction ( $instructionXmlNode );
 		$eval = new \Kuink\Core\EvalExpr ();
 		$content = $eval->e ( $content, $instManager->variables, FALSE, FALSE, FALSE ); // Eval and return a value without ''
-		return (int) $content;
+		return round($content);
 	}
 
 }
