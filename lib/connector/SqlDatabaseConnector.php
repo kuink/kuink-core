@@ -431,6 +431,7 @@ private function encloseIdentifier($identifier) {
 		
 		return $output;
 	}
+
 	private function transformMultilangData($data, $lang, $langInline) {
 		$ignoreKeys = array ('id');
 		$langKey = 'lang';
@@ -468,6 +469,15 @@ private function encloseIdentifier($identifier) {
 		
 		return $resultdData;
 	}
+
+	/*
+	function load($params, $operators=null) {
+		$records = $this->getAll($params, $operators);
+		$record = (count ( $records ) > 0) ? $records [0] : null;
+		return ($record);
+	}*/	
+
+	
 	function load($params, $operators=null) {
 		// kuink_mydebug(__CLASS__, __METHOD__);
 		global $KUINK_TRACE;
@@ -476,23 +486,6 @@ private function encloseIdentifier($identifier) {
 		
 		$lang = ( string ) $this->getParam ( $params, '_lang', false, '' );
 		$langInline = ( string ) $this->getParam ( $params, '_lang_inline', false, 'true' );
-		$multilangTransformedRecords = array ();
-		if ($lang != '') {
-			$entity = ( string ) $this->getParam ( $params, '_entity', false, 'false' );
-			// Get the multilang data
-			$paramsMultilang = array ();
-			$paramsMultilang ['_entity'] = $entity . '_lang';
-			$paramsMultilang ['id'] = $params ['id'];
-			if ($lang != '*') {
-				$paramsMultilang ['lang'] = $lang;
-			}
-			$multilangRecords = $this->getAll ( $paramsMultilang );
-			
-			$multilangTransformedRecords = $this->transformMultilangData ( $multilangRecords, $lang, $langInline );
-			// print_object($multilangTransformedRecords);
-			unset ( $params ['_lang'] );
-			unset ( $params ['_lang_inline'] );
-		}
 		
 		if (isset ( $params ['_sql'] )) {
 			$sql = $this->prepareStatementToExecute ( $params );
@@ -507,9 +500,27 @@ private function encloseIdentifier($identifier) {
 		//$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
 		
 		$records = $this->executeSql ( $sql, $params, true, false );
-		
 		$record = (count ( $records ) > 0) ? $records [0] : null;
+
 		// add the multilang data if it is set
+		$multilangTransformedRecords = array ();
+		if ($lang != '') {
+			$entity = ( string ) $this->getParam ( $params, '_entity', false, 'false' );
+			// Get the multilang data
+			$paramsMultilang = array ();
+			$paramsMultilang ['_entity'] = $entity . '_lang';
+			$paramsMultilang ['id'] = $record ['id'];
+			if ($lang != '*') {
+				$paramsMultilang ['lang'] = $lang;
+			}
+			$multilangRecords = $this->getAll ( $paramsMultilang );
+			
+			$multilangTransformedRecords = $this->transformMultilangData ( $multilangRecords, $lang, $langInline );
+			// print_object($multilangTransformedRecords);
+			unset ( $params ['_lang'] );
+			unset ( $params ['_lang_inline'] );
+		}
+
 		if (!empty($multilangTransformedRecords)) {
 			if (count ( $multilangTransformedRecords > 0 )) {
 				foreach ( $multilangTransformedRecords as $key => $multilangData )
@@ -521,6 +532,7 @@ private function encloseIdentifier($identifier) {
 		
 		return $record;
 	}
+	
 	
 	/**
 	 * *
@@ -620,6 +632,7 @@ private function encloseIdentifier($identifier) {
 			unset ( $params ['_sql'] );
 			unset ( $params ['_debug_'] );
 			unset ( $params ['_multilang_fields'] );
+			unset ( $params ['_lang'] );
 			unset ( $params ['_acl']);
 			unset ( $params ['_aclPermissions']);
 		}
@@ -786,8 +799,8 @@ private function encloseIdentifier($identifier) {
 		unset ( $params ['_debug_'] );
 		unset ( $params ['_lang'] );
 		unset ( $params ['_lang_inline'] );
-  	unset ( $params ['_acl'] );
-  	unset ( $params ['_aclPermissions'] );
+	  	unset ( $params ['_acl'] );
+  		unset ( $params ['_aclPermissions'] );
 		
 		$count = 0;
 		$whereClauses = '';
@@ -796,7 +809,7 @@ private function encloseIdentifier($identifier) {
 				if ($count > 0)
 					$whereClauses .= ' AND ';
 				$operator = isset($operators[$key]) ? $this->getOperator($operators[$key]) : '=';
-				$whereClauses .= $this->encloseIdentifier($key). ' '.$operator.' ' . ':' . $key . ' ';
+				$whereClauses .= 'e.'.$this->encloseIdentifier($key). ' '.$operator.' ' . ':' . $key . ' ';
 				$count ++;
 			}
 		}

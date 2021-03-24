@@ -33,6 +33,10 @@ class CallInstruction extends \Kuink\Core\Instruction {
 			
 		$paramValues = $instManager->getParams( $instructionXmlNode, true ); //Get the params defined in params attribute
 		$paramOutputVars = $instManager->getParamsOutputVars( $instructionXmlNode ); //Get the params defined in params attribute
+		foreach ($paramOutputVars as $paramOutputVarKey => $paramOutputVarValue) {
+			//Expand variables to the params
+			$paramValues[$paramOutputVarKey] = $instManager->variables[$paramOutputVarValue];
+		}
 		
 		if (trim ( $library ) != '') {
 			// Call a function in a different application,process

@@ -373,13 +373,12 @@ class ProcessOrchestrator {
 		$contextId = (isset($contextId)) ? $contextId : self::getContextId();
 		$value = '';
 		if ($key=='') {
-			if (isset($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable]))
+			if ( array_key_exists($variable, $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars))
 				$value = $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable];
 		}
 		else
-			if (isset($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable][$key]))
+			if (array_key_exists($key, $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable]))
 				$value = $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable][$key];
-	
 		return $value;
 	}
 	static function registerAPI($api, $contextId = null) {
