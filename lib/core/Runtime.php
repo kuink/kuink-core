@@ -1082,7 +1082,7 @@ class Runtime {
 		if ($action_screen) {
 			$layout = Layout::getInstance ();
 			
-			$screen_obj = $nodexml->xpath ( '//Screen[@id="' . $screen_name . '"]' );
+			$screen_obj = $nodexml->xpath ( '//Screen[@id="' . $screen_name . '" or @name="' . $screen_name . '"]' );
 			
 			if (! $screen_obj)
 				throw new \Exception ( 'Screen "' . $screen_name . '" does not exist. Check the <Action ... screen=""> tag.' );

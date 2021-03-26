@@ -1220,11 +1220,14 @@ private function encloseIdentifier($identifier) {
 		$parent = current ( $entity->xpath ( 'parent::*' ) );
 		$name = $this->getAttribute ( $parent, 'name', false, 'entity' );
 		$multilang = $this->getAttribute ( $parent, 'multilang', false, 'multilang', 'false' );
+		$doc = $this->getAttribute ( $parent, 'doc', false, 'doc', '' );
+		$doc = wordwrap($doc, 50, '<br/>');
 		
 		$entArray = Array ();
 		$entArray ['__attributes'] = array (
 				'name' => $name,
-				'multilang' => $multilang 
+				'multilang' => $multilang,
+				'doc' => $doc,
 		);
 		
 		foreach ( $entity->children () as $attrParent => $attr ) {
@@ -2001,6 +2004,75 @@ private function encloseIdentifier($identifier) {
 		// print_object($log);
 		return $log;
 	}
+
+	public function getLogicalEntities($params) {
+		global $KUINK_TRACE;
+		$application = ( string ) $params ['application'];
+		$process = isset($params ['process']) ? ( string ) $params ['process'] : null;
+		$node = ( string ) $params ['node'];
+		
+		$nodeManager = new NodeManager ( $application, $process, NodeType::DATA_DEFINITION, $node );
+		
+		$nodeManager->load ();
+
+		/*
+		if ($attr ['domain'] != '') {
+			$domain = $nodeManager->getDomain ( $attr ['domain'] );
+			$domain = $this->domainToArray ( $domain, $nodeManager );
+			if (! isset ( $domain ))
+				throw new DomainNotFound ( __CLASS__, $attr ['domain'] );
+		}
+		*/
+		
+		$entities = (array)$nodeManager->getEntities ( $nodeManager );
+		$entitiesArray = array();
+		foreach ( $entities as $entity ) {			
+			$entityArray = $this->entityToArray ( $entity->Attributes, $nodeManager );
+			$entitiesArray[$entityArray['__attributes'][name]] = $entityArray;
+		}
+		return $entitiesArray;
+	}
+
+	public function getLogicalEntitiesUml( $params ) {
+		$application = ( string ) $params ['application'];
+		$node = ( string ) $params ['node'];				
+		$template = ( string ) $params ['template'];
+		$template = ($template == '') ? 'medium' : $template;
+		kuink_mydebug('Template', $template);
+		$logicalEntities = $this->getLogicalEntities($params);		
+		//get all nodes
+		$diagram = new \Kuink\Core\Diagram();
+		$diagram->addTitle('Entities: '.$application.','.$node);
+
+		//Get nodes first
+		$relations = array();
+		foreach ($logicalEntities as $logicalEntity) {
+			$attributes = array();
+			foreach ($logicalEntity as $logicalEntityAttrs) {
+
+				if (isset($logicalEntityAttrs['domain']) && ($logicalEntityAttrs['domain'] == 'foreign') && (isset($logicalEntityAttrs['refentity']))) {
+					$refEntitySplit = explode(',', $logicalEntityAttrs['refentity']);
+					$relations[] = array('from'=>end($refEntitySplit), 'to'=>$logicalEntity['__attributes']['name']);
+					$attributes[] = $logicalEntityAttrs;
+				} else {
+					if (isset($logicalEntityAttrs['domain']) && ($logicalEntityAttrs['domain'] == 'id') ) {
+						$attributes[] = $logicalEntityAttrs;
+					} else {
+						if ($template=='complete' )
+							$attributes[] = $logicalEntityAttrs;
+					}
+				} 	
+			}
+			$diagram->addEntity($logicalEntity['__attributes']['name'], $logicalEntity['__attributes']['multilang'], $logicalEntity['__attributes']['doc'], $attributes);			
+		}
+		foreach ($relations as $relation) {
+			$diagram->addEntityRelation($relation['from'], $relation['to']);
+		}
+
+		return $diagram->getUml();
+	}
+
+
 	private function getAttribute($arr, $key, $required, $context, $default = '') {
 		if (! isset ( $arr [$key] ) && $required) {
 			$a = var_export ( $arr, true );

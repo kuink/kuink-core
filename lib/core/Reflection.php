@@ -664,7 +664,74 @@ class Reflection {
 				'external' => $ret 
 		));
 	}
+
 	
+	static public function getUml($application, $process=null, $node=null, $nodeType=null) {
+		$uml = '';
+		if (($application != null) && ($process != null) && ($node == null))
+			$uml = self::getProcessUml( $application, $process);
+		return $uml;
+	}
+
+	static public function getProcessUml( $application, $process ) {
+		global $KUINK_CFG, $KUINK_APPLICATION;
+	
+		$appBase = isset($KUINK_APPLICATION) ?$KUINK_APPLICATION->appManager->getApplicationBase($application) : '';
+		$nodePath = $KUINK_CFG->appRoot.'/apps/'.$appBase.'/'.$application.'/process/'.$process.'/process.xml';
+		//libxml_use_internal_errors( true );
+		$nodeXml = simplexml_load_file($nodePath, 'SimpleXmlElement', LIBXML_COMPACT | LIBXML_NOCDATA);
+		//$errors = libxml_get_errors();
+		if ($nodeXml == null)
+			throw new \Exception('Cannot load node: '.$nodePath);
+		
+		//get all nodes
+		$diagram = new \Neon\Core\Diagram();
+		$diagram->addTitle('Process: '.$application.','.$process);
+		$endStates = array();
+		$flowXml = $nodeXml->xpath('//Flow');
+
+		//Get nodes first
+		$states = array();
+		foreach ($flowXml as $flow) {
+			$attrs = $flow->attributes();
+			if (!empty($attrs['startnode'])) {
+				$transl = (string)neon_get_string($attrs['startnode'], $application, null);
+				$states[(string)$attrs['startnode']] = array();
+				$states[(string)$attrs['startnode']][] = $diagram->getHyperlink('http://localhost/moodle/view.php?application='.$application.'&process='.process.'&node='.$attrs['startnode'].'&type=node', $transl);
+			}
+			if (!empty($attrs['endnode'])) {
+				$transl = (string)neon_get_string($attrs['endnode'], $application, null);
+				$states[(string)$attrs['endnode']] = array();
+				$states[(string)$attrs['endnode']][] = $diagram->getHyperlink('http://localhost/moodle/view.php?application='.$application.'&process='.process.'&node='.$attrs['endnode'].'&type=node', $transl);
+			}
+		}
+		//Add all the nodes before the flow
+		foreach ($states as $stateName=>$state)
+			foreach ($state as $stateDesc)
+				$diagram->addState($stateName, $stateDesc);
+		
+		foreach ($flowXml as $flow) {
+			$attrs = $flow->attributes();			
+			if (empty($attrs['startnode']))
+				$diagram->addStartFlow((string)$attrs['endnode'], $attrs['event']);
+			else
+				if (empty($attrs['endnode']))
+					$diagram->addEndFlow((string)$attrs['startnode'], $attrs['event']);
+				else
+					$diagram->addFlow((string)$attrs['startnode'], (string)$attrs['endnode'], $attrs['event']);
+			//Check if this is an end state
+			$endState = $nodeXml->xpath('//Flow[@startnode="'.$attrs['endnode'].'"]');
+			//print_object($endState);
+			if (count($endState) == 0) {
+				$endStates[(string)$attrs['endnode']] = (string)$attrs['endnode'];
+			}
+		}
+		foreach ($endStates as $state)
+			$uml .= $diagram->addEndFlow($state, null);
+
+		return $diagram->getUml();
+	}
+
 	/**
 	 * Lists a directory content
 	 * 
