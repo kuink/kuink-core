@@ -432,15 +432,29 @@ class FileLib {
 		$newName = (isset ( $params ['newName'] )) ? ( string ) $params ['newName'] : false;
 		
 		// load file
-		$datasource = new Kuink\Core\DataSource ( null, 'framework,generic,load', 'framework', 'generic' );
-		$file = $datasource->execute ( array (
-				'table' => 'fw_file',
-				'id' => $id 
-		) );
+		//$datasource = new Kuink\Core\DataSource ( null, 'framework,generic,load', 'framework', 'generic' );
+		//$file = $datasource->execute ( array (
+		//		'table' => 'fw_file',
+		//		'id' => $id 
+		//) );
+
+		$fileDa = new Kuink\Core\DataAccess ( 'framework,generic,load', 'framework', 'generic' );
+		$file = $fileDa->execute( array (
+			'table' => 'fw_file',
+			'id' => $id 
+		));
+
+		//var_dump($params);
+		//var_dump($id);
+		//var_dump($file);
 		
 		// full origin path
-		$originalFile = $KUINK_CFG->uploadRoot . '/' . $file ['path'] . '/' . $file ['name'];
+		$originalFilePath = $file ['path'];
+		/* corect the file path based on $KUINK_CFG->uploadVirtualPrefix temporary key*/
+		$originalFilePath = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $originalFilePath);		
+		$originalFile = $KUINK_CFG->uploadRoot . '/' . $originalFilePath . '/' . $file ['name'];
 		$originalFile = str_replace ( '//', '/', $originalFile );
+		
 		
 		// full destination path
 		$newName = (! $newName) ? $file ['name'] : $newName . '.' . $file ['ext'];
@@ -461,6 +475,8 @@ class FileLib {
 
 		mkdir ( dirname ( $destinationFile ), 0777, true );
 		copy ( $originalFile, $destinationFile );
+		//var_dump($originalFile);
+		//var_dump($destinationFile);
 		
 		// register new file into fw_file
 		$newFile = $this->register ( $file ['name'], $registerPath, $newName, $file ['size'], $file ['ext'], $file ['mimetype'], $KUINK_CFG->auth->user->id, '' );
@@ -646,7 +662,11 @@ class FileLib {
 		) );
 		
 		// full origin path
-		$originalFile = $KUINK_CFG->uploadRoot . '/' . $file ['path'] . '/' . $file ['name'];
+		/* corect the file path based on $KUINK_CFG->uploadVirtualPrefix temporary key*/
+		$path = $file ['path'];
+		$path = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $path);
+
+		$originalFile = $KUINK_CFG->uploadRoot . '/' . $path . '/' . $file ['name'];
 		$originalFile = str_replace ( '//', '/', $originalFile );
 		
 		return md5_file ( $originalFile );
