@@ -334,8 +334,9 @@ class googleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 	}
 
 	function getAll($params) {
-		$this->connect ();
-		$entity = ( string ) $this->getParam ( $params, '_entity', true ); 
+		$entity = ( string ) $this->getParam ( $params, '_entity', true ); 		
+		$this->connect ($entity);
+
 		/*
 		$this->connector->setApprovalPrompt('force');
 		if ($this->connector->isAccessTokenExpired())
@@ -355,8 +356,21 @@ class googleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 			if ($results)
 				$events = $results->getItems();			
 			return (array)$events;
-		} else {
+		} else if ($entity == 'user') {
 			$dir = new \Google_Service_Directory ( $this->connector );
+		} else if ($entity == 'audit.activities') {
+			$service = new \Google_Service_Reports( $this->connector );
+
+			$userKey = $params['userKey'];
+			$applicationName = $params['applicationName'];
+			$filters = $params['filters'];
+			$optParams = array(
+				'filters' => $filters,
+			);
+			$results = $service->activities->listActivities($userKey, $applicationName, $optParams);
+			$items = $this->object_to_array($results->getItems());			
+
+			return ($items);
 		}
 	}
 
