@@ -211,7 +211,7 @@ class Google_Service_Classroom_Resource_CoursesCourseWork extends Google_Service
    * The following fields may be specified by teachers:
    *
    * * `title` * `description` * `state` * `due_date` * `due_time` * `max_points`
-   * * `scheduled_time` * `submission_modification_mode`
+   * * `scheduled_time` * `submission_modification_mode` * `topic_id`
    * @return Google_Service_Classroom_CourseWork
    */
   public function patch($courseId, $id, Google_Service_Classroom_CourseWork $postBody, $optParams = array())
