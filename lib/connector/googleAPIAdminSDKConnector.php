@@ -156,6 +156,7 @@ class googleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 			$end = (string) $this->getParam ( $params, 'end', true);
 			$attendees = $this->getParam ( $params, 'attendees', true);
 			$conference = (string) $this->getParam ( $params, 'conference', false, 'false');			
+			$visibility = (string) $this->getParam ( $params, 'visibility', false, 'default');			
 
 			//Impersonate the organizer so the event is set in it's calendar
 				//Check if the organizer has the domain or append it
@@ -182,6 +183,7 @@ class googleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 				'description' => $description,
 				'start' => array('dateTime' => $start),
 				'end' => array('dateTime' => $end),
+				'visibility' => $visibility,				
 				'attendees' => $attendeesArray
 			));
 
