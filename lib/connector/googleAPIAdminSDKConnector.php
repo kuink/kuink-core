@@ -25,7 +25,6 @@ class googleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 	var $delegatedAdmin;
 	var $domain;
 	var $scopes;
-
 	
 	function connect($entity=null) {
 		//$this->service = $this->dataSource->getParam ('service', true );
