@@ -206,7 +206,9 @@ class googleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 				$event->setConferenceData($conferenceData);
 				$event = $service->events->patch($calendarId, $event->id, $event, ['conferenceDataVersion' => 1]);
 			}
+			//kuink_mydebugobj('Event', $event);
 			$eventArr = $this->object_to_array($event);
+			//kuink_mydebugobj('Event', $eventArr);
 
 			return $eventArr;
 		} else {		

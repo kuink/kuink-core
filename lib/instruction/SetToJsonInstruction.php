@@ -16,7 +16,7 @@ class SetToJsonInstruction extends \Kuink\Core\Instruction {
 	 */
 	static public function execute($instManager, $instructionXmlNode) {
 		$content = $instManager->executeInnerInstruction ( $instructionXmlNode );
-		$list = json_encode ( $content );
+		$list = json_encode ( $content, JSON_HEX_APOS|JSON_HEX_QUOT );
 		
 		return $list;
 	}

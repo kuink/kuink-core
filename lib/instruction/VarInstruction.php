@@ -67,7 +67,7 @@ class VarInstruction extends \Kuink\Core\Instruction {
 			switch ($key) {
 				case '' : $value = isset($instManager->variables [$varname]) ? $instManager->variables [$varname] : ''; break;
 				case '__first' : $value= (is_array($instManager->variables[$varname])) ? array_values($instManager->variables[$varname])[0] : null; break;
-				case '__length' :$value=count($instManager->$variables[$varname]);break;			
+				case '__length' :$value=count($instManager->variables[$varname]);break;			
 				default :
 					$value = isset($instManager->variables [$varname]) ? self::getVarKeyInDepth($instManager, $instManager->variables[$varname], $keys) : ''; //isset($instManager->variables [$varname] [$key]) ? $instManager->variables [$varname] [$key] : null;
 			}

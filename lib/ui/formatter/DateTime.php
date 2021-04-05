@@ -263,7 +263,15 @@ class DateTime extends Formatter {
 		// Reason: php do not implement iso8601
 		$result = str_replace ( ( string ) $obj->format ( "O" ), date ( "O" ), $result );
 		$result = str_replace ( ( string ) $obj->format ( "P" ), date ( "P" ), $result );
+		//kuink_mydebug($timestamp.' | '.$format, $result);
 		return $result;
+	}
+	function iso8601_timestamp($value, $params) {
+		if (isset($params['format'])) 
+			$format = (string) $params['format'];
+		else
+			$format = self::DATETIME_COMPLETE_BASIC_1;
+		return $this->iso8601_format ( $value, $format );
 	}
 	function iso8601_week1($value, $params) {
 		return $this->iso8601_format ( $value, self::WEEK_COMPLETE_BASIC );

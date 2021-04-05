@@ -27,20 +27,23 @@ class FormatterLib {
 		$this->nodeconfiguration = $nodeconfiguration;
 	}
 	function format($params) {
+
+		//kuink_mydebugObj('Params-A', $params);
 		$formatter = ( string ) $params [0];
 		$method = ( string ) $params [1];
 		$value = (is_array ( $params [2] ) || is_bool($params [2])) ? $params [2] : (string) ($params [2]);
 		$params = (isset ( $params [3] )) ? $params [3] : null;
-		
+		//kuink_mydebugObj('Params-B', $params);
 		$params ['method'] = $method;
-		$formatted_value = ( string ) $this->call_formatter ( $formatter, $params, $value );
+		//kuink_mydebugObj('Params-C', $params);
+		$formattedValue = ( string ) $this->call_formatter ( $formatter, $params, $value );
 		// $formatted_value = call_user_func_array(array('Kuink\\Formatter\\'.$formatter, $method), array($value));
 		// kuink_mydebug($value, $formatted_value);
-		return $formatted_value;
+		return $formattedValue;
 	}
 	private function call_formatter($formatter_name, $params, $value) {
 		$formatter_name = str_replace ( 'Formatter', '', $formatter_name );
-		// kuink_mydebug('Formatter', $formatter_name);
+		//kuink_mydebug('Formatter', $formatter_name);
 		$formatter = Kuink\Core\Factory::getFormatter ( $formatter_name, $this->nodeconfiguration, null );
 		
 		if (! $formatter)
