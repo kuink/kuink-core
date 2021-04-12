@@ -135,7 +135,7 @@ private function encloseIdentifier($identifier) {
 	 */
 	function insert($params) {
 		global $KUINK_TRACE;
-		
+
 		$this->connect ();
 		
 		$originalParams = $params;
@@ -668,7 +668,7 @@ private function encloseIdentifier($identifier) {
 		while ( preg_match ( "/[\:][a-zA-Z0-9_]+/", $sqlTmp, $matches ) ) {
 			$bindParamRaw = $matches [0];
 			$bindParam = substr($bindParamRaw, -(strlen($bindParamRaw)-1));
-			$bindParams[$bindParam] = stripslashes($params[$bindParam]);
+			$bindParams[$bindParam] = ($params[$bindParam] === null) ? $params[$bindParam] : stripslashes($params[$bindParam]);
 			$query->bindValue($bindParam, $bindParams[$bindParam]);
 			$keys=array();
 			if (is_string($bindParam))
@@ -677,7 +677,6 @@ private function encloseIdentifier($identifier) {
 				$keys[] = '/[?]/';
 			$sqlTmp = preg_replace($keys, $bindParams, $sqlTmp, 1, $count);//str_replace($matches[0],"'".$params[$bindParam]."'",$sqlTmp);			
 		}
-
 		$performanceStart = microtime(true);
 
 		$query->execute ();
@@ -888,7 +887,7 @@ private function encloseIdentifier($identifier) {
 			$values .= ':' . $key;
 			$count ++;
 		}
-		
+	
 		$sql = 'INSERT INTO '.$this->encloseIdentifier($entity).' ('.$fields.') VALUES ('.$values.')';
 		
 		return $sql;

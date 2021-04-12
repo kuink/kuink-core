@@ -42,14 +42,28 @@ class ListInstruction extends \Kuink\Core\Instruction {
 	}
 
 	//Removes an element from a list
+	static public function reverse($instManager, $instructionXmlNode) {
+		$params = $instManager->getParams ( $instructionXmlNode );
+		$list = (string) $params [0];
+		$separator = (string) self::getAttribute ( $instructionXmlNode, 'separator', $instManager->variables, false, ',');		
+
+		$arr = ($list != '') ? explode($separator, $list) : array();
+		$arr = array_reverse($arr);
+
+		$newList = implode($separator, $arr);
+		return $newList;
+	}	
+
+	//Removes an element from a list
 	static public function remove($instManager, $instructionXmlNode) {
 		$params = $instManager->getParams ( $instructionXmlNode );
 		$element = $params [0];
 		$list = (string) $params [1];
+		$separator = (string) self::getAttribute ( $instructionXmlNode, 'separator', $instManager->variables, false, ',');				
 
-		$arr = ($list != '') ? explode(',', $list) : array();
+		$arr = ($list != '') ? explode($separator, $list) : array();
 		$arrDiff = array_diff($arr, array($element));
-		$newList = implode(',', $arrDiff);
+		$newList = implode($separator, $arrDiff);
 		return $newList;
 	}
 

@@ -198,6 +198,8 @@ class DataAccess {
 		} else {
 			$newParams = $params;
 		}
+
+		//kuink_mydebugObj('Params', $params);
 		
 		if ($this->dataAccessXml_domobject != null) {
 			// Execute the DataAcess from the XML definition file
