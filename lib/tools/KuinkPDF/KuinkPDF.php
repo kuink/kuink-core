@@ -56,4 +56,12 @@ class KuinkPDF extends \TCPDF {
 		}
 		
 	}
+
+	public function Error($msg) {
+		// unset all class variables
+		$this->_destroy(true);
+	 
+		// do whatever you want with $msg
+		throw new \Exception($msg);
+	 }	
 }

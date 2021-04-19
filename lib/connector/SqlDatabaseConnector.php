@@ -632,7 +632,7 @@ private function encloseIdentifier($identifier) {
 			unset ( $params ['_sql'] );
 			unset ( $params ['_debug_'] );
 			unset ( $params ['_multilang_fields'] );
-			unset ( $params ['_lang'] );
+			//unset ( $params ['_lang'] );
 			unset ( $params ['_acl']);
 			unset ( $params ['_aclPermissions']);
 		}

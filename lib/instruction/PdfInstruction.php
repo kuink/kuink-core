@@ -18,6 +18,7 @@ class PdfInstruction extends \Kuink\Core\Instruction {
 
 	static public function create($instManager, $instructionXmlNode) {
 		global $KUINK_CFG;
+		define('K_TCPDF_THROW_EXCEPTION_ERROR', true);
 		
 		$paper = (string) self::getAttribute ( $instructionXmlNode, 'paper', $instManager->variables, false, 'a4'); //$this->get_inst_attr ( $instruction_xmlnode, 'paper', $instManager->variables, false, 'a4' );
 		$orientation = (string) self::getAttribute ( $instructionXmlNode, 'orientation', $instManager->variables, false, 'portrait'); //$this->get_inst_attr ( $instruction_xmlnode, 'orientation', $instManager->variables, false, 'portrait' );
@@ -139,7 +140,12 @@ class PdfInstruction extends \Kuink\Core\Instruction {
 				$pdf->Image ( $background, $marginLeft, $marginTop, 210, 297, '', '', '', false, 0, '', false, false, 0 );
 			
 			// Print text using writeHTMLCell()
-		$pdf->writeHTML ( $html, true, false, true, false, '' );
+		try {
+			$pdf->writeHTML ( $html, true, false, true, false, '' );
+		} catch (\Exception $e) {
+			var_dump($e);
+			throw new \Exception($e);
+		}
 		
 		$config = $instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::CONFIG];
 		
@@ -166,7 +172,12 @@ class PdfInstruction extends \Kuink\Core\Instruction {
 		$flag = ($override == 'true') ? 'w+' : 'x+';
 		
 		$fh = fopen ( $myFile, $flag ) or die ( "can't open file. The file is not marked to be overriden." );
-		$stringData = $pdf->Output ( 'example_001.pdf', 'S' );
+		try {
+			$stringData = $pdf->Output ( 'example_001.pdf', 'S' );
+		} catch (\Exception $e) {
+			var_dump($e);
+			throw new \Exception($e);
+		}
 		fwrite ( $fh, $stringData );
 		fclose ( $fh );
 		
