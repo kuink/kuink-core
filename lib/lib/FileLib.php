@@ -334,6 +334,8 @@ class FileLib {
 		// send the file
 		// ========================================
 		$pathname = $KUINK_CFG->tmpRoot.'/'.$file;
+		//var_dump($pathname);
+		//die();
 
 		if (file_exists($pathname) and !is_dir($pathname)) {
 			ob_clean();

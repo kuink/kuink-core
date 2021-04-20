@@ -48,6 +48,7 @@ $KUINK_CFG->apiCompleteUrl = $wwwroot . '/' . $KUINK_CFG->apiUrl . '&neonfunctio
 $KUINK_CFG->guestUrl = $wwwroot . '/mod/kuink/auth_guest.php';
 $KUINK_CFG->dataRoot = $KUINK_BRIDGE_CFG->dataRoot;
 $KUINK_CFG->appRoot = $KUINK_BRIDGE_CFG->appRoot;
+$KUINK_CFG->tmpRoot = $KUINK_BRIDGE_CFG->tmpRoot;
 $KUINK_CFG->uploadRoot = $KUINK_BRIDGE_CFG->uploadRoot . 'files/';
 $KUINK_CFG->uploadVirtualPrefix = $KUINK_BRIDGE_CFG->uploadVirtualPrefix;//Only for neon compatibility. Leave blank in a fresh install.
 
