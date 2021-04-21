@@ -102,7 +102,7 @@ class ValidationLib {
         $is_valid = true;
         if ((!is_numeric($number) || strlen($number) != 9)) {
             $is_valid = false;
-            $this->msg_manager->add(\Neon\Core\MessageType::ERROR, neon_get_string('invalid_health_number').' : '.$number);
+            $this->msg_manager->add(\Kuink\Core\MessageType::ERROR, kuink_get_string('invalid_health_number').' : '.$number);
         }
 
         return $is_valid;
@@ -144,7 +144,7 @@ class ValidationLib {
                 $is_valid=true;
         }
         if (!$is_valid){
-            $this->msg_manager->add(\Neon\Core\MessageType::ERROR, neon_get_string('invalid_'.$type).' : '.$number.' checkDigit:'.$checkDigit);
+            $this->msg_manager->add(\Kuink\Core\MessageType::ERROR, kuink_get_string('invalid_'.$type).' : '.$number.' checkDigit:'.$checkDigit);
         }
         return (int)$is_valid;
     }
@@ -290,7 +290,7 @@ class ValidationLib {
                 $is_valid=true;
         }
         if (!$is_valid){
-            $this->msg_manager->add(\Kuink\Core\MessageType::ERROR, neon_get_string("invalid_pt_ss_number"));
+            $this->msg_manager->add(\Kuink\Core\MessageType::ERROR, kuink_get_string("invalid_pt_ss_number"));
         }
         return (int)$is_valid;
     }    	

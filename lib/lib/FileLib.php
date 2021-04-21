@@ -333,19 +333,19 @@ class FileLib {
 		// ========================================
 		// send the file
 		// ========================================
-		$pathname = $KUINK_CFG->tmpRoot.'/'.$file;
-		//var_dump($pathname);
+		$pathName = $KUINK_CFG->tmpRoot.'/'.$file;
+		//var_dump($pathName);
 		//die();
 
-		if (file_exists($pathname) and !is_dir($pathname)) {
+		if (file_exists($pathName) and !is_dir($pathName)) {
 			ob_clean();
 			header('Accept-Ranges: bytes');
 			header('Content-Disposition: attachment; filename=' . $file);
 			header('Content-Type: application/octet-stream');
-			//send_file($pathname, $file);
-			readfile($pathname);
+			//send_file($pathName, $file);
+			readfile($pathName);
 			die();
-			//print_object($pathname.'::'.$file);
+			//print_object($pathName.'::'.$file);
 		} else {
 			header('HTTP/1.0 404 not found');
 			print_error('filenotfound', 'error'); //this is not displayed on IIS??

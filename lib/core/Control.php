@@ -316,8 +316,8 @@ abstract class Control {
 				//var_dump($callParams);
 				$parts = explode ( ',', $library );
 				if (count ( $parts ) != 4) {
-					var_dump($datasourcename);					
-					throw new \Exception ( 'Invalid lirary,function name: ' . $datasourcename .' - '. count ( $parts ) );
+					//var_dump($datasourcename);					
+					throw new \Exception ( 'Invalid library,function name: ' . $datasourcename .' - '. count ( $parts ) );
 				}
 				$node = new \Kuink\Core\Node ( $parts [0], $parts [1], $parts [2] );
 				$runtime = new \Kuink\Core\Runtime ( $node, 'lib', null );

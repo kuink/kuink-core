@@ -162,7 +162,22 @@ class InstructionManager {
 	public function getParams($instructionXmlNode, $includeParamsAttribute=false) {
 		$paramsXml = $instructionXmlNode->xpath ( './Param' );
 		$params = array ();
-		
+
+		//kuink_mydebugObj('ParamsUntilNow', $params);
+		//Join the params defined in params atribute if define
+		if ($includeParamsAttribute) {
+			//Join the params defined in params atribute if defined				
+			$paramsVar = $this->getAttribute($instructionXmlNode, 'params', false, null); //isset ( $instructionXmlNode ['params'] ) ? ( string ) $instructionXmlNode ['params'] : '';
+			//kuink_mydebugObj('ParamsAttr', $paramsVar);
+			if ($paramsVar != null) {
+				$var = isset($this->variables [$paramsVar]) ? $this->variables [$paramsVar] : array();
+				//kuink_mydebugObj('ParamsAttrValue', $var);
+				foreach ( $var as $paramKey => $paramValue )
+					$params ["$paramKey"] = $paramValue;
+			}
+			//kuink_mydebugObj('Params', $params);
+		}
+
 		foreach ( $paramsXml as $param ) {
 			$paramName = isset ( $param ['name'] ) ? ( string ) $param ['name'] : '';
 			if ($param->count () > 0) {
@@ -177,17 +192,6 @@ class InstructionManager {
 				$params [] = $value;
 			else
 				$params [$paramName] = $value;
-		}
-
-		//Join the params defined in params atribute if define
-		if ($includeParamsAttribute) {
-			//Join the params defined in params atribute if defined				
-			$paramsVar = $this->getAttribute($instructionXmlNode, 'params', false, null); //isset ( $instructionXmlNode ['params'] ) ? ( string ) $instructionXmlNode ['params'] : '';
-			if ($paramsVar != null) {
-				$var = isset($this->variables [$paramsVar]) ? $this->variables [$paramsVar] : array();
-				foreach ( $var as $paramKey => $paramValue )
-					$params ["$paramKey"] = $paramValue;
-			}
 		}
 
 		return ($params);
