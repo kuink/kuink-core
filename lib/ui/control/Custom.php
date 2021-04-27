@@ -44,7 +44,10 @@ class Custom extends Control {
 	function bind($value) {
 		$params = array ();
 		foreach ( $value as $pkey => $pvalue )
-			$params [$pkey] = ( string ) $pvalue;
+			if (is_array($pvalue))
+				$params [$pkey] = $pvalue;
+			else
+				$params [$pkey] = ( string ) $pvalue;
 		
 		$this->value = $params;
 	}
@@ -70,6 +73,7 @@ class Custom extends Control {
 			$newnodeconfiguration ['customappname'] = $this->app_name;
 			$newnodeconfiguration ['master_process_name'] = $this->process_name;
 			$newnodeconfiguration ['action'] = '';
+			//kuink_mydebugObj('Conf:', $newnodeconfiguration );
 			$node = new \Kuink\Core\Node ( $this->app_name, $this->process_name, $this->node_name );
 			$runtime = new \Kuink\Core\Runtime ( $node, 'ui', $newnodeconfiguration, true, $params );
 			// kuink_mydebug($this->name, $this->position );

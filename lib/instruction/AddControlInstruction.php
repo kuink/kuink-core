@@ -19,8 +19,8 @@ class AddControlInstruction extends \Kuink\Core\Instruction {
 		$name = ( string ) self::getAttribute ( $instructionXmlNode, 'name', $instManager->variables, true );//$this->get_inst_attr ( $instruction_xmlnode, 'name', $variables, true );
 		
 		$controlDefinitionStr = '<' . $type;
-		foreach ( $instructionXmlNode->attributes () as $key => $value ) {
-			$attrValue = self::getAttribute ( $instructionXmlNode, '$key', $instManager->variables, false ); //$this->get_inst_attr ( $instruction_xmlnode, $key, $variables );
+		foreach ( $instructionXmlNode->attributes() as $key => $value ) {
+			$attrValue = self::getAttribute ( $instructionXmlNode, $key, $instManager->variables, false ); //$this->get_inst_attr ( $instruction_xmlnode, $key, $variables );
 			$controlDefinitionStr .= ' ' . $key . '="' . $attrValue . '"';
 		}
 		$controlDefinitionStr .= '/>';
