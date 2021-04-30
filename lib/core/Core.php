@@ -288,6 +288,44 @@ class Core {
 					//print_error('filenotfound', 'error'); //this is not displayed on IIS??
 				}
 				break;
+				case "app_file" :
+					$KUINK_DATASOURCES = array ();
+					$KUINK_APPLICATION = new \Kuink\Core\Application ( 'framework', 'pt', null, $this );
+					
+					if (! empty ( $guid )) {
+						//Guid will be in the form of app/guid.ext
+						$guidParts = explode('/', $guid);
+			
+						$pathName = realpath($KUINK_CFG->uploadRoot.'app_files/'. $guid);
+						if ($pathName === FALSE) {
+							//The file does not exists
+							$pathName = realpath($KUINK_CFG->uploadRoot.'app_files/'. $guidParts[0]).'/default.jpg';
+							if ($pathName === FALSE)
+								$pathName = realpath($KUINK_CFG->uploadRoot.'app_files/'. $guidParts[0]).'/default.png';
+						}
+						//kuink_mydebug('path', $pathName);
+						
+						//Prevent relative paths to get elements from other applications
+						//Check if Someone is trying to get a file out of app_files scope
+						$pos = strpos($pathName, $KUINK_CFG->uploadRoot.'app_files/');
+						if ($pos === FALSE) {
+							header ( 'HTTP/1.0 404 not found' );
+							die('Security Exception');
+						}
+					} else {
+						// Without guid
+						header ( 'HTTP/1.0 404 not found' );
+						die();
+					}
+
+					//Everything is OK, so stream the file					
+					$fileParts = explode('/', $pathName);
+					ob_clean ();
+					header ( 'Content-Type: ' .mime_content_type($pathName) );
+					header ( 'Content-Length: ' . filesize ( $pathName ) );
+					header('Content-Disposition: attachment; filename="'.$fileParts[count($fileParts)-1].'"');
+					readfile ( $pathName );
+					break;				
 		}		
 	}
 
