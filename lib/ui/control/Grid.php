@@ -53,6 +53,7 @@ class GridDefaults {
 	const REFRESHABLE = 'false';
 	const REFRESH_ACTION = '';
 	const REFRESH_INTERVAL = '5000';
+	const SHOW_COLUMNS = 'true';
 }
 
 /**
@@ -89,6 +90,7 @@ class GridProperty {
 	const REFRESHABLE = 'refreshable';
 	const REFRESH_ACTION = 'refreshaction';
 	const REFRESH_INTERVAL = 'refreshinterval';
+	const SHOW_COLUMNS = 'showcolumns';
 }
 class GridViewType {
 	const GRID = 'grid';
@@ -257,6 +259,7 @@ class Grid extends Control {
 	var $refreshable; // This grid is refreshable?
 	var $refreshAction; // Refresh action
 	var $refreshInterval; // Refresh interval in miliseconds
+	var $showColumns; //Indicates if the template will show the table header
 	function __construct($nodeconfiguration, $xml_definition) {
 		global $SESSION;
 		$this->built = false;
@@ -619,6 +622,8 @@ class Grid extends Control {
 		$this->treeid = ( string ) $this->getProperty ( $this->name, GridProperty::TREE_ID, false, GridDefaults::TREE_ID );
 		$this->treeparentid = ( string ) $this->getProperty ( $this->name, GridProperty::TREE_PARENT_ID, false, GridDefaults::TREE_PARENT_ID );
 		$this->exportable = ( string ) $this->getProperty ( $this->name, GridProperty::EXPORTABLE, false, GridDefaults::EXPORTABLE );
+		kuink_mydebug($this->name, $this->exportable);
+
 		$this->pageable = ( string ) $this->getProperty ( $this->name, GridProperty::PAGEABLE, false, GridDefaults::PAGEABLE );
 		$this->collapsible = ( string ) $this->getProperty ( $this->name, GridProperty::COLLAPSIBLE, false, GridDefaults::COLLAPSIBLE );
 		// $this->pagesize = (string) $this->getProperty($this->name, GridProperty::PAGE_SIZE, false, GridDefaults::PAGE_SIZE);
@@ -634,6 +639,9 @@ class Grid extends Control {
 		$this->refreshable = ( string ) $this->getProperty ( $this->name, GridProperty::REFRESHABLE, false, GridDefaults::REFRESHABLE );
 		$this->refreshAction = ( string ) $this->getProperty ( $this->name, GridProperty::REFRESH_ACTION, false, GridDefaults::REFRESH_ACTION );
 		$this->refreshInterval = ( string ) $this->getProperty ( $this->name, GridProperty::REFRESH_INTERVAL, false, GridDefaults::REFRESH_INTERVAL );
+
+		$this->showColumns = ( string ) $this->getProperty ( $this->name, GridProperty::SHOW_COLUMNS, false, GridDefaults::SHOW_COLUMNS );
+		kuink_mydebug($this->name, $this->showColumns);
 		
 		$this->pivot = ( string ) $this->getProperty ( $this->name, GridProperty::PIVOT, false, GridDefaults::PIVOT );
 		$this->pivotlines = ( string ) $this->getProperty ( $this->name, GridProperty::PIVOT_LINES, false, GridDefaults::PIVOT_LINES );
@@ -1494,6 +1502,7 @@ class Grid extends Control {
 		$params ['refreshable'] = $this->refreshable;
 		$params ['refreshInterval'] = $this->refreshInterval;
 		$params ['refreshUrl'] = $this->baseurl . '&action=' . $this->refreshAction . '&control=' . $this->name . '&modal=Control';
+		$params ['showColumns'] = $this->showColumns;
 		
 		$params ['baseUrl'] = $this->baseurl . '&action=' . $this->pagingaction;
 		$params ['action'] = isset ( $_GET ['action'] ) ? ( string ) $_GET ['action'] : 'init';
@@ -1667,6 +1676,8 @@ class Grid extends Control {
 		$params ['refreshable'] = $this->refreshable;
 		$params ['refreshInterval'] = $this->refreshInterval;
 		$params ['refreshUrl'] = $this->baseurl . '&action=' . $this->refreshAction . '&control=' . $this->name . '&modal=Control';
+
+		$params ['showColumns'] = $this->showColumns;
 		
 		$params ['freeze'] = $freeze = $this->getProperty ( $this->name, GridProperty::FREEZE, false, GridDefaults::FREEZE, null, true );
 		$this->legend = $this->getProperty ( $this->name, GridProperty::LEGEND, false, GridDefaults::LEGEND );

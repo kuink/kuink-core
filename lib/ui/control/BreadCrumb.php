@@ -18,10 +18,13 @@ namespace Kuink\UI\Control;
 
 class BreadCrumb extends Control {
 	function display() {
+		
 		$params = array();
-		$params['action'] = (string)$this->getProperty('', 'action', true, '', $this->xml_definition);
-		$params['labelField'] = (string)$this->getProperty('', 'label', false, 'label', $this->xml_definition);
-		$params['actionvalueField'] = (string)$this->getProperty('', 'actionvalue', false, 'actionvalue', $this->xml_definition);
+		$params['action'] = (string)$this->getProperty($this->name, 'action', true, '');
+		$params['labelField'] = (string)$this->getProperty($this->name, 'label', false, 'label');
+		$params['actionvalueField'] = (string)$this->getProperty($this->name, 'actionvalue', false, 'actionvalue');
+		$params['title'] = (string)$this->getProperty($this->name, 'title', false, '');
+		$params['title'] = \Kuink\Core\Language::getString ( $params['title'], $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] );
 
 		$params['baseUrl'] = $this->nodeconfiguration [\Kuink\Core\NodeConfKey::BASEURL];
 		$params['entries'] = $this->bind_data;
