@@ -1226,8 +1226,8 @@ class Grid extends Control {
 								$confirm_text = '';
 								if ($confirm_label != 'false') {
 									
-									$confirm_text = ($confirm_label == 'true') ? Core\Language::getString ( 'ask_proceed', 'framework' ) : Core\Language::getString ( $confirm_label, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
-									
+									$confirm_text = ($confirm_label == 'true') ? \Kuink\Core\Language::getString ( 'ask_proceed', 'framework' ) : \Kuink\Core\Language::getString ( $confirm_label, $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] );
+									$confirm_label = 'true';
 									$this->tableConfirmActions [] = array (
 											'actionName' => $actionname,
 											'actionValue' => $actionvalue,
