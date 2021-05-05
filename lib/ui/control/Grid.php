@@ -622,8 +622,7 @@ class Grid extends Control {
 		$this->treeid = ( string ) $this->getProperty ( $this->name, GridProperty::TREE_ID, false, GridDefaults::TREE_ID );
 		$this->treeparentid = ( string ) $this->getProperty ( $this->name, GridProperty::TREE_PARENT_ID, false, GridDefaults::TREE_PARENT_ID );
 		$this->exportable = ( string ) $this->getProperty ( $this->name, GridProperty::EXPORTABLE, false, GridDefaults::EXPORTABLE );
-		kuink_mydebug($this->name, $this->exportable);
-
+		
 		$this->pageable = ( string ) $this->getProperty ( $this->name, GridProperty::PAGEABLE, false, GridDefaults::PAGEABLE );
 		$this->collapsible = ( string ) $this->getProperty ( $this->name, GridProperty::COLLAPSIBLE, false, GridDefaults::COLLAPSIBLE );
 		// $this->pagesize = (string) $this->getProperty($this->name, GridProperty::PAGE_SIZE, false, GridDefaults::PAGE_SIZE);
@@ -641,7 +640,6 @@ class Grid extends Control {
 		$this->refreshInterval = ( string ) $this->getProperty ( $this->name, GridProperty::REFRESH_INTERVAL, false, GridDefaults::REFRESH_INTERVAL );
 
 		$this->showColumns = ( string ) $this->getProperty ( $this->name, GridProperty::SHOW_COLUMNS, false, GridDefaults::SHOW_COLUMNS );
-		kuink_mydebug($this->name, $this->showColumns);
 		
 		$this->pivot = ( string ) $this->getProperty ( $this->name, GridProperty::PIVOT, false, GridDefaults::PIVOT );
 		$this->pivotlines = ( string ) $this->getProperty ( $this->name, GridProperty::PIVOT_LINES, false, GridDefaults::PIVOT_LINES );
