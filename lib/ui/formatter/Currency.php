@@ -19,12 +19,20 @@ namespace Kuink\UI\Formatter;
 class Currency extends Formatter {
 	function currencyBefore($value, $params = null) {
 		// TODO get currency symbol from nodeconfiguration
-		return '€' . number_format ( ( float ) $value, 2, ',', '.' );
+		if (is_numeric($value))		
+			return '€' . number_format ( ( float ) $value, 2, ',', '.' );
+		else
+			return $value;
 	}
+
 	function currencyAfter($value, $params = null) {
 		// TODO get currency symbol from nodeconfiguration
-		return number_format ( ( float ) $value, 2, ',', '.' ) . '&nbsp;€';
+		if (is_numeric($value))
+			return number_format ( ( float ) $value, 2, ',', '.' ) . '&nbsp;€';
+		else
+			return $value;
 	}
+	
 	function format($value, $params = null) {
 		// TODO get currency symbol from nodeconfiguration
 		return $this->currencyAfter ( $value, $params );
