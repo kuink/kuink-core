@@ -503,12 +503,12 @@ class Form extends Control {
 			$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $id, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		$attributes [FieldProperty::HELP] = $help;
 		$attributes [FieldProperty::NAME] = $this->getProperty ( $id, FieldProperty::NAME, false, FieldPropertyDefaults::NAME, $formfield );
-		$attributes [FieldProperty::REQUIRED] = $this->getProperty ( $id, FieldProperty::REQUIRED, false, FieldPropertyDefaults::REQUIRED, $formfield );
-		$attributes [FieldProperty::DISABLED] = $this->getProperty ( $id, FieldProperty::DISABLED, false, FieldPropertyDefaults::DISABLED, $formfield );
+		$attributes [FieldProperty::REQUIRED] = $this->getProperty ( $id, FieldProperty::REQUIRED, false, FieldPropertyDefaults::REQUIRED, $formfield, true ); //Parse Bool to evaluate conditions
+		$attributes [FieldProperty::DISABLED] = $this->getProperty ( $id, FieldProperty::DISABLED, false, FieldPropertyDefaults::DISABLED, $formfield, true ); //Parse Bool to evaluate conditions
 		$attributes [FieldProperty::MAXLENGTH] = $this->getProperty ( $id, FieldProperty::MAXLENGTH, false, FieldPropertyDefaults::MAXLENGTH, $formfield );
-		$attributes [FieldProperty::VISIBLE] = $this->getProperty ( $id, FieldProperty::VISIBLE, false, FieldPropertyDefaults::VISIBLE, $formfield );
-		$attributes [FieldProperty::FREEZE] = $this->getProperty ( $id, FieldProperty::FREEZE, false, FieldPropertyDefaults::FREEZE, $formfield );
-		$attributes [FieldProperty::INLINE] = $this->getProperty ( $id, FieldProperty::INLINE, false, FieldPropertyDefaults::INLINE, $formfield );
+		$attributes [FieldProperty::VISIBLE] = $this->getProperty ( $id, FieldProperty::VISIBLE, false, FieldPropertyDefaults::VISIBLE, $formfield, true ); //Parse Bool to evaluate conditions
+		$attributes [FieldProperty::FREEZE] = $this->getProperty ( $id, FieldProperty::FREEZE, false, FieldPropertyDefaults::FREEZE, $formfield, true ); //Parse Bool to evaluate conditions
+		$attributes [FieldProperty::INLINE] = $this->getProperty ( $id, FieldProperty::INLINE, false, FieldPropertyDefaults::INLINE, $formfield, true ); //Parse Bool to evaluate conditions
 		$attributes [FieldProperty::SIZE] = $this->getProperty ( $id, FieldProperty::SIZE, false, FieldPropertyDefaults::SIZE, $formfield );
 		$attributes [FieldProperty::ICON] = $this->getProperty ( $id, FieldProperty::ICON, false, FieldPropertyDefaults::ICON, $formfield );
 		$attributes [FieldProperty::COLS] = $this->getProperty ( $id, FieldProperty::COLS, false, FieldPropertyDefaults::COLS, $formfield );

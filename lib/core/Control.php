@@ -235,9 +235,15 @@ abstract class Control {
 			// Parse the conditionExpr
 			$eval = new \Kuink\Core\EvalExpr ();
 			try {
+				$data = array();
+				foreach ( $this->bind_data as $bind ) {
+					$bind = ( array ) $bind;
+					$data = array_merge($data, $bind);
+				}	
 				$data ['CAPABILITY'] = $this->nodeconfiguration ['capabilities'];
 				$data ['ROLE'] = $this->nodeconfiguration ['roles'];
 				$value = ($eval->e ( $value, $data, TRUE )) ? 'true' : 'false';
+				//kuink_mydebugObj($value, $data);
 			} catch ( \Exception $e ) {
 				var_dump ( 'Exception: eval' );
 				die ();
