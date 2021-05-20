@@ -307,7 +307,7 @@ class Core {
 						
 						//Prevent relative paths to get elements from other applications
 						//Check if Someone is trying to get a file out of app_files scope
-						$pos = strpos($pathName, $KUINK_CFG->uploadRoot.'app_files/');
+						$pos = strpos($pathName, realpath($KUINK_CFG->uploadRoot.'app_files/'));
 						if ($pos === FALSE) {
 							header ( 'HTTP/1.0 404 not found' );
 							die('Security Exception: '.$pathName);
