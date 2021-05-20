@@ -399,6 +399,15 @@ class FileLib {
 			return $result;
 	}
 
+
+	function copyFileRaw($params) {
+		$origin = (string) $params ['origin'];
+		$destination = (string) $params ['destination'];
+
+		copy( $origin, $destination );
+	}
+
+
 	/**
 	 * Copy a file record to another destination
 	 * 

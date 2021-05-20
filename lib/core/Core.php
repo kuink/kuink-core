@@ -310,7 +310,7 @@ class Core {
 						$pos = strpos($pathName, $KUINK_CFG->uploadRoot.'app_files/');
 						if ($pos === FALSE) {
 							header ( 'HTTP/1.0 404 not found' );
-							die('Security Exception');
+							die('Security Exception: '.$pathName);
 						}
 					} else {
 						// Without guid
