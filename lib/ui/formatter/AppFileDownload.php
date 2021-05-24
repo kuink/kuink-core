@@ -30,16 +30,12 @@ class AppFileDownload extends Formatter {
 		$ext = isset($params ['ext']) ? ( string ) $params ['ext'] : '';
 		$application = isset($params ['application']) ? ( string ) $params ['application'] : '';
 		$path = isset($params ['path']) ? '/'.( string ) $params ['path'].'/' : '';
-		$height = isset($params ['height']) ? (string) $params ['height'] : '50px';
-		$width = isset($params ['width']) ? ( string ) $params ['width'] : '';
-
-		$height = 'height="'.$height.'"';
-		$width = ($width == '') ? '' : 'width="'.$width.'"';
+		$style = isset($params ['style']) ? ( string ) $params ['style'] : 'height: 50px';
 
 		$guid = $application.'/'.$path.$value.'.'.$ext;
 
 		$contextId = \Kuink\Core\ProcessOrchestrator::getContextId ();
-		$imgHtml = '<img src="stream.php?idcontext=' . $contextId . '&type=app_file&guid=' . $guid . '" '.$height.' '.$width.'/>';
+		$imgHtml = '<img src="stream.php?idcontext=' . $contextId . '&type=app_file&guid=' . $guid . '" style="'.$style.'"/>';
 		$returnHtml = '<table border="0" style="border: none;"><tr><td valign="top">' . $imgHtml . '</td></tr></table>';
 		
 		return $returnHtml;
