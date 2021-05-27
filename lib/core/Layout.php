@@ -158,7 +158,9 @@ class Layout {
 	public function setExecutionTime($time) {
 		$this->layoutAdapter->setExecutionTime ( $time );
 	}
-
+	public function setFocus($control) {
+		$this->layoutAdapter->setFocus ( $control );
+	}
 }
 
 ?>

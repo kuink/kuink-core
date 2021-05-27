@@ -99,15 +99,16 @@ class FileLib {
 		$mandatory = (isset($params [6])) ? $params [6] : null;
 		$showErrors = (isset($params ['showErrors'])) ? $params ['showErrors'] : 1; //default shows all errors
 
-		// print('FILENAME:'.$param_filename );
-		// print('MAXUPLOAD SIZE:'.$maxUploadSize );
-		// print('UPLOAD FOLDER:'.$upload_folder );
+		//kuink_mydebug('FILENAME:'.$param_filename );
+		//kuink_mydebug('MAXUPLOAD SIZE:'.$maxUploadSize );
+		//kuink_mydebug('UPLOAD FOLDER:'.$upload_folder );
 		$config = $this->nodeconfiguration ['config'];
 		
 		$base_upload = $KUINK_CFG->uploadRoot;
 		$upload_dir = $base_upload . $upload_folder;
 		//kuink_mydebug('uploaddir', $upload_dir);
-		
+		//kuink_mydebugObj('FILES', $_FILES);
+
 		// normalizar os ficheiros
 		foreach ( $_FILES as $tipo => $file ) {
 			//ignore if filename and filetype are empty

@@ -33,13 +33,14 @@ abstract class Control {
 	var $properties;
 	var $datasources;
 	var $bind_data;
-	var $name; // This control name
-	var $type; // This control type: Form, Grid, Chart, etc...
-	var $skeleton; // This control skeleton
-	var $skin; // This control skin
-	var $position; // position of the control in the template
-	var $guid; // Control uniqueid
-	var $refreshing; // Is this control being refreshed?
+	var $name; 				// This control name
+	var $type; 				// This control type: Form, Grid, Chart, etc...
+	var $skeleton; 		// This control skeleton
+	var $skin; 				// This control skin
+	var $position; 		// position of the control in the template
+	var $guid; 				// Control uniqueid
+	var $refreshing; 	// Is this control being refreshed?
+	var $focus; 			// Is this control the one tyo get the focus automatically (auto scroll)?
 	
 	/**
 	 * Base Contructor
@@ -61,6 +62,8 @@ abstract class Control {
 		$this->skeleton = ( string ) $this->getProperty ( $this->name, 'skeleton', false, '' );
 		$this->skin = ( string ) $this->getProperty ( $this->name, 'skin', false, '' );
 		$this->position = ( string ) $this->getProperty ( $this->name, 'position', false, '' );
+		$this->focus = ( string ) $this->getProperty ( $this->name, 'focus', false, 'false' );		
+		$this->properties [$key] ['focus'] = $this->focus;
 		$this->guid = 'k'.uniqid(); //allways start with a letter
 		$this->refreshing = false;
 		$this->bind_data = array();
@@ -162,7 +165,11 @@ abstract class Control {
 		$params ['_position'] = $this->position;
 		$params ['_skin'] = $this->skin;
 		$params ['_skeleton'] = $this->skeleton;
+		$params ['_focus'] = ( string ) $this->getProperty ( $this->name, 'focus', true, 'false', $this->xml_definition, true );;
 		$layout->addControl ( $this->type, $params, $this->skeleton, $this->skin, $this->position );
+		//kuink_mydebug('Focus - '.$this->guid, $this->focus);
+		if ($params ['_focus'] != 'false')
+			$layout->setFocus($this->guid);
 	}
 	
 	/**
@@ -243,7 +250,7 @@ abstract class Control {
 				$data ['CAPABILITY'] = $this->nodeconfiguration ['capabilities'];
 				$data ['ROLE'] = $this->nodeconfiguration ['roles'];
 				$value = ($eval->e ( $value, $data, TRUE )) ? 'true' : 'false';
-				//kuink_mydebugObj($value, $data);
+				//kuink_mydebugObj($this->name.'::'.$property, $value);
 			} catch ( \Exception $e ) {
 				var_dump ( 'Exception: eval' );
 				die ();

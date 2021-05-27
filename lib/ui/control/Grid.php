@@ -1125,6 +1125,7 @@ class Grid extends Control {
 									'action' => $colActionName,
 									'actionvalue' => $colActionValueBind 
 							) );
+							//kuink_mydebug($colActionName, $colActionUrl);
 							$colActionLabel = $datatoinsert [$current_key] ['value'];
 							$colActionFormatted = '<a href="' . $colActionUrl . '">' . $colActionLabel . '</a>&nbsp;';
 							$colAction_constructor = array ();

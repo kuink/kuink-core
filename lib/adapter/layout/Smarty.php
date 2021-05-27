@@ -329,7 +329,13 @@ class Smarty extends \Smarty {
 
 	public function setExecutionTime($time){
 		$this->assign("_executionTime", $time);
-	}    
+	}  
+	
+	public function setFocus($control){
+	//kuink_mydebug('Focus', $control);
+		$this->assign('_focus', $control);
+	}  
+	
 }
 
 ?>

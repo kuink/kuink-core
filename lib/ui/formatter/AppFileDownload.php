@@ -31,11 +31,15 @@ class AppFileDownload extends Formatter {
 		$application = isset($params ['application']) ? ( string ) $params ['application'] : '';
 		$path = isset($params ['path']) ? '/'.( string ) $params ['path'].'/' : '';
 		$style = isset($params ['style']) ? ( string ) $params ['style'] : 'height: 50px';
+		$zoom = isset($params ['zoom']) ? ( string ) $params ['zoom'] : '';
+		$zoomClass = ($zoom == 'true') ? 'kuinkZoom' : '';
 
 		$guid = $application.'/'.$path.$value.'.'.$ext;
 
+		$class = $zoomClass;
+
 		$contextId = \Kuink\Core\ProcessOrchestrator::getContextId ();
-		$imgHtml = '<img src="stream.php?idcontext=' . $contextId . '&type=app_file&guid=' . $guid . '" style="'.$style.'"/>';
+		$imgHtml = '<img src="stream.php?idcontext=' . $contextId . '&type=app_file&guid=' . $guid . '" class="'.$class.'" style="'.$style.'"/>';
 		$returnHtml = '<table border="0" style="border: none;"><tr><td valign="top">' . $imgHtml . '</td></tr></table>';
 		
 		return $returnHtml;
