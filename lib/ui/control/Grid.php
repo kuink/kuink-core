@@ -685,6 +685,9 @@ class Grid extends Control {
 			$this->global_actions [$action_name] ['name'] = $action_name;
 			$this->global_actions [$action_name] ['label'] = isset ( $global_action ['label'] ) ? ( string ) $global_action ['label'] : ( string ) $global_action ['name'];
 			$this->global_actions [$action_name] ['color'] = ( string ) $global_action ['color'];
+			$this->global_actions [$action_name] ['type'] = isset ( $global_action ['type'] ) ? ( string ) $global_action ['type'] : '';
+			$this->global_actions [$action_name] ['decoration'] = isset ( $global_action ['decoration'] ) ? ( string ) $global_action ['decoration'] : '';
+			$this->global_actions [$action_name] ['icon'] = isset ( $global_action ['icon'] ) ? ( string ) $global_action ['icon'] : '';
 		}
 		
 		$actions = $tablexml->xpath ( './Template/Actions//Action' );
@@ -1628,8 +1631,11 @@ class Grid extends Control {
 		$action_permissions = $this->nodeconfiguration ['actionPermissions'];
 		if (isset ( $this->global_actions ))
 			foreach ( $this->global_actions as $global_action ) {
-				if (! empty ( $action_permissions [$global_action ['name']] ))
-					$globalActions [$global_action ['name']] = Core\Language::getString ( $global_action ['label'], $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+				if (! empty ( $action_permissions [$global_action ['name']] )) {
+					$globalAction = $global_action;
+					$globalAction['label'] = Core\Language::getString ( $global_action ['label'], $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+					$globalActions [$global_action ['name']] = $globalAction;
+				}
 			}
 		
 		$headers = array ();
