@@ -761,8 +761,8 @@ class Form extends Control {
 	 * Builds the form from the current state
 	 */
 	function build() {
-		$freeze = $this->getProperty ( $this->name, FormProperty::FREEZE, false, FormPropertyDefaults::FREEZE );
-		$visible = $this->getProperty ( $this->name, FormProperty::VISIBLE, false, FormPropertyDefaults::VISIBLE );
+		$freeze = $this->getProperty ( $this->name, FormProperty::FREEZE, false, FormPropertyDefaults::FREEZE, $this->xml_definition, true );
+		$visible = $this->getProperty ( $this->name, FormProperty::VISIBLE, false, FormPropertyDefaults::VISIBLE, $this->xml_definition, true);
 		$title = $this->getProperty ( $this->name, FormProperty::TITLE, false, FormPropertyDefaults::TITLE );
 		
 		$this->buttonsPosition = $this->getProperty ( $this->name, FormProperty::BUTTONS_POSITION, false, FormPropertyDefaults::BUTTONS_POSITION );

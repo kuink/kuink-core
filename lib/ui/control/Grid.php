@@ -618,20 +618,20 @@ class Grid extends Control {
 		$this->baseurl = ( string ) $this->nodeconfiguration [Core\NodeConfKey::BASEURL] . $form;
 		
 		$this->visible = ( string ) $this->getProperty ( $this->name, GridProperty::VISIBLE, false, GridDefaults::VISIBLE, null, true );
-		$this->tree = ( string ) $this->getProperty ( $this->name, GridProperty::TREE, false, GridDefaults::TREE );
+		$this->tree = ( string ) $this->getProperty ( $this->name, GridProperty::TREE, false, GridDefaults::TREE, null, true  );
 		$this->treeid = ( string ) $this->getProperty ( $this->name, GridProperty::TREE_ID, false, GridDefaults::TREE_ID );
 		$this->treeparentid = ( string ) $this->getProperty ( $this->name, GridProperty::TREE_PARENT_ID, false, GridDefaults::TREE_PARENT_ID );
-		$this->exportable = ( string ) $this->getProperty ( $this->name, GridProperty::EXPORTABLE, false, GridDefaults::EXPORTABLE );
+		$this->exportable = ( string ) $this->getProperty ( $this->name, GridProperty::EXPORTABLE, false, GridDefaults::EXPORTABLE, null, true);
 		
 		$this->pageable = ( string ) $this->getProperty ( $this->name, GridProperty::PAGEABLE, false, GridDefaults::PAGEABLE );
-		$this->collapsible = ( string ) $this->getProperty ( $this->name, GridProperty::COLLAPSIBLE, false, GridDefaults::COLLAPSIBLE );
+		$this->collapsible = ( string ) $this->getProperty ( $this->name, GridProperty::COLLAPSIBLE, false, GridDefaults::COLLAPSIBLE, null, true  );
 		// $this->pagesize = (string) $this->getProperty($this->name, GridProperty::PAGE_SIZE, false, GridDefaults::PAGE_SIZE);
 		$this->pagingaction = ( string ) $this->getProperty ( $this->name, GridProperty::PAGING_ACTION, false, GridDefaults::PAGING_ACTION );
 		$this->title = ( string ) $this->getProperty ( $this->name, GridProperty::TITLE, false, GridDefaults::TITLE );
 		$this->subtitle = ( string ) $this->getProperty ( $this->name, GridProperty::SUBTITLE, false, GridDefaults::SUBTITLE );
 		$this->is_form = false;
 		$this->transpose = ( string ) $this->getProperty ( $this->name, GridProperty::TRANSPOSE, false, GridDefaults::TRANSPOSE );
-		$this->infer = ( string ) $this->getProperty ( $this->name, GridProperty::INFER, false, GridDefaults::INFER );
+		$this->infer = ( string ) $this->getProperty ( $this->name, GridProperty::INFER, false, GridDefaults::INFER, null, true  );
 		
 		$this->extendEdit = ( string ) $this->getProperty ( $this->name, GridProperty::EXTEND_EDIT, false, GridDefaults::EXTEND_EDIT );
 		
