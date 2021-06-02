@@ -1159,13 +1159,14 @@ class Grid extends Control {
 						// $url = new \moodle_url($this->baseurl);
 						// $baseurl = $url->out(false);
 						$actionType = isset ( $action ['type'] ) ? ( string ) $action ['type'] : '';
-						$actionicon = isset ( $action ['icon'] ) ? ( string ) $action ['icon'] : '';
+						$actionIcon = isset ( $action ['icon'] ) ? ( string ) $action ['icon'] : '';
 						$actionname = ( string ) $action ['name'];
 						$actionlabel_print = isset ( $action ['label'] ) ? ( string ) $action ['label'] : ( string ) $action ['name'];
+						$actionDecoration = isset ( $action ['decoration'] ) ? ( string ) $action ['decoration'] : '';
 						$action_permissions = $this->nodeconfiguration [Core\NodeConfKey::ACTION_PERMISSIONS];
-						
+
 						// Allow actions to have type like buttons
-						$actionTypeData = $this->getActionTypeData ( $actionType );
+						$actionTypeData = $this->getActionTypeData ( $actionType, $actionDecoration, $actionIcon);
 						if (! empty ( $action_permissions [$actionname] )) {
 							// print($has_permission);
 							$actionvaluebind = ( string ) $action ['actionvalue'];
@@ -1200,8 +1201,8 @@ class Grid extends Control {
 							// print($location);
 							// Check if the action is to be displayed due to conditional values
 							$label = Core\Language::getString ( $actionlabel_print, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
-							// $icon = ($actionicon == '') ? '' : '<span class="badge badge-info"><i class="icon-'.$actionicon.' icon-white"></i></span>';
-							$iconName = ($actionicon != '') ? $actionicon : ( string ) $actionTypeData ['icon'];
+							// $icon = ($actionIcon == '') ? '' : '<span class="badge badge-info"><i class="icon-'.$actionIcon.' icon-white"></i></span>';
+							$iconName = ($actionIcon != '') ? $actionIcon : ( string ) $actionTypeData ['icon'];
 							// print($iconName.' ' );
 							
 							$iconStyle = '';
@@ -1216,9 +1217,9 @@ class Grid extends Control {
 							} else
 								$actionlabel = ($iconName == '') ? $label : $icon . ' ' . $label;
 								
-								// $tooltip = ($actionicon == '') ? '' : 'rel="tooltip" data-placement="top" data-original-title="'.$label.'"';
+								// $tooltip = ($actionIcon == '') ? '' : 'rel="tooltip" data-placement="top" data-original-title="'.$label.'"';
 							$tooltip = ($iconName == '') ? '' : 'rel="tooltip" data-placement="top" title="' . $label . '"';
-							// $tooltipdiv = ($actionicon == '') ? '' :'<div class="tooltip fade top in" style="top: 5px; left: 221.5px; display: block; "><div class="tooltip-arrow"></div><div class="tooltip-inner">'.$label.'</div></div>';
+							// $tooltipdiv = ($actionIcon == '') ? '' :'<div class="tooltip fade top in" style="top: 5px; left: 221.5px; display: block; "><div class="tooltip-arrow"></div><div class="tooltip-inner">'.$label.'</div></div>';
 							$tooltipdiv = '';
 							
 							if ($cond_fieldvalue == $action_condvalue || $conditionTrue == 1) {
@@ -1314,34 +1315,50 @@ class Grid extends Control {
 			}
 		}
 	}
-	private function getActionTypeData($actionType) {
+	private function getActionTypeData($actionType, $actionDecoration, $actionIcon) {
 		$actionTypeData = array ();
+
 		switch ($actionType) {
 			case 'download' :
+				$icon = ($actionIcon == '') ? 'cloud-download' : $actionIcon;
+				$decoration = ($actionDecoration == '') ? 'success' : $actionDecoration;
 				$actionTypeData = array (
-						'icon' => 'cloud-download',
+						'icon' => $icon,
 						'icon-color' => 'icon-white',
 						'icon-only' => false,
-						'class' => 'btn btn-success' 
+						'class' => 'btn btn-'.$decoration 
 				);
 				break;
 			case 'execute' :
+				$icon = ($actionIcon == '') ? 'play' : $actionIcon;
+				$decoration = ($actionDecoration == '') ? 'primary' : $actionDecoration;
 				$actionTypeData = array (
-						'icon' => 'play',
-						'icon-color' => 'icon-white',
-						'icon-only' => false,
-						'class' => 'btn btn-primary' 
-				);
-				break;
+					'icon' => $icon,
+					'icon-color' => 'icon-white',
+					'icon-only' => false,
+					'class' => 'btn btn-'.$decoration 
+			);
+			break;
+			case 'submit' :
+				$icon = $actionIcon;
+				$decoration = ($actionDecoration == '') ? 'primary' : $actionDecoration;
+				$actionTypeData = array (
+					'icon' => $icon,
+					'icon-color' => 'icon-white',
+					'icon-only' => false,
+					'class' => 'btn btn-'.$decoration 
+			);
+			break;
 			default :
 				$actionTypeData = array (
-						'icon' => '',
+						'icon' => $actionIcon,
 						'icon-color' => 'icon-black',
 						'icon-only' => true,
 						'class' => '' 
 				);
 				break;
 		}
+
 		return $actionTypeData;
 	}
 	/**
@@ -1674,7 +1691,7 @@ class Grid extends Control {
 		$params ['isPageable'] = $this->pageable;
 		$params ['pageSize'] = $this->pagesize;
 		$params ['pageCurrent'] = $this->page;
-		$params ['pageTotal'] = ($this->pagesize != 0) ? ( int ) ($this->total / $this->pagesize) + 1 : 1;
+		$params ['pageTotal'] = ($this->pagesize != 0) ? ( int ) ceil($this->total / $this->pagesize) : 1;
 		$params ['recordsTotal'] = ( int ) ($this->total);
 		$params ['globalActions'] = $globalActions;
 		$params ['exportable'] = $this->exportable;
