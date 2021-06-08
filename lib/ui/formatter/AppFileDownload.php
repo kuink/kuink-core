@@ -40,7 +40,7 @@ class AppFileDownload extends Formatter {
 
 		$contextId = \Kuink\Core\ProcessOrchestrator::getContextId ();
 		$imgHtml = '<img src="stream.php?idcontext=' . $contextId . '&type=app_file&guid=' . $guid . '" class="'.$class.'" style="'.$style.'"/>';
-		$returnHtml = '<table border="0" style="border: none;"><tr><td valign="top">' . $imgHtml . '</td></tr></table>';
+		$returnHtml = '<table border="0" style="border: none;"><tr><td valign="top" style="display: flex">' . $imgHtml . '</td></tr></table>';
 		
 		return $returnHtml;
 	}
