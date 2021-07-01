@@ -34,7 +34,8 @@ class FormProperty {
 	const TYPE = 'type';
 	const INFER = 'infer';
 	const TABS = 'tabs'; // The tabs position top | left | right
-	const BUTTONS_POSITION = 'buttonsposition'; // The tabs position top |bottom | both
+	const BUTTONS_POSITION = 'buttonsposition'; // The tabs position top | bottom | both
+	const BUTTONS_ALIGN = 'buttonsalign'; // The buttons align left | center | right
 	const PERSIST = 'persist'; // persist the data of the form through screens
 }
 
@@ -54,6 +55,7 @@ class FormPropertyDefaults {
 	const INFER = 'false';
 	const TABS = 'top';
 	const BUTTONS_POSITION = 'bottom';
+	const BUTTONS_ALIGN = 'left';
 	const PERSIST = 'false';
 }
 
@@ -118,6 +120,7 @@ class FieldProperty {
 	const VALIDATE = 'validate';
 	const ALLOW_DELETE = 'allowdelete';
 	const CLOSE = 'close';	
+	const POSITION = 'position';	
 }
 
 /**
@@ -181,6 +184,7 @@ class FieldPropertyDefaults {
 	const VALIDATE = 'true';
 	const ALLOW_DELETE = 'false';	
 	const CLOSE = 'false';	
+	const POSITION = 'left';	
 }
 
 /**
@@ -256,6 +260,7 @@ class Form extends Control {
 	var $rulesClient; // Array to hold client side rules (dynamic rules)
 	var $rulesServer; // Array to hold server side rules (dynamic rules)
 	var $buttonsPosition; // Position of the button group top | bottom | both
+	var $buttonsAlign; // Alignment of the button group left | center | right
 	var $defaultData; // Form default data
 	var $postData; // Form post data
 	function __construct($nodeconfiguration, $xml_definition) {
@@ -547,6 +552,7 @@ class Form extends Control {
 		$attributes [FieldProperty::VALIDATE] = $this->getProperty ( $id, FieldProperty::VALIDATE, false, FieldPropertyDefaults::VALIDATE, $formfield );
 		$attributes [FieldProperty::ALLOW_DELETE] = $this->getProperty($id, FieldProperty::ALLOW_DELETE, false, FieldPropertyDefaults::ALLOW_DELETE, $formfield);
 		$attributes [FieldProperty::CLOSE] = $this->getProperty($id, FieldProperty::CLOSE, false, FieldPropertyDefaults::CLOSE, $formfield);
+		$attributes [FieldProperty::POSITION] = $this->getProperty($id, FieldProperty::POSITION, false, FieldPropertyDefaults::POSITION, $formfield);
 		
 		return $attributes;
 	}
@@ -766,6 +772,7 @@ class Form extends Control {
 		$title = $this->getProperty ( $this->name, FormProperty::TITLE, false, FormPropertyDefaults::TITLE );
 		
 		$this->buttonsPosition = $this->getProperty ( $this->name, FormProperty::BUTTONS_POSITION, false, FormPropertyDefaults::BUTTONS_POSITION );
+		$this->buttonsAlign = $this->getProperty ( $this->name, FormProperty::BUTTONS_ALIGN, false, FormPropertyDefaults::BUTTONS_ALIGN );
 		
 		if ($visible != 'true')
 			return;
@@ -1361,6 +1368,7 @@ class Form extends Control {
 		$params ['form'] = $this->form;
 		$params ['tabs'] = $this->tabs;
 		$params ['buttonsPosition'] = $this->buttonsPosition;
+		$params ['buttonsAlign'] = $this->buttonsAlign;
 		$params ['hasTabs'] = (count($this->tabs) > 1); //If there is only one tab, don't show the headers
 		$params ['tabsPosition'] = $this->getProperty ( $this->name, FormProperty::TABS, false, FormPropertyDefaults::TABS );
 		$params ['fields'] = $this->fields;
