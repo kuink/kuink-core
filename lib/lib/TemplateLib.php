@@ -68,12 +68,15 @@ class TemplateLib {
 		$application = (trim ( $nameParts [0] ) == 'this') ? $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] : trim ( $nameParts [0] );
 		$process = (trim ( $nameParts [1] ) == 'this') ? $this->nodeconfiguration [\Kuink\Core\NodeConfKey::PROCESS] : trim ( $nameParts [1] );
 		$templateName = trim ( $nameParts [2] );
-		
+
 		$lang = isset ( $params [1] ) ? $params [1] : $KUINK_APPLICATION->getLang ();
 		$data = $params [2];
 		
+
+
 		// Read the template file
 		$nodeManager = new \Kuink\Core\NodeManager ( $application, $process, 'templates', $templateName . '.' . $lang );
+
 		
 		// check if the file exists, else try to open in portuguese
 		if (! $nodeManager->exists ())
@@ -107,7 +110,7 @@ class TemplateLib {
 				// If template isset then get the template from smarty
 				if ($template) {
 					$layout = Layout::getInstance ();
-					$parsedValue = $layout->getApplicationTemplate ( $application, $process, $templateName, $data );
+					$parsedValue = $layout->getApplicationTemplate ( $application, $process, $template, $data );
 				}
 				else {
 					$eval = new \Kuink\Core\EvalExpr ();
@@ -115,7 +118,6 @@ class TemplateLib {
 					foreach ( $data as $key => $value ) {
 						$cleanedData [$key] = ($value === null) ? '' : $value;
 					}
-					
 					$parsedValue = $eval->e ( $keyValue, $cleanedData, FALSE, TRUE, FALSE ); // Eval and return a value without ''
 					$parsedValue = str_replace('\"','"',$parsedValue); //To prevent bad urls on hyperlinks
 				}
