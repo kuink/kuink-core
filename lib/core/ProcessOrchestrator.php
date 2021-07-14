@@ -281,15 +281,19 @@ class ProcessOrchestrator {
 		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();
 		
 		// Check if the node is already in the stack with the same RWX or IMPERSONATE
+		//kuink_mydebug('Node:', $node->application.'|'.$node->process.'|'.$node->node);
 		$found = - 1;
     $foundNode = null;
     if (isset($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->stack))
       foreach ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->stack as $item => $stackNode ) {
+				//kuink_mydebug('Node:', $stackNode->application.'|'.$stackNode->process.'|'.$stackNode->node);
         if ($stackNode->application == $node->application && $stackNode->process == $node->process && $stackNode->node == $node->node) {
           $found = $item;
           break;
         }
       }
+		
+		
 		if ($found != - 1) {
 			// Remove all the nodes from the found
 			$count = count ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId]->stack );

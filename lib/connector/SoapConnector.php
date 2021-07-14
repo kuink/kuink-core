@@ -94,13 +94,17 @@ class NTLMSoapClient extends \SoapClient
     	curl_setopt($this->ch, CURLINFO_HEADER_OUT, true);
     	
     	$KUINK_TRACE[] = 'Request: ' . '<pre>'.htmlspecialchars($request).'</pre>';
-    
+
+			$performanceStart = microtime(true);    
     	$response = curl_exec($this->ch);
     	$headerData = curl_getinfo($this->ch);
+			$performanceEnd = microtime(true);
 
     	$KUINK_TRACE[] = 'Response: ' . '<pre>'.htmlspecialchars($response).'</pre>';
     	$KUINK_TRACE[] = 'HttpCode: ' . $headerData['http_code'];    	
-    
+			$performanceTime = $performanceEnd - $performanceStart;
+			$KUINK_TRACE[] = 'Execution Time: ' . number_format($performanceTime, 5);
+
     	if ($response === false) {
     		$KUINK_TRACE[] = 'Exception calling webservice';
     		$KUINK_TRACE[] = 'Request: ' . $request;
