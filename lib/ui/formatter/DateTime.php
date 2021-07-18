@@ -124,12 +124,12 @@ class DateTime extends Formatter {
 	function shortWeekDay($value, $params = null) {
 		if ($value == '0' || $value == '-' || $value == '')
 			return '-';
-		return $this->neon_userdate ( $value, '%a' );
+		return $this->kuink_userdate ( $value, '%a' );
 	}
 	function longWeekDay($value, $params = null) {
 		if ($value == '0' || $value == '-' || $value == '')
 			return '-';
-		return $this->neon_userdate ( $value, '%A' );
+		return $this->kuink_userdate ( $value, '%A' );
 	}
 	function weekDayString($value, $params = null) {
 		if ($value == '0' || $value == '-' || $value == '')
@@ -175,7 +175,7 @@ class DateTime extends Formatter {
 	 *        	If true (default) then the leading zero from %I is removed.
 	 * @return string the formatted date/time.
 	 */
-	private function neon_userdate($date, $format = '', $timezone = 99, $fixday = true, $fixhour = true) {
+	private function kuink_userdate($date, $format = '', $timezone = 99, $fixday = true, $fixhour = true) {
 		global $KUINK_CFG;
 		
 		if (empty ( $format )) {
@@ -382,6 +382,23 @@ class DateTime extends Formatter {
 			$out [] = kuink_get_string ( 'dow_' . $day, $this->nodeconfiguration ['customappname'] );
 		}
 		return implode ( ',', $out );
+	}
+
+	function dateInterval($value, $params) {
+		$interval=array($params['start'], $params['end']);
+		if (count($interval) == 1)
+			return $this->shortDateTime($interval[0]);
+		
+		$startDate = $this->shortDate($interval[0]);
+		$endDate = $this->shortDate($interval[1]);
+
+		$startTime = $this->shortTime($interval[0]);
+		$endTime = $this->shortTime($interval[1]);
+		if ($startDate == $endDate) {
+			return $startDate.' | '.$startTime.' até '.$endTime;
+		} else {
+			return $this->shortDateTime($interval[0]).' até '.$this->shortDateTime($interval[1]);
+		}
 	}
 }
 
