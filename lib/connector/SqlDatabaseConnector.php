@@ -622,6 +622,7 @@ private function encloseIdentifier($identifier) {
 		global $KUINK_TRACE;
 		
 		// print_object($sql);
+		$entity = $params ['_entity'];
 		if (isset($params)) {
 			unset ( $params ['_entity'] );
 			unset ( $params ['_attributes'] );
@@ -662,6 +663,7 @@ private function encloseIdentifier($identifier) {
 		//print_object($sql);
 		//print_object($params);
 
+
 		//Remove unused params from the query to use bind params
 		$bindParams = array();
 		$sqlTmp = $sql;
@@ -669,7 +671,14 @@ private function encloseIdentifier($identifier) {
 			$bindParamRaw = $matches [0];
 			$bindParam = substr($bindParamRaw, -(strlen($bindParamRaw)-1));
 			$bindParams[$bindParam] = ($params[$bindParam] === null) ? $params[$bindParam] : stripslashes($params[$bindParam]);
-			$query->bindValue($bindParam, $bindParams[$bindParam]);
+			$query->bindValue($bindParam, $bindParams[$bindParam]);				
+
+			$errorInfo = $query->errorInfo ();
+			if ($$errorInfo[0] != '') {
+				$KUINK_TRACE [] = 'query bind param error';
+				$KUINK_TRACE [] = $errorInfo [0] . '|' . $errorInfo [1];
+			}
+	
 			$keys=array();
 			if (is_string($bindParam))
 				$keys[] = '/:'.$bindParam.'/';
@@ -2086,29 +2095,50 @@ private function encloseIdentifier($identifier) {
 		return;
 	}
 	function beginTransaction() {
-		$this->connect ();
-		if (! $this->db->inTransaction ()) {
-			$this->db->beginTransaction ();
-			parent::beginTransaction ();
-		}
-		return;
+		global $KUINK_CFG, $KUINK_TRACE;
+
+		if ($KUINK_CFG->useTransactions) {
+			$this->connect ();
+			if (! $this->db->inTransaction ()) {
+				$this->db->beginTransaction ();
+				parent::beginTransaction ();
+				$KUINK_TRACE[] = 'Transactions are enabled... begin transaction';
+			}
+			return;
+		}	else
+			$KUINK_TRACE[] = 'Transactions are disabled... skipping begin';
+
 	}
+
 	function commitTransaction() {
-		$this->connect ();
-		if ($this->db->inTransaction ()) {
-			$this->db->commit ();
-			parent::commitTransaction ();
-		}
+		global $KUINK_CFG, $KUINK_TRACE;
+
+		if ($KUINK_CFG->useTransactions) {		
+			$this->connect ();
+			if ($this->db->inTransaction ()) {
+				$this->db->commit ();
+				parent::commitTransaction ();
+				$KUINK_TRACE[] = 'Transactions are enabled... commit transaction';
+			}
+		} else
+			$KUINK_TRACE[] = 'Transactions are disabled... skipping commit';
 		
 		return;
 	}
+
 	function rollbackTransaction() {
+		global $KUINK_CFG, $KUINK_TRACE;
+
+		if ($KUINK_CFG->useTransactions) {		
 		$this->connect ();
 		if (isset($this->db))
 			if ($this->db->inTransaction ()) {
 				$this->db->rollBack ();
 				parent::rollbackTransaction ();
+				$KUINK_TRACE[] = 'Transactions are enabled... rollback transaction';
 			}
+		} else
+		$KUINK_TRACE[] = 'Transactions are disabled... skipping rollback';
 		
 		return;
 	}

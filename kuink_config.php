@@ -69,6 +69,7 @@ $KUINK_CFG->environment = str_replace ( array (
 ), '', $fileContents );
 
 // If imageRemote is defined, then this location is used to load image instead of local folder
+$KUINK_CFG->useTransactions = $KUINK_BRIDGE_CFG->useTransactions;
 
 switch ($KUINK_CFG->environment) {
 	case 'dev' :
@@ -79,6 +80,7 @@ switch ($KUINK_CFG->environment) {
 		$KUINK_CFG->useGlobalACL = false;
 		$KUINK_CFG->displayNativeErrors = false;
 		$KUINK_CFG->serverTimezone = 'Europe/Lisbon';
+
 		break;
 	case 'test' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
