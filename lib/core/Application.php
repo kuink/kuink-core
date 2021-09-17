@@ -435,7 +435,7 @@ class Application {
 			if ($functionName == null) {
 				$layout = \Kuink\UI\Layout\Layout::getInstance ();
 				$layout->setBaseUrl ( $KUINK_CFG->wwwRoot );
-				$layout->setLogOut ( $KUINK_CFG->auth->user->firstName . ' ' . $KUINK_CFG->auth->user->lastName, $KUINK_CFG->auth->user->id, $KUINK_CFG->auth->sessionKey );
+				$layout->setLogOut ( $KUINK_CFG->auth->user->firstName . ' ' . $KUINK_CFG->auth->user->lastName, $KUINK_CFG->auth->user->id_bridge, $KUINK_CFG->auth->sessionKey );
 			}
 			$runtime = null;
 			if ($functionName == null)

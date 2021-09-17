@@ -353,6 +353,18 @@ class FileLib {
 		}
 	}
 
+	function downloadContent($params) {
+		$content = ($params[0]) ? (string)$params[0] : '';
+		$contentType = ($params[1]) ? (string)$params[1] : 'application/pdf';
+		$fileName = ($params[2]) ? (string)$params[2] : uniqid();
+		ob_clean();
+		$data = base64_decode($content);
+		header('Content-Type: '.$contentType);
+		header('Content-Disposition: attachment; filename='.$fileName);		
+		echo $data;		
+		die();
+	}
+
 	/**
 	* Copy a folder to another destination
 	* @param source : path to original folder under uploadBase/files/
