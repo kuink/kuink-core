@@ -57,6 +57,16 @@ class ActionInstruction extends \Kuink\Core\Instruction {
 
 		return null;
 	}
+
+	static public function getUrl($instManager, $instructionXmlNode) {
+		$utils = new \UtilsLib ( $instManager->nodeConfiguration, null );
+		$actionName = $instManager->executeInnerInstruction ( $instructionXmlNode );
+		$url = $utils->ActionUrl ( array (
+			0 => $actionName 
+	) );
+		return $url;
+	}
+
 }
 
 ?>

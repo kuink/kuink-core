@@ -131,7 +131,7 @@ class TemplateLib {
 		$templateCode = ( string ) $params [0];
 		$data = $params [1];
 		$layout = Layout::getInstance ();
-		$d = $layout->getApplicationTemplate( $templateCode, $data );
+		$d = $layout->expandTemplate($templateCode, $data);
 		return $d;
 	}
 }

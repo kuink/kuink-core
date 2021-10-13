@@ -135,7 +135,7 @@ class DataAccessInstruction extends \Kuink\Core\Instruction {
 		$dataAccess = new \Kuink\Core\DataAccess ( $dataAccessNid, $appName, $processName, $dataSourceName );
 		$dataAccess->setUser($instManager->variables['USER']);
 		$resultset = $dataAccess->execute ( $params, $paramsOperators );
-		
+
 		return $resultset;	
 	}
 }

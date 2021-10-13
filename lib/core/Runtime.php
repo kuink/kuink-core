@@ -182,6 +182,7 @@ class Runtime {
 		$server_info ['appRoot'] = $KUINK_CFG->appRoot;
 		$server_info ['apiUrl'] = $KUINK_CFG->apiUrl;
 		$server_info ['streamUrl'] = $KUINK_CFG->streamUrl;
+		$server_info ['streamFileUrl'] = $KUINK_CFG->streamFileUrl;
 		$server_info ['guestUrl'] = $KUINK_CFG->guestUrl;
 		$server_info ['baseUploadDir'] = $KUINK_CFG->uploadRoot; 
 		$server_info ['baseUploadDirVirtualPrefix'] = $KUINK_CFG->uploadVirtualPrefix; 
@@ -747,7 +748,7 @@ class Runtime {
 				}
 			$html .= '</pre></div>';
 			
-			$html .= '<br/>Process Stack » ';
+			$html .= '<br/>Process Stack » ('.ProcessOrchestrator::getContextCount().') ';
 			$html .= '<a href="javascript:;" onmousedown="if(document.getElementById(\'stack\').style.display == \'none\'){ document.getElementById(\'stack\').style.display = \'block\'; }else{ document.getElementById(\'stack\').style.display = \'none\'; }">Show/Hide</a><br/> ';
 			$html .= '<div id="stack" style="display:none">';
 			$html .= ProcessOrchestrator::getContextStackHtml ( false );

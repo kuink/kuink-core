@@ -125,7 +125,12 @@ class ProcessOrchestrator {
 		// var_dump($newContext);
 		return $newContext;
 	}
-	
+
+	//Get the total number of contexts in use in this session
+	static function getContextCount() {
+		return (isset($_SESSION ['KUINK_CONTEXT']) ? count ( $_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] ) : 0);
+	}
+
 	// If the context does not exists, create one
 	static function prepareContext($baseApplicationName, $contextId = null) {
 		

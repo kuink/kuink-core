@@ -42,7 +42,7 @@ $KUINK_CFG->kuinkRoot = $KUINK_BRIDGE_CFG->kuinkRoot; // 'mod/kuink/';
 //$KUINK_CFG->themeRoot = 'kuink-core/';
 $KUINK_CFG->themeRoot = $KUINK_BRIDGE_CFG->themeRoot;; //defaults to the bridge... let the bridge control the theme
 $KUINK_CFG->apiUrl = $KUINK_CFG->kuinkRoot.'/api.php?idcontext=' . $contextId;
-$KUINK_CFG->streamUrl = $KUINK_CFG->wwwRoot.'stream.php';
+$KUINK_CFG->streamUrl = $KUINK_CFG->kuinkRoot.'/stream.php';
 $KUINK_CFG->streamFileUrl = $KUINK_CFG->streamUrl.'?type=file&guid=';
 $KUINK_CFG->apiCompleteUrl = $wwwroot . '/' . $KUINK_CFG->apiUrl . '&neonfunction=';
 $KUINK_CFG->guestUrl = $wwwroot . '/mod/kuink/auth_guest.php';

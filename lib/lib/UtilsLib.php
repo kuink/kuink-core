@@ -250,6 +250,21 @@ substr ( $charid, 0, 8 ) . $hyphen . substr ( $charid, 8, 4 ) . $hyphen . substr
 		
 		return $out;
 	}
+
+	function filterNotEmpty($params) {
+		$arr = $params [0];
+		$out = array ();
+		
+		foreach ( $arr as $key => $value ) {
+			if ($value !== '' && $key !== '_debug_') {
+				$out [$key] = $value;
+			}
+		}
+		
+		return $out;
+	}
+
+
 	function getMultiSelectedValues($params) {
 		$postdata = $params [0];
 		$field = ( string ) $params [1];

@@ -127,15 +127,19 @@ class Core {
 	 */
 	public function call($function) {
 		global $KUINK_CFG, $KUINK_LAYOUT, $KUINK_TRACE, $KUINK_MANUAL_TRACE, $KUINK_DATABASES, $KUINK_DATASOURCES, $KUINK_TRANSLATION, $KUINK_APPLICATION, $USER;
+		$originalFunction = isset ( $_GET ['neonfunction'] ) ? ( string ) $_GET ['neonfunction'] : '';
 		$function = isset ( $_GET ['neonfunction'] ) ? ( string ) $_GET ['neonfunction'] : '';
+		//Fix
+		$function = str_replace('call:', '', $function);
+
 		$functionParsed = explode ( ',', $function );
 		$idcontext = (isset ( $_GET ['idcontext'] )) ? $_GET ['idcontext'] : null;
 		
 		$bypass = ($_SESSION ['_kuink_api_security_bypass'] === true);
 		// $bypass = true;
 		
-		$validRegisteredAPI = \Kuink\Core\ProcessOrchestrator::validRegisteredAPI ( $function, $idcontext, $bypass );
-		
+		$validRegisteredAPI = \Kuink\Core\ProcessOrchestrator::validRegisteredAPI ( $originalFunction, $idcontext, $bypass );
+	
 		if (! $validRegisteredAPI) {
 			// var_dump(\Kuink\Core\ProcessOrchestrator::getRegisteredAPIs($idcontext));
 			throw new \Exception ( 'No permission to execute API: ' . $function );
@@ -328,6 +332,9 @@ class Core {
 					header ( 'Content-Length: ' . filesize ( $pathName ) );
 					header('Content-Disposition: attachment; filename="'.$fileParts[count($fileParts)-1].'"');
 					readfile ( $pathName );
+					//var_dump($pathName);
+					//var_dump(mime_content_type($pathName));
+					//die();
 					break;				
 		}		
 	}
