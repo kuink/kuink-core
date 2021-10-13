@@ -267,8 +267,9 @@ class FileLib {
 		) );
 		// var_dump($file);
 		// print($CFG->dataRoot.'/'.$file->path.'/'.$file->name);
-		$filename = $KUINK_CFG->uploadRoot . '/' . $file ['path'] . '/' . $file ['name'];
-		// kuink_mydebug('file',$filename);
+		$path = $file['path'];
+		$path = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $path);		
+		$filename = $KUINK_CFG->uploadRoot . '/' . $path . '/' . $file ['name'];
 		if (file_exists($filename))
 			unlink ( $filename );
 		
