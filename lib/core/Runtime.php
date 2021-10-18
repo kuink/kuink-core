@@ -779,13 +779,13 @@ class Runtime {
 			$html .= '</pre>';
 			$html .= '</div>';
 			
-			
+			/*
 			$html .= "<br/>Variables » ";
 			$html .= '<a href="javascript:;" onmousedown="if(document.getElementById(\'vars\').style.display == \'none\'){ document.getElementById(\'vars\').style.display = \'block\'; }else{ document.getElementById(\'vars\').style.display = \'none\'; }">Show/Hide</a><br/> ';
 			$html .= '<div id="vars" style="display:none">';
 			$html .= '<pre class="pre-scrollable"><p>' . var_export ( $this->variables, true ) . '</p></pre>';
 			$html .= '</div>';
-			
+			*/
 			
 			$html .= '<br/>Session Variables » ';
 			$html .= '<a href="javascript:;" onmousedown="if(document.getElementById(\'sess\').style.display == \'none\'){ document.getElementById(\'sess\').style.display = \'block\'; }else{ document.getElementById(\'sess\').style.display = \'none\'; }">Show/Hide</a><br/> ';
