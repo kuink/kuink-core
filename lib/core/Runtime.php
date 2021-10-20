@@ -21,6 +21,8 @@ use Kuink\UI\Layout\Layout;
 use Kuink\Core;
 use Kuink\Core\Exception\ERROR_CODE;
 use Kuink\Core\Exception\GenericException;
+use Kuink\Core\TraceManager;
+use Kuink\Core\TraceCategory;
 
 
 /**
@@ -1382,8 +1384,8 @@ class Runtime {
 		// $local_variables['PARAMS'] = $variables['PARAMS'];
 		$local_variables ['PARAMS'] = $param_values;
 		
-		$KUINK_TRACE [] = "Function Name: " . $function_name;
-		$KUINK_TRACE [] = $param_values;
+		TraceManager::add ( 'Function Name: '.$function_name, TraceCategory::INSTRUCTION, __CLASS__.'::'.__METHOD__ );
+		TraceManager::add ( $param_values, TraceCategory::INSTRUCTION, __CLASS__.'::'.__METHOD__ );
 		
 		// Get the function definition
 		$funct_xmlnode = $nodexml->xpath ( '/Node/Library/Function [@name="' . $function_name . '"]' );

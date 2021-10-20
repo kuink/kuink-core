@@ -12,6 +12,8 @@ class TraceCategory {
 	const GENERAL = 'GENERAL';
 	const CONNECTOR = 'CONNECTOR';
 	const INSTRUCTION = 'INSTRUCTION';
+	const SQL = 'SQL';
+	const ERROR = 'ERROR';
 }
 
 /**
@@ -26,7 +28,7 @@ class TraceManager {
 		
 		$message = ($class == '') ? $message : $class . '::' . $message;
 		
-		$KUINK_TRACE [] = $category . '::' . $message;
+		$KUINK_TRACE[] = $category . '::' . htmlentities($message);
 	}
 }
 

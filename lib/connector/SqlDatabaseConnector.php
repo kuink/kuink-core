@@ -7,7 +7,8 @@
 
 namespace Kuink\Core\DataSourceConnector;
 
-
+use \Kuink\Core\TraceManager;
+use \Kuink\Core\TraceCategory;
 use Kuink\Core\NodeManager;
 use Kuink\Core\NodeType;
 use Kuink\Core\Exception\ParameterNotFound;
@@ -134,8 +135,6 @@ private function encloseIdentifier($identifier) {
 	 * @see \Kuink\Core\DataSourceConnector::insert()
 	 */
 	function insert($params) {
-		global $KUINK_TRACE;
-
 		$this->connect ();
 		
 		$originalParams = $params;
@@ -155,8 +154,7 @@ private function encloseIdentifier($identifier) {
 			$sql = $this->getPreparedStatementInsert ( $params );
 		}
 		
-		$KUINK_TRACE [] = __METHOD__;
-		//$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
 		$this->executeSql ( $sql, $params );
 		
@@ -236,8 +234,6 @@ private function encloseIdentifier($identifier) {
 		return $multilangFieldsArray;
 	}
 	function update($params) {
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		
 		$multilangFieldsArray = $this->handleMultilang ( $params, 2 ); // 2: Update
@@ -252,19 +248,13 @@ private function encloseIdentifier($identifier) {
 			$sql = $this->getPreparedStatementUpdate ( $params );
 		}
 		
-		$KUINK_TRACE [] = __METHOD__;
-		//$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
-		//$KUINK_TRACE [] = $params;
-
-		//kuink_mydebug('Sql', $sql);
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
 		$this->executeSql ( $sql, $params, false, true, true );
 		
 		return $this->lastAffectedRows;
 	}
 	function save($params) {
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		
 		$pk = $this->getParam ( $params, '_pk', false, 'id' );
@@ -277,8 +267,8 @@ private function encloseIdentifier($identifier) {
 		foreach ( $pks as $pk )
 			$allPksPresent = $allPksPresent && isset ( $params [$pk] );
 		
-		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = ($allPksPresent) ? 'Save::Update' : 'Save::Insert';
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
+		TraceManager::add ( ($allPksPresent) ? 'Save::Update' : 'Save::Insert', TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
 		if ($allPksPresent)
 			$result = $this->update ( $params );
@@ -288,8 +278,6 @@ private function encloseIdentifier($identifier) {
 		return $result;
 	}
 	function delete($params) {
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
 		$acl = ($aclPermissions == 'false') ? 'false' : 'true';
@@ -300,8 +288,7 @@ private function encloseIdentifier($identifier) {
 			$sql = $this->getPreparedStatementDelete ( $params );
 		}
 		
-		$KUINK_TRACE [] = __METHOD__;
-		//$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
 		$canDelete = true;
 		if ($acl == 'true') {
@@ -328,12 +315,9 @@ private function encloseIdentifier($identifier) {
 	 * For compatibility
 	 */
 	function execute($params) {
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		$sql = $this->prepareStatementToExecute ( $params );
-		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $sql;
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
 		$records = $this->executeSql ( $sql, $params );
 		return $records;
@@ -344,14 +328,11 @@ private function encloseIdentifier($identifier) {
 	 * For compatibility
 	 */
 	function sql($params) {
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		
 		$sql = $this->prepareStatementToExecute ( $params );
 		
-		$KUINK_TRACE [] = __METHOD__;
-		//$KUINK_TRACE [] = $sql;
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
 		$records = $this->executeSql ( $sql, $params );
 		return $records;
@@ -362,8 +343,6 @@ private function encloseIdentifier($identifier) {
 	 * For compatibility
 	 */
 	function sqlPaginated($params) {
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		
 		$pageSize = 10;
@@ -399,7 +378,7 @@ private function encloseIdentifier($identifier) {
 		// print_object($pageNum);print_object($pageSize);
 		// kuink_mydebug($pagenum, $pagesize);
 		
-		$KUINK_TRACE [] = "COUNT SQL: " . $countSql;
+		TraceManager::add ( "COUNT SQL: " . $countSql, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );
 		
 		// get the total number of records
 		$total = $this->executeSql ( $countSql, $params ); // $DB->count_records_sql($count_sql);
@@ -408,8 +387,7 @@ private function encloseIdentifier($identifier) {
 			$totalRecords = (int)$totalItem['_total'];
 		}
 		
-		
-		$KUINK_TRACE [] = "TOTAL RECORDS: " . $totalRecords;
+		TraceManager::add ( "TOTAL RECORDS: " . $totalRecords, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );
 		
 		$limitFrom = ($pageNum) * $pageSize;
 		$limitNum = $pageSize;
@@ -422,7 +400,7 @@ private function encloseIdentifier($identifier) {
 		if ($limitFrom != 0 || $limitNum != 0)
 			$querySql .= ' LIMIT ' . $limitFrom . ',' . $limitNum;
 		
-		$KUINK_TRACE [] = "SQL: " . $querySql;
+		TraceManager::add ( 'SQL: ' . $querySql, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );		
 		$records = $this->executeSql ( $querySql, $params );
 		
 		// Preparing the output
@@ -480,8 +458,6 @@ private function encloseIdentifier($identifier) {
 	
 	function load($params, $operators=null) {
 		// kuink_mydebug(__CLASS__, __METHOD__);
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		
 		$lang = ( string ) $this->getParam ( $params, '_lang', false, '' );
@@ -496,8 +472,7 @@ private function encloseIdentifier($identifier) {
 		if ($this->db->inTransaction ())
 			$sql .= ' FOR UPDATE';
 		
-		$KUINK_TRACE [] = __METHOD__;
-		//$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );	
 		
 		$records = $this->executeSql ( $sql, $params, true, false );
 		$record = (count ( $records ) > 0) ? $records [0] : null;
@@ -561,8 +536,6 @@ private function encloseIdentifier($identifier) {
 		return $records;
 	}
 	function getAll($params, $operators=null) {
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		
 		$pageNum = $this->getParam ( $params, '_pageNum', false, 0 );
@@ -593,14 +566,11 @@ private function encloseIdentifier($identifier) {
 				$totalRecords = ( int ) $total;
 		}
 		
-		$KUINK_TRACE [] = __METHOD__;
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );	
 		if ($pageNum != 0 || $pageSize != 0) {
-			$KUINK_TRACE [] = 'CountSql';
-			$KUINK_TRACE [] = $countSql;
-			$KUINK_TRACE [] = 'Total: ' . $totalRecords;
+			TraceManager::add ( 'CountSQL: '.$countSql, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );	
+			TraceManager::add ( 'Total: '.$totalRecords, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );	
 		}
-		
-		//$KUINK_TRACE [] = $sql;
 		
 		$records = $this->executeSql ( $sql, $params );
 		if ($pageNum != 0 || $pageSize != 0) {
@@ -619,8 +589,6 @@ private function encloseIdentifier($identifier) {
 	 * $notSelect - For Sql Server error on update without $query->nextRowset();
 	 */
 	private function executeSql($sql, $params, $ignoreNulls = false, $allowEmptyParams = true, $notSelect=false) {
-		global $KUINK_TRACE;
-		
 		// print_object($sql);
 		$entity = $params ['_entity'];
 		if (isset($params)) {
@@ -652,8 +620,8 @@ private function encloseIdentifier($identifier) {
 		$query = $this->db->prepare ( $sql );
 
 		if (!$query) {
-			$KUINK_TRACE [] = 'Database error';
-			$KUINK_TRACE [] = $sql;
+			TraceManager::add ( 'Database error', TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );	
+			TraceManager::add ( $sql, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );	
 			throw new \Exception ( 'Error preparing query ');
 		}
 		//if ($query === FALSE)
@@ -675,8 +643,8 @@ private function encloseIdentifier($identifier) {
 
 			$errorInfo = $query->errorInfo ();
 			if ($$errorInfo[0] != '') {
-				$KUINK_TRACE [] = 'query bind param error';
-				$KUINK_TRACE [] = $errorInfo [0] . '|' . $errorInfo [1];
+				TraceManager::add ( 'Query bind param error', TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
+				TraceManager::add ( $errorInfo [0] . '|' . $errorInfo [1], TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
 			}
 	
 			$keys=array();
@@ -692,9 +660,9 @@ private function encloseIdentifier($identifier) {
 
 		$performanceEnd = microtime(true);
 		$performanceTime = $performanceEnd - $performanceStart;		
-
-		$KUINK_TRACE [] = $this->pdoDebugStrParams($query); //$query->debugDumpParams();
-		$KUINK_TRACE [] = 'SQL Execution - (Time: '. number_format($performanceTime, 5).')';
+		
+		TraceManager::add ( $this->pdoDebugStrParams($query), TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );
+		TraceManager::add ( 'SQL Execution - (Time: '. number_format($performanceTime, 5).')', TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );		
 
 		//var_dump($sql);
 		//var_dump(count($params));
@@ -704,15 +672,14 @@ private function encloseIdentifier($identifier) {
 		
 		// Handle the errors
 		$errorInfo = $query->errorInfo ();
-		//$KUINK_TRACE [] = $errorInfo;
 		//kuink_mydebugObj('ErrorInfo', $errorInfo);
 		//if ($this->type == 'sqlsrv')
 		//	kuink_mydebugObj('ErrorInfo', $errorInfo);
 
 		if ($errorInfo [0] !== '00000' || $errorInfo [1] != 0) {
-			$KUINK_TRACE [] = 'Database error';
-			$KUINK_TRACE [] = $sql;
-			$KUINK_TRACE [] = $errorInfo [0] . '|' . $errorInfo [1];
+			TraceManager::add ( 'Database Error:', TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
+			TraceManager::add ( $sql, TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
+			TraceManager::add ( $errorInfo [0] . '|' . $errorInfo [1], TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
 			throw new \Exception ( 'Internal database error ('.$errorInfo [0].') - '.$errorInfo [1] );
 		}
 
@@ -1001,14 +968,10 @@ private function encloseIdentifier($identifier) {
 	// Returns sql query from xsql
 	// $count - replce select with select count(*) and remove order by
 	private function xsql($instruction, $params, $count = false) {
-		global $KUINK_TRACE;
   	$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
   	$acl = ($aclPermissions == 'false') ? 'false' : 'true';
 		$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::view.all' : $aclPermissions;
 		$tablePrefix = $this->dataSource->getParam ( 'prefix', false, '' );
-		// global $CFG;
-		// global $KUINK_TRACE;
-		// global $DB;
   	$hasGroupBy = false;
   	//Check if this has a xsql query
   	$xsql = $instruction->xpath('./XSql');
@@ -1077,7 +1040,8 @@ private function encloseIdentifier($identifier) {
 			}
 		}
 		$sql = str_replace('{table_prefix}', $tablePrefix , $sql);
-		$KUINK_TRACE[] = $sql;
+		//TraceManager::add ( $sql, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );
+		
 
   	if ($hasGroupBy && $count)
   		$sql = 'SELECT COUNT(*) as _total FROM ('.$sql.') __total';
@@ -1840,7 +1804,6 @@ private function encloseIdentifier($identifier) {
 		return $data;
 	}
 	public function applyEntityChanges($params) {
-		global $KUINK_TRACE;
 		$entityChanges = $this->getEntityChanges ( $params );
 		// print_object($entityChanges);
 		
@@ -1971,7 +1934,8 @@ private function encloseIdentifier($identifier) {
 			
 			// print_object($entity);
 			// print_object($sqlStatement);
-			$KUINK_TRACE [] = $sqlStatement;
+			
+			TraceManager::add ( $sqlStatement, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );
 		}
 		
 		// Add the foreign keys indexes after the table creations to avoid invalid references
@@ -2014,7 +1978,6 @@ private function encloseIdentifier($identifier) {
 	}
 
 	public function getLogicalEntities($params) {
-		global $KUINK_TRACE;
 		$application = ( string ) $params ['application'];
 		$process = isset($params ['process']) ? ( string ) $params ['process'] : null;
 		$node = ( string ) $params ['node'];
@@ -2095,39 +2058,38 @@ private function encloseIdentifier($identifier) {
 		return;
 	}
 	function beginTransaction() {
-		global $KUINK_CFG, $KUINK_TRACE;
+		global $KUINK_CFG;
 
 		if ($KUINK_CFG->useTransactions) {
 			$this->connect ();
 			if (! $this->db->inTransaction ()) {
 				$this->db->beginTransaction ();
 				parent::beginTransaction ();
-				$KUINK_TRACE[] = 'Transactions are enabled... begin transaction';
+				TraceManager::add ( 'Transactions are enabled... begin transaction', TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 			}
 			return;
 		}	else
-			$KUINK_TRACE[] = 'Transactions are disabled... skipping begin';
-
+			TraceManager::add ( 'Transactions are disabled... skipping begin', TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 	}
 
 	function commitTransaction() {
-		global $KUINK_CFG, $KUINK_TRACE;
+		global $KUINK_CFG;
 
 		if ($KUINK_CFG->useTransactions) {		
 			$this->connect ();
 			if ($this->db->inTransaction ()) {
 				$this->db->commit ();
 				parent::commitTransaction ();
-				$KUINK_TRACE[] = 'Transactions are enabled... commit transaction';
+				TraceManager::add ( 'Transactions are enabled... commit transaction', TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 			}
 		} else
-			$KUINK_TRACE[] = 'Transactions are disabled... skipping commit';
+			TraceManager::add ( 'Transactions are disabled... skipping commit', TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
 		return;
 	}
 
 	function rollbackTransaction() {
-		global $KUINK_CFG, $KUINK_TRACE;
+		global $KUINK_CFG;
 
 		if ($KUINK_CFG->useTransactions) {		
 		$this->connect ();
@@ -2135,10 +2097,11 @@ private function encloseIdentifier($identifier) {
 			if ($this->db->inTransaction ()) {
 				$this->db->rollBack ();
 				parent::rollbackTransaction ();
-				$KUINK_TRACE[] = 'Transactions are enabled... rollback transaction';
+				TraceManager::add ( 'Transactions are enabled... rollback transaction', TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 			}
 		} else
-		$KUINK_TRACE[] = 'Transactions are disabled... skipping rollback';
+		TraceManager::add ( 'Transactions are disabled... skipping rollback', TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
+
 		
 		return;
 	}

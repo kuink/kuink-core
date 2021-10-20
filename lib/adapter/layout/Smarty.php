@@ -147,9 +147,6 @@ class Smarty extends \Smarty {
 			$this->display ( 'Modal_' . $modal . '.tpl' );
 		else
 			$this->display ( "Master.tpl" );
-		
-		// $this->assign("parts",$html);
-		// $this->display('html.tpl');
 	}
 
 	public function getString($params, $content, $smarty, &$repeat, $template) {
