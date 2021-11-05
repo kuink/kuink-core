@@ -22,6 +22,7 @@ class AppFileDownload extends Formatter {
 	}
 
 	function small($value, $params = null) {
+		global $KUINK_CFG;
 
 		if (empty ( $value ))
 			return '-';
@@ -32,6 +33,7 @@ class AppFileDownload extends Formatter {
 		$path = isset($params ['path']) ? '/'.( string ) $params ['path'].'/' : '';
 		$style = isset($params ['style']) ? ( string ) $params ['style'] : 'height: 50px';
 		$zoom = isset($params ['zoom']) ? ( string ) $params ['zoom'] : '';
+		$fullUrl = isset($params ['fullUrl']) ? ( string ) $params ['fullUrl'] : 'false';
 		$zoomClass = ($zoom == 'true') ? 'kuinkZoom' : '';
 
 		$guid = $application.'/'.$path.$value.'.'.$ext;
@@ -39,7 +41,11 @@ class AppFileDownload extends Formatter {
 		$class = $zoomClass;
 
 		$contextId = \Kuink\Core\ProcessOrchestrator::getContextId ();
-		$imgHtml = '<img src="stream.php?idcontext=' . $contextId . '&type=app_file&guid=' . $guid . '" class="'.$class.'" style="'.$style.'"/>';
+		$imageUrl = 'stream.php?idcontext=' . $contextId . '&type=app_file&guid=' . $guid;
+		if ($fullUrl == 'true')
+			$imageUrl = $KUINK_CFG->wwwRoot.'/'.$KUINK_CFG->streamUrl.'/'.$imageUrl;
+		
+		$imgHtml = '<img src="' . $imageUrl . '" class="'.$class.'" style="'.$style.'"/>';
 		$returnHtml = '<table border="0" style="border: none;"><tr><td valign="top" style="display: flex">' . $imgHtml . '</td></tr></table>';
 		
 		return $returnHtml;

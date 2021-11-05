@@ -891,7 +891,7 @@ class Runtime {
 			// print($action_name.'::'.$has_permission.'<br/>');
 			// Check action permissions on roles and capabilities
 			$permissions = $node_xml->xpath ( '/Node/Actions/Action[@name="' . $action_name . '"]/Permissions' );
-			// var_dump( $permissions );
+			//kuink_mydebugObj($action_name, $permissions );
 			if (count ( $permissions ) == 0)
 				$has_permission += 1;
 			else
@@ -1542,6 +1542,8 @@ class Runtime {
 							$hasPermissionsLocal = 0;
 					}
 				} else if ($permissionType == 'Role') {
+					//kuink_mydebug($permissionName, $this->nodeconfiguration [NodeConfKey::ROLES] [$permissionName]);
+					//kuink_mydebugObj('Roles', $this->nodeconfiguration [NodeConfKey::ROLES]);
 					if (isset ( $this->nodeconfiguration [NodeConfKey::ROLES] [$permissionName] )) {
 						// The capability is present
 						if ($allowType == 'or')

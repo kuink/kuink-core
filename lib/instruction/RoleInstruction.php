@@ -10,13 +10,15 @@ namespace Kuink\Core\Instruction;
 class RoleInstruction extends \Kuink\Core\Instruction {
 	static public function execute($instManager, $instructionXmlNode) {
 		// Set the role
-        $value = (string) $instManager->executeInnerInstructions( $instructionXmlNode );
+    $value = (string) $instManager->executeInnerInstructions( $instructionXmlNode );
+		//kuink_mydebug('Role', $value);
 
 		$clear = self::getAttribute ( $instructionXmlNode, 'clear', $instManager->variables, false );//$this->get_inst_attr ( $instruction_xmlnode, 'clear', $variables, false );
 		// $node_roles = $nodeconfiguration[NodeConfKey::NODE_ROLES];
 		$roles = $instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::ROLES];
 		
 		$currentStackRoles = \Kuink\Core\ProcessOrchestrator::getNodeRoles ();
+		//kuink_mydebugObj('CurrentStackRoles', $currentStackRoles);
 		
 		if ($clear == 'true') {
 			if ($value == '') { // clear all
@@ -36,14 +38,25 @@ class RoleInstruction extends \Kuink\Core\Instruction {
 			$currentStackRoles [$value] = 1;
 			\Kuink\Core\ProcessOrchestrator::setNodeRoles ( $currentStackRoles );
 		}
-		$actionPermissions = $instManager->runtime->getActionPermissions ( $instManager->runtime->nodeManager->nodeXml );
-		$instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::ROLES] = $roles;
-        $instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::ACTION_PERMISSIONS] = $actionPermissions;
-        $instManager->runtime->nodeconfiguration = $instManager->nodeConfiguration;
 
+		//update the roles 
+		$instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::ROLES] = $roles;
+		$instManager->runtime->nodeconfiguration = $instManager->nodeConfiguration;
+
+		//update the action permissions
+		$actionPermissions = $instManager->runtime->getActionPermissions ( $instManager->runtime->nodeManager->nodeXml );
+		//kuink_mydebugObj('Action Permissions', $actionPermissions);
+		$instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::ROLES] = $roles;
+    $instManager->nodeConfiguration [\Kuink\Core\NodeConfKey::ACTION_PERMISSIONS] = $actionPermissions;
+    $instManager->runtime->nodeconfiguration = $instManager->nodeConfiguration;
+
+		//Rebuild the capabilities
 		$instManager->runtime->buildAllCapabilities (null, null, true);
+
+		//Update the global variables to the new values
 		$instManager->variables['ROLES'] = $instManager->runtime->nodeconfiguration[\Kuink\Core\NodeConfKey::ROLES];
 		$instManager->variables['CAPABILITIES'] = $instManager->runtime->nodeconfiguration[\Kuink\Core\NodeConfKey::CAPABILITIES];		
+
 		return $value;
     }
 }

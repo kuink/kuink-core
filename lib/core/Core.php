@@ -195,7 +195,6 @@ class Core {
 				$file = $guid . '.jpg';
 				$base = $KUINK_CFG->imageRoot . $type . '/';
 
-				var_dump($KUINK_CFG->imageRoot);
 
 				$baseRP = realpath ( $base );
 				$path = realpath ( $base . $file );
