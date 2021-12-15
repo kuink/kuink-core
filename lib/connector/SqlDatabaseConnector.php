@@ -280,6 +280,8 @@ private function encloseIdentifier($identifier) {
 	function delete($params) {
 		$this->connect ();
 		$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
+		$multilang = (string)$this->getParam($params, '_multilang', false, 'false');
+		unset($params['_multilang']);
 		$acl = ($aclPermissions == 'false') ? 'false' : 'true';
 		$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::delete.all' : $aclPermissions;
 		if (isset ( $params ['_sql'] )) {
@@ -306,8 +308,17 @@ private function encloseIdentifier($identifier) {
 		}
 		if ($canDelete)
 			$this->executeSql($sql, $params);
+		
+			$lastAffectedRows = $this->lastAffectedRows;
+		
+		//If multilang, then delete the language records also
+		if ($multilang == 'true') {
+			$entity = (string)$this->getParam($params, '_entity', true);
+			$params['_entity'] = $entity.'_lang';
+			$this->delete($params);
+		}
 
-		return $this->lastAffectedRows;
+		return $lastAffectedRows;
 	}
 	
 	/**
@@ -484,16 +495,21 @@ private function encloseIdentifier($identifier) {
 			// Get the multilang data
 			$paramsMultilang = array ();
 			$paramsMultilang ['_entity'] = $entity . '_lang';
-			$paramsMultilang ['id'] = $record ['id'];
+			$paramsMultilang ['id'] = $record ['_multilang_id'];
+			//kuink_mydebugObj('record', $record);
 			if ($lang != '*') {
 				$paramsMultilang ['lang'] = $lang;
 			}
-			$multilangRecords = $this->getAll ( $paramsMultilang );
 			
+			$multilangRecords = $this->getAll ( $paramsMultilang );
+			//kuink_mydebugObj('entity', $entity);
+			//kuink_mydebugObj('paramsMultilang', $paramsMultilang);
+			//kuink_mydebugObj('multilangRecords', $multilangRecords);
 			$multilangTransformedRecords = $this->transformMultilangData ( $multilangRecords, $lang, $langInline );
-			// print_object($multilangTransformedRecords);
+			//kuink_mydebugObj('multilangTransformedRecords', $multilangTransformedRecords);
 			unset ( $params ['_lang'] );
 			unset ( $params ['_lang_inline'] );
+			unset ( $record ['_multilang_id'] );
 		}
 
 		if (!empty($multilangTransformedRecords)) {
@@ -815,6 +831,10 @@ private function encloseIdentifier($identifier) {
 				$newAttrs [] = 'e.' . trim ( $attr );
 				// print_object($newAttrs);
 			$attributes = implode ( ',', $newAttrs );
+		}
+
+		if ($attributes == '*' && $lang != '') {
+			$attributes = 'e.id as _multilang_id, e.*, l.*';
 		}
 		
   	if ($acl == 'true')

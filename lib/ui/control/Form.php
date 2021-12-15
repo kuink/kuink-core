@@ -825,7 +825,7 @@ class Form extends Control {
 		if ($multilang == 'true') {
 			// load the datasource
 			if (! isset ( $this->datasources ['_lang'] )) {
-				$dataAccess = new \Kuink\Core\DataAccess ( 'getAll' );
+				$dataAccess = new \Kuink\Core\DataAccess ( 'getAll', framework, config );
 				$params ['_entity'] = 'fw_lang';
 				// $params['id_company'] = 1; //Hard coded for now... $variables['USER']['idCompany'];
 				$params ['is_active'] = 1;
