@@ -199,8 +199,6 @@ class DataAccess {
 			$newParams = $params;
 		}
 
-		//kuink_mydebugObj('Params', $params);
-		
 		if ($this->dataAccessXml_domobject != null) {
 			// Execute the DataAcess from the XML definition file
 			try {
@@ -252,6 +250,14 @@ class DataAccess {
 							// var_dump($newParams['_sql']);
 						
 						$connector = $dataSource->connector;
+
+						//kuink_mydebugObj('instruction', $connectorInstruction);
+						/*
+						if ($connectorInstruction == 'Insert') {
+							print_object($newParams);
+							die();
+						}*/
+
 						$records = $connector->$connectorInstruction ( $newParams );
 						// $records = array();
 					}
@@ -262,12 +268,15 @@ class DataAccess {
 			}
 		} else {
 			// Execute the method directly
-			
+
 			$connectorInstruction = $this->directMethod;
 			$dataSource = $KUINK_DATASOURCES [$dataSourceName];
 			if (! (isset ( $dataSource )))
 				throw new \Exception ( 'DataSource ' . $dataSourceName . ' not found. Check for definition in framework.xml, application.xml, or the node it self.' );
 			$connector = $dataSource->connector;
+
+			//kuink_mydebug($connectorInstruction);
+
 			$records = $connector->$connectorInstruction ( $newParams, $operators );
 		}
 		//Set in cache

@@ -288,6 +288,19 @@ class Form extends Control {
 	}
 	
 	/***
+	 * Gets a form field ID attribute. If id is defined then return id else if name is defined it will return the name.
+	 * The goal is to slowly remove the id option from a field and replace it with the name property. But id will prevail over name if both are defined to keep compatibility
+	 * @param $field The field object to get the id
+	 */
+	function getId($field) {
+		$id = (string) $field [FieldProperty::ID];
+		if ($id == '')
+			//return the name instead
+			$id = (string) $field [FieldProperty::NAME];
+		return $id;
+	}	
+
+	/***
 	 * Adds a tab to the form
 	 * @param $id tabid
 	 * @param $label tab label
@@ -790,7 +803,8 @@ class Form extends Control {
 		
 		foreach ( $form->children () as $formfield ) {
 			$type = ( string ) $formfield->getname ();
-			$id = ( string ) $formfield ['id'];
+			//$id = ( string ) $formfield ['id'];
+			$id = $this->getId($formfield);
 			
 			// $field = new FormField($id, $type, $attributes, $options, $skeleton, $skin);
 			$field = $this->expandField ( $formfield, $id, $type );
@@ -1086,7 +1100,8 @@ class Form extends Control {
 		$hasDefault = false;
 		
 		foreach ( $formfield->children () as $button ) {
-			$id = ( string ) $button [FieldProperty::ID];
+			//$id = ( string ) $button [FieldProperty::ID];
+			$id = $this->getId($button);
 			$attributes = $this->getFormfieldAttributes ( $button, $id );
 			
 			$default = ( string ) $attributes [FieldProperty::DEFAULT_BUTTON];
@@ -1098,7 +1113,8 @@ class Form extends Control {
 		}
 		
 		foreach ( $formfield->children () as $button ) {
-			$id = ( string ) $button [FieldProperty::ID];
+			//$id = ( string ) $button [FieldProperty::ID];
+			$id = $this->getId($button);
 			$attributes = $this->getFormfieldAttributes ( $button, $id );
 			$type = ( string ) $attributes [FieldProperty::TYPE];
 			$visible = ( string ) $attributes [FieldProperty::VISIBLE];
@@ -1499,8 +1515,10 @@ class Form extends Control {
 					}
 				if ($numberOfInlineFields > 1)
 					$lastNumberOfInlineFields = $numberOfInlineFields;
-				$fieldId = $fields[$i]['attributes']['id'];
-				$nextFieldId = isset($fields[$i+1]) ? $fields[$i+1]['attributes']['id'] : null;
+				//$fieldId = $fields[$i]['attributes']['id'];
+				$fieldId = $this->getId($fields[$i]['attributes']);
+				//$nextFieldId = isset($fields[$i+1]) ? $fields[$i+1]['attributes']['id'] : null;
+				$nextFieldId = isset($fields[$i+1]) ? $this->getId($fields[$i+1]['attributes']) : null;
 				$this->fields[$fieldId]['attributes']['_rowStart'] = (int)($this->fields[$fieldId]['attributes']['inline'] == 'false');
 				$this->fields[$fieldId]['attributes']['_rowEnd'] = (int) (isset($this->fields[$nextFieldId]) && ($this->fields[$nextFieldId]['attributes']['inline'] == 'false') || ($i == count($fields)-1));
 				$this->fields[$fieldId]['attributes']['_rowLength'] = ($i == count($fields)) ? 1 : $lastNumberOfInlineFields;

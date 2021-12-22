@@ -136,7 +136,7 @@ private function encloseIdentifier($identifier) {
 	 */
 	function insert($params) {
 		$this->connect ();
-		
+
 		$originalParams = $params;
 		
 		if (isset ( $params ['_multilang_fields'] )) {
@@ -153,7 +153,7 @@ private function encloseIdentifier($identifier) {
 		} else {
 			$sql = $this->getPreparedStatementInsert ( $params );
 		}
-		
+
 		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
 		$this->executeSql ( $sql, $params );
@@ -668,7 +668,17 @@ private function encloseIdentifier($identifier) {
 				$keys[] = '/:'.$bindParam.'/';
 			else
 				$keys[] = '/[?]/';
-			$sqlTmp = preg_replace($keys, $bindParams, $sqlTmp, 1, $count);//str_replace($matches[0],"'".$params[$bindParam]."'",$sqlTmp);			
+			$sqlTmpReplaced = preg_replace($keys, $bindParams, $sqlTmp, 1, $count);//str_replace($matches[0],"'".$params[$bindParam]."'",$sqlTmp);			
+
+			/*
+			if ($sqlTmpReplaced == $sqlTmp) {
+				//The replace was not executed... something wrong happened
+				kuink_mydebug('Error', $sqlTmpReplaced);
+				break;
+			}
+			*/
+			
+			$sqlTmp = $sqlTmpReplaced;
 		}
 		$performanceStart = microtime(true);
 
@@ -862,6 +872,9 @@ private function encloseIdentifier($identifier) {
   	$acl = ($aclPermissions == 'false') ? 'false' : 'true';
 		$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::view.all' : $aclPermissions;
 				
+		//kuink_mydebugObj('Params', $params);
+		//die();
+
 		unset ( $params ['_entity'] );
 		unset ( $params ['_attributes'] );
 		unset ( $params ['_sort'] );
@@ -1247,6 +1260,7 @@ private function encloseIdentifier($identifier) {
 		// print_object($entAttr);
 		return $entArray;
 	}
+
 	private function getEntitiesWithChanges($nodeManager, $entities, $drop = false) {
 		$types = $this->getTypeConversion ();
 		$changes = array ();
@@ -1413,6 +1427,7 @@ private function encloseIdentifier($identifier) {
 		
 		return $changes;
 	}
+
 	private function getTypeConversion() {
 		$KUINKSql = array ();
 		
@@ -1484,6 +1499,7 @@ private function encloseIdentifier($identifier) {
 		
 		return $this->getExpandedAttribute ( $attr, $nodeManager, $entityName );
 	}
+
 	private function getExpandedAttribute($attr, $nodeManager, $entityName) {
 		$types = $this->getTypeConversion ();
 		
@@ -1823,6 +1839,7 @@ private function encloseIdentifier($identifier) {
 		
 		return $data;
 	}
+
 	public function applyEntityChanges($params) {
 		$entityChanges = $this->getEntityChanges ( $params );
 		// print_object($entityChanges);
@@ -2063,7 +2080,6 @@ private function encloseIdentifier($identifier) {
 		return $diagram->getUml();
 	}
 
-
 	private function getAttribute($arr, $key, $required, $context, $default = '') {
 		if (! isset ( $arr [$key] ) && $required) {
 			$a = var_export ( $arr, true );
@@ -2072,11 +2088,13 @@ private function encloseIdentifier($identifier) {
 		$value = isset ( $arr [$key] ) ? ( string ) $arr [$key] : $default;
 		return $value;
 	}
+
 	private function checkRequiredAttribute($arr, $key, $entityName) {
 		if (! isset ( $arr [$key] ))
 			throw new ParameterNotFound ( __CLASS__, $entityName, $key );
 		return;
 	}
+
 	function beginTransaction() {
 		global $KUINK_CFG;
 
