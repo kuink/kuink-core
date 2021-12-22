@@ -27,6 +27,10 @@
  * 	      </DataAccess>
  *      </Var>
  * 
+ *    Note: In order to access the datasource if we need extra PHP code, like an external library, place
+ *          the code in kuink-core/lib/tools directory
+ *          Include those libraries in the file kuink-core/bootstrap/autoload 
+ *          example: require_once ($KUINK_INCLUDE_PATH . 'lib/tools/zend_libs/autoload.php');
  */
 
 
@@ -96,6 +100,9 @@ class SampleConnector extends \Kuink\Core\DataSourceConnector{
     $entity = (string)$this->getParam($params, '_entity', true); //_entity attribute is required
     $id = (string)$this->getParam($params, 'id', true); //id attribute is required
     \Kuink\Core\TraceManager::add ( 'Loading id:'.$id.'  on entity:'.$entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );  	
+    
+    //Returning a sample array
+    return array('id'=>1,'name'=>'Sample 1');
   }
   
   /**
