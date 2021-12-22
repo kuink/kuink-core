@@ -657,6 +657,9 @@ private function encloseIdentifier($identifier) {
 			$bindParams[$bindParam] = ($params[$bindParam] === null) ? $params[$bindParam] : stripslashes($params[$bindParam]);
 			$query->bindValue($bindParam, $bindParams[$bindParam]);				
 
+			//Hack to prevent that params with ':' character create an infinite loop here
+			$bindParams[$bindParam] = str_replace(':', '§§§§§§§§', $bindParams[$bindParam]);
+
 			$errorInfo = $query->errorInfo ();
 			if ($$errorInfo[0] != '') {
 				TraceManager::add ( 'Query bind param error', TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
