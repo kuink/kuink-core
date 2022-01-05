@@ -261,6 +261,49 @@ abstract class Control {
 		return $value;
 	}
 	
+	/*
+	 * This function will look for any child elements given the $elementName 
+	 * 
+	 * @param    string  $elementName The element name to search the attribute
+	 * @param    bool		 $mandatory The attribute is mandatory
+	 * @param    object  $xml The root xmlDefinition
+ 	 * @return   string		the inner element xml
+	 */
+	protected function getInnerElement($elementName, $mandatory=false, $xml=null) {
+		$innerElementXmlCollection = $xml->xpath ( './'.$elementName);
+		$innerElementXml = $innerElementXmlCollection[0];
+		
+		if (!isset($innerElementXml) && $mandatory)
+			throw new \Exception ( $this->type . '->' . $this->name . ': Required xml element &lt;' . $elementName . '/&gt; not found.' );		
+
+		return $innerElementXml;
+	}
+
+	/*
+	 * This function will look for any child elements given the $elementName and retrieve the $attributeName
+	 * 
+	 * @param    string  $elementName The element name to search the attribute
+	 * @param    string  $attributeName The attribute name to get the value
+	 * @param    bool		 $mandatory The attribute is mandatory
+	 * @param    string	 $default The attribute default value
+	 * @param    object  $xml The root xmlDefinition* 
+ 	 * @return   string		the attribute value
+	 */
+	protected function getInnerElementAttribute($elementName, $attributeName, $mandatory=false, $default='', $xml=null) {
+		$innerElementXmlCollection = $xml->xpath ( './'.$elementName);
+		$innerElementXml = $innerElementXmlCollection[0];
+		
+		if (!isset($innerElementXml) && $mandatory)
+			throw new \Exception ( $this->type . '->' . $this->name . ': Required xml element &lt;' . $elementName . '/&gt; not found.' );		
+
+		if (!isset($innerElementXml[$attributeName]) && $mandatory)
+			throw new \Exception ( $this->type . '->' . $this->name . ': Required xml element &lt;'.$elementName.'/&gt; attribute::'.$attributeName.' not found.' );
+
+		$attributeValue = isset($innerElementXml[$attributeName]) ? (string)$innerElementXml[$attributeName] : $default;
+
+		return $attributeValue;
+	}
+
 	/**
 	 * Loads a datasource only once and store it in datasources property
 	 * 
