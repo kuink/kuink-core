@@ -1,10 +1,28 @@
 <?php
+
+// This file is part of Kuink Application Framework
+//
+// Kuink Application Framework is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Kuink Application Framework is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
+
+namespace Kuink\Core\DataSourceConnector;
+
 /*
  * This file is a sample file for a connector
  * 
  * To use it:
- *    Change the classname
- *    Place it in the parent directory
+ *    Copy this file and paste it in the same directory with the name changed to the new connector name
+ *    Change the classname to the new connector name
  * 
  *    Create a datasource for it in either:
  *      - framework.xml (file in the root of kuink-apps for a framework wide datasource)
@@ -32,15 +50,6 @@
  *          Include those libraries in the file kuink-core/bootstrap/autoload 
  *          example: require_once ($KUINK_INCLUDE_PATH . 'lib/tools/zend_libs/autoload.php');
  */
-
-
-namespace Kuink\Core\DataSourceConnector;
-
-/**
- * Description of SampleConnector
- *
- * @author paulo.tavares
- */
 class SampleConnector extends \Kuink\Core\DataSourceConnector{
   var $type;   //To hold the config value of type from the datasource xml
   var $sample; //The object holding the connection
@@ -58,7 +67,7 @@ class SampleConnector extends \Kuink\Core\DataSourceConnector{
   
   /**
    * Inserts a record in a datasource using this connector
-   * @param    array  $params The params that are passed to insert an entity record
+   * @param  array  $params The params that are passed to insert an entity record
    */
   function insert($params) {
     $this->connect();
@@ -69,7 +78,7 @@ class SampleConnector extends \Kuink\Core\DataSourceConnector{
 
   /**
    * Updates a record in a datasource using this connector
-   * @param    array  $params The params that are passed to update an entity record
+   * @param  array  $params The params that are passed to update an entity record
    */
   function update($params) {
   	$this->connect();
