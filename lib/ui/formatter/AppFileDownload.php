@@ -36,7 +36,10 @@ class AppFileDownload extends Formatter {
 		$fullUrl = isset($params ['fullUrl']) ? ( string ) $params ['fullUrl'] : 'false';
 		$zoomClass = ($zoom == 'true') ? 'kuinkZoom' : '';
 
-		$guid = $application.'/'.$path.$value.'.'.$ext;
+		$guid = $application.'/'.$path.$value;
+		if($ext != '') {
+			$guid .= '.' . $ext;
+		}
 
 		$class = $zoomClass;
 
