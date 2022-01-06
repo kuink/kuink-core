@@ -13,6 +13,7 @@ abstract class DataSourceConnector {
 	var $user; //The user performing this request	
 	function __construct($dataSource) {
 		$this->dataSource = $dataSource;
+
 	}
 	function getParam($params, $paramName, $paramRequired = false, $paramDefault = '') {
 		if (! isset ( $params [$paramName] ) && $paramRequired)
@@ -20,6 +21,7 @@ abstract class DataSourceConnector {
 		
 		return (isset ( $params [$paramName] ) ? $params [$paramName] : $paramDefault);
 	}
+
 	abstract function connect();
 	abstract function insert($params);
 	abstract function update($params);
