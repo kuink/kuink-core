@@ -123,6 +123,7 @@ class SampleConnector extends \Kuink\Core\DataSourceConnector{
 
     $entity = (string)$this->getParam($params, '_entity', true); //_entity attribute is required
     \Kuink\Core\TraceManager::add ( 'Getting all records from entity:'.$entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );  	
+    return array(array('id'=>1,'name'=>'Sample 1'), array('id'=>2,'name'=>'Sample 2'));
   }  
 
   /**

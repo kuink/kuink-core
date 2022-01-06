@@ -66,6 +66,38 @@ abstract class Instruction {
 		$KUINK_MANUAL_TRACE [] = $msg;
 	}
 
+	/*
+	 * This function will look for any child elements given the $elementName 
+	 * 
+	 * @param    string  $elementName The element name to search the attribute
+	 * @param    bool		 $mandatory The attribute is mandatory
+	 * @param    object  $xml The root xmlDefinition
+ 	 * @return   string		the inner element xml
+	 */
+	static function getInnerElements($elementName, $mandatory=false, $xml=null) {
+		$innerElementXmlCollection = $xml->xpath ( './'.$elementName);
+		
+		if (!isset($innerElementXmlCollection) && $mandatory)
+			throw new \Exception ( ': Required xml element &lt;' . $elementName . '/&gt; not found.' );		
+
+		return $innerElementXmlCollection;
+	}	
+
+	/*
+	 * This function will look for any child elements given the $elementName 
+	 * 
+	 * @param    string  $elementName The element name to search the attribute
+	 * @param    bool		 $mandatory The attribute is mandatory
+	 * @param    object  $xml The root xmlDefinition
+ 	 * @return   string		the inner element xml
+	 */
+	static function getInnerElement($elementName, $mandatory=false, $xml=null) {
+		$innerElementXmlCollection = self::getInnerElements($elementName, $mandatory, $xml);
+		$innerElementXml = isset($innerElementXmlCollection[0]) ? $innerElementXmlCollection[0] : null;
+
+		return $innerElementXml;
+	}	
+
 	abstract static public function execute($instManager, $instructionXmlNode);
 }
 

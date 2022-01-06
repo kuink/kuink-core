@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 
-
 namespace Kuink\Core\Instruction;
 
 /**
@@ -76,7 +75,7 @@ class SampleInstruction extends \Kuink\Core\Instruction {
 		$foundMatch = false;
 
 		//Get all branches from the xml 
-		$branchsXml = $instructionXmlNode->xpath ( './/Branch' );
+		$branchsXml = self::getInnerElements('Branch', true, $instructionXmlNode);
 
 		foreach($branchsXml as $branchXml) {
 			//Get branch value attribute
@@ -93,10 +92,14 @@ class SampleInstruction extends \Kuink\Core\Instruction {
 		}
 
 		if (!$foundMatch) {
-			//Then no match found so execute the default branch..
-
+			//Then no match found so execute the default branch...
+			
 			//It's your turn now!
 			//Get the default branch and execute the inner instructions
+			$defaultXml = self::getInnerElement('Default', false, $instructionXmlNode);
+			//Execute the inner instructions only if Default branch is supplied
+			if ($defaultXml)
+				$result = $instManager->executeInnerInstruction ( $defaultXml );
 		}
 
 		//Returning the result back to the caller
