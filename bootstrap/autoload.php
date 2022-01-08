@@ -25,6 +25,12 @@ spl_autoload_register(function ($class) {
       include_once $filename;
     }
 
+    // Kuink::lib extensions
+    foreach ( glob ( $KUINK_INCLUDE_PATH . 'lib/lib/extensions/*.php' ) as $filename ) {
+      include_once $filename;
+    }
+
+
     // Kuink::connectors
     foreach ( glob ( $KUINK_INCLUDE_PATH . 'lib/connector/*.php' ) as $filename ) {
       require_once $filename;
