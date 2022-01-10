@@ -1054,8 +1054,13 @@ private function encloseIdentifier($identifier) {
   					$sql .= $this->xparse($xinst, 'HAVING', 'HAVING 1=1', 'XCondition', $params);
   					break;
   				case 'XOrderBy':
-  					$sql .= ($count) ? '' : $this->xparse($xinst, 'ORDER BY', '', 'XOrder', $params);
-  					break;
+						//For compatibility mode try to find XORDER, if not then go and find XCondition
+						$orderBy = $this->xparse($xinst, 'ORDER BY', '', 'XOrder', $params);
+						if (trim($orderBy) == '')
+							//Try to get it from a XCondition instead of a XOrder (Refactor will remove all XOrder and replace by XCondition)
+							$orderBy = $this->xparse($xinst, 'ORDER BY', '', 'XCondition', $params);
+  					$sql .= ($count) ? '' : $orderBy;
+   					break;
   				default:
   					throw new \Exception('Invalid xsql instruction: '.$xinst_name);
   					break;
