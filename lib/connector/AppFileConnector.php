@@ -41,7 +41,7 @@ class AppFileConnector extends \Kuink\Core\DataSourceConnector {
 
     foreach( $_FILES as $type => $file ) {
       if($file ['error'] != 0) {
-        throw new \Exception('Erro a fazer upload do ficheiro (' . $file ['error'] . ').');
+        throw new \Exception('Error uploading file (' . $file ['error'] . ').');
       }
       else if($file ['size'] == 0) {
         $this->msg_manager->add(\Kuink\Core\MessageType::ERROR, 'Ficheiro vazio.' );
@@ -93,11 +93,11 @@ class AppFileConnector extends \Kuink\Core\DataSourceConnector {
 
     try {
       $path = realpath($this->dir . '/' . $entity . '/' . $id);
-      if(strpos($path, $this->dir) === 0) {
+      if(strpos($path, '/app_files/') != 0) {
         $info = $this->setFileInfo($path, $entity);
       }
       else {
-        throw new \Exception('Security exception: id: ' . $id . ' on entity: ' . $entity . 'Path: ' . $path . ' , Dir: ' . $this->dir);
+        throw new \Exception('Security Exception: Loading id: ' . $id . ' on entity: ' . $entity);
       }
     }
     catch(\Exception $e) {
