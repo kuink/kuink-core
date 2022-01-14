@@ -101,7 +101,7 @@ class AppFileConnector extends \Kuink\Core\DataSourceConnector {
       }
     }
     catch(\Exception $e) {
-      \Kuink\Core\TraceManager::add($e->message, \Kuink\Core\TraceCategory::ERROR, __CLASS__);
+      \Kuink\Core\TraceManager::add($e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__);
     }
     
 
