@@ -675,6 +675,7 @@ class FileLib {
 		
 		return $record;
 	}
+	
 	function getFileChecksum($params) {
 		global $KUINK_CFG;
 		
@@ -733,6 +734,7 @@ class FileLib {
 		$contents = $this->directoryFiles ( $pathName );
 		return $contents;
 	}
+
 	function createFileOrDirectory($params) {
 		GLOBAL $KUINK_CFG;
 		
@@ -760,6 +762,7 @@ class FileLib {
 		
 		return true;
 	}
+
 	function renameFileOrDirectory($params) {
 		GLOBAL $KUINK_CFG;
 		
@@ -775,6 +778,7 @@ class FileLib {
 		
 		return $result;
 	}
+
 	function deleteFileOrDirectory($params) {
 		GLOBAL $KUINK_CFG;
 		
@@ -792,6 +796,7 @@ class FileLib {
 		unlink ( $pathName );
 		return true;
 	}
+
 	function getFileType($params) {
 		GLOBAL $KUINK_CFG;
 		
@@ -825,6 +830,7 @@ class FileLib {
 			return ('template');
 		return 'error';
 	}
+
 	function getLevel($params) {
 		GLOBAL $KUINK_CFG;
 		
