@@ -88,16 +88,22 @@ class AppFileConnector extends \Kuink\Core\DataSourceConnector {
     $this->connect();
 
     $entity = (string)$this->getParam($params, '_entity', true); 
-    $id = (string)$this->getParam($params, 'id', true);
+    $id = (string)$this->getParam($params, 'id', false);
     \Kuink\Core\TraceManager::add('Loading id: ' . $id . '  on entity: ' . $entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
 
-    $path = realpath($this->dir . '/' . $entity . '/' . $id);
-    if(strpos($path, $this->dir) === 0) {
-      $info = $this->setFileInfo($path, $entity);
+    try {
+      $path = realpath($this->dir . '/' . $entity . '/' . $id);
+      if(strpos($path, $this->dir) === 0) {
+        $info = $this->setFileInfo($path, $entity);
+      }
+      else {
+        throw new \Exception('Error loading id: ' . $id . ' on entity: ' . $entity);
+      }
     }
-    else {
-      throw new \Exception('Error loading id: ' . $id . ' on entity: ' . $entity);
+    catch(\Exception $e) {
+      \Kuink\Core\TraceManager::add($e->message, \Kuink\Core\TraceCategory::ERROR, __CLASS__);
     }
+    
 
     $result = array();
     if($this->evaluateConditions($params, $info, $operators)) {
