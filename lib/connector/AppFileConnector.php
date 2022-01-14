@@ -97,7 +97,7 @@ class AppFileConnector extends \Kuink\Core\DataSourceConnector {
         $info = $this->setFileInfo($path, $entity);
       }
       else {
-        throw new \Exception('Error loading id: ' . $id . ' on entity: ' . $entity);
+        throw new \Exception('Security exception: id: ' . $id . ' on entity: ' . $entity . 'Path: ' . $path . ' , Dir: ' . $this->dir);
       }
     }
     catch(\Exception $e) {
