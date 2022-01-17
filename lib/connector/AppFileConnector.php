@@ -150,13 +150,20 @@ class AppFileConnector extends \Kuink\Core\DataSourceConnector {
     \Kuink\Core\TraceManager::add( 'Getting all entities from entity: ' . $entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
 
     $directory = $this->dir . '/' . $entity;
-    $directories = glob($directory . '/*' , GLOB_ONLYDIR);
     $result = array();
 
-    foreach($directories as $dir) {
-      $params['id'] = $dir;
-      $result[] = $this->setFileInfo($dir, $entity);
-    } 
+    if(strpos($directory, '/app_files/') != 0) {   
+      $directories = glob($directory . '/*' , GLOB_ONLYDIR);
+  
+      foreach($directories as $dir) {
+        $params['id'] = $dir;
+        $result[] = $this->setFileInfo($dir, $entity);
+      }
+
+    }
+    else {
+      throw new \Exception('Security Exception: Getting subentities of ' . $entity);
+    }
 
     return $result;
   }
