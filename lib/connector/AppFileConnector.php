@@ -17,14 +17,14 @@ class AppFileConnector extends \Kuink\Core\DataSourceConnector {
 
   function connect( ) {
     global $KUINK_CFG;
-    $this->type = $this->dataSource->getParam ('type', true ); //Getting datasource param type (true->required; false->notRequired)
-    $this->dir = $KUINK_CFG->uploadRoot. 'app_files';
+    $this->type = $this->dataSource->getParam('type', true ); //Getting datasource param type (true->required; false->notRequired)
+    $this->dir = $KUINK_CFG->uploadRoot . 'app_files';
 
     //Usually want to connect only once per request
     if (!$this->sample) {
       $this->sample = 'Sample object'; //Usually an instance of a class new \Class();
 
-      \Kuink\Core\TraceManager::add( 'Connecting to the datasource type: ' . $this->type, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);  	
+      \Kuink\Core\TraceManager::add('Connecting to the datasource type: ' . $this->type, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);  	
     }
   }
   
@@ -41,7 +41,7 @@ class AppFileConnector extends \Kuink\Core\DataSourceConnector {
 
     foreach( $_FILES as $type => $file ) {
       if($file ['error'] != 0) {
-        throw new \Exception('Erro a fazer upload do ficheiro (' . $file ['error'] . ').');
+        throw new \Exception('Error uploading file (' . $file ['error'] . ').');
       }
       else if($file ['size'] == 0) {
         $this->msg_manager->add(\Kuink\Core\MessageType::ERROR, 'Ficheiro vazio.' );
@@ -84,39 +84,80 @@ class AppFileConnector extends \Kuink\Core\DataSourceConnector {
    * Loads a record from a datasource using this connector
    * @param    array  $params The params that are passed to load an entity record
    */
-  function load($params) {
+  function load($params, $operators=null) {
     $this->connect();
 
     $entity = (string)$this->getParam($params, '_entity', true); 
-    $id = (string)$this->getParam($params, 'id', true);
-    \Kuink\Core\TraceManager::add( 'Loading id: ' . $id . '  on entity: ' . $entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
+    $id = (string)$this->getParam($params, 'id', false);
+    \Kuink\Core\TraceManager::add('Loading id: ' . $id . '  on entity: ' . $entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
 
-    $path = $this->dir . '/' . $entity . '/' . $id;
-    $info = $this->setFileInfo($path);
+    try {
+      $path = realpath($this->dir . '/' . $entity . '/' . $id);
+      if(strpos($path, '/app_files/') != 0) {
+        $info = $this->setFileInfo($path, $entity);
+      }
+      else {
+        throw new \Exception('Security Exception: Loading id: ' . $id . ' on entity: ' . $entity);
+      }
+    }
+    catch(\Exception $e) {
+      \Kuink\Core\TraceManager::add($e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__);
+    }
+    
 
+    $result = array();
+    if($this->evaluateConditions($params, $info, $operators)) {
+      $result = $info;
+    }
     //Returns an array with the file info
-    return $info;
+    return $result;
   }
   
   /**
    * Get all records from a datasource using this connector
    * @param    array  $params The params that are passed to get all records of an entity
    */
-  function getAll($params) {
+  function getAll($params, $operators=null) {
   	$this->connect();
 
     $entity = (string)$this->getParam($params, '_entity', true);
-    \Kuink\Core\TraceManager::add( 'Getting all records from entity: ' . $entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
-
+    \Kuink\Core\TraceManager::add('Getting all records from entity: ' . $entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
     $folder = $this->dir . '/' . $entity;
     $files = array_values(array_diff(scandir($folder), array('..', '.')));
     $result = array();
 
     foreach($files as $file) {
       $params['id'] = $file;
-      $result[] = $this->load($params);
-    
+      $fileData = $this->load($params, $operators);
+
+      if(count($fileData) != 0) {
+        $result[] = $fileData;
+      }
     }
+
+    return $result;
+  }
+
+  /**
+   * Get all records from a datasource using this connector
+   * @param    array  $params The params that are passed to get all records of an entity
+   */
+  function getEntities($params) {
+    $this->connect();
+
+    $entity = (string)$this->getParam($params, '_entity', false, '');
+    
+    \Kuink\Core\TraceManager::add( 'Getting all entities from entity: ' . $entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
+
+    $directory = $this->dir . '/' . $entity;
+    $directories = glob($directory . '/*' , GLOB_ONLYDIR);
+    $result = array();
+
+    foreach($directories as $dir) {
+      $params['id'] = $dir;
+      $result[] = $this->setFileInfo($dir, $entity);
+    } 
+
     return $result;
   }
 
@@ -129,11 +170,10 @@ class AppFileConnector extends \Kuink\Core\DataSourceConnector {
   	return null;
   }
 
-
   /**
     * @param    path the path to the file
     */
-  private function setFileInfo($path){
+  private function setFileInfo($path, $entity) {
     $info = array();
     $pathInfo = pathinfo($path);
     $stat = stat($path);
@@ -144,6 +184,7 @@ class AppFileConnector extends \Kuink\Core\DataSourceConnector {
     }
     else {
       $info['id'] = $pathInfo['basename'];
+      $info['entity'] = $entity;
       $info['dirname'] = $pathInfo['dirname'];
       $info['basename'] = $pathInfo['basename'];
       $info['filename'] = $pathInfo['filename'];
@@ -159,6 +200,46 @@ class AppFileConnector extends \Kuink\Core\DataSourceConnector {
 
     return $info;
   }
-}
 
+  private function evaluateConditions($params, $record, $operators) {
+    $result = true;
+
+    unset($params['_entity']);
+    unset($params['_sort']);
+
+    foreach($operators as $attr => $operator) {
+      switch ($operator) {
+        case '!=':
+          $result = $result && ($record[$attr] != $params[$attr]);
+          break;
+        case '==':
+          $result = $result && ($record[$attr] == $params[$attr]);
+          break;
+        case '<=':
+          $result = $result && ($record[$attr] <= $params[$attr]);
+          break;
+        case '>=':
+          $result = $result && ($record[$attr] >= $params[$attr]);
+          break;
+        case '<':
+          $result = $result && ($record[$attr] < $params[$attr]);
+          break;
+        case '>':
+          $result = $result && ($record[$attr] > $params[$attr]);
+          break;
+      }
+
+      unset($params[$attr]);
+
+      if(!$result)
+        break;
+    }
+
+    foreach($params as $attr => $value) {
+      $result = $result && ($record[$attr] == $params[$attr]);
+    }
+    
+    return $result;
+  }
+}
 ?>
