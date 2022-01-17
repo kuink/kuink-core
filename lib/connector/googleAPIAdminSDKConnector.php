@@ -1,22 +1,63 @@
 <?php
 
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * This file is a sample file for a connector
+ * 
+ * To use it:
+ *    Change the classname
+ *    Place it in the parent directory
+ * 
+ *    Create a datasource for it in either:
+ *      - framework.xml (file in the root of kuink-apps for a framework wide datasource)
+ *      - fw_datasource (table for company global datasource. It will always be loaded for every request in that company)
+ *      - application.xml (file with the application definition to be used in that application context)
+ *      - node.xml (inline with the code on a node. For a specific usage of an application)
+ * 
+ *    Xml Definition to define a datasource using this connector
+ * 
+ * 			<DataSource name="googleAPIAdminSDK" connector="googleAPIAdminSDKConnector">	
+ * 				<Param name="keyfile">credentials/googleAPI.json</Param>
+ *				<Param name="domain">your.domain.com</Param>
+ *				<Param name="delegatedAdmin">admin@your.domain.com</Param>		
+ *				<Param name="scopes">https://www.googleapis.com/auth/admin.directory.user,https://www.googleapis.com/auth/calendar,https://www.googleapis.com/auth/admin.reports.audit.readonly</Param>
+ *			</DataSource>
+ * 
+ * 		Getting the Client ID (https://developers.google.com/identity/protocols/OAuth2ServiceAccount#creatinganaccount)
+ * 		Available scopes list (https://developers.google.com/identity/protocols/googlescopes)
+ * 
+ * 		To configure access to google API
+ * 			1 - Access Google Admin with your domain administrator (https://admin.google.com/)
+ * 			2 - Security > API controls
+ * 
+ *    Dependencies: 
+ * 			This connector depends on:
+ * 				kuink-core/lib/tools/googleClientApi   (https://github.com/googleapis/google-api-php-client)
  */
 
 namespace Kuink\Core\DataSourceConnector;
 
 use Kuink\Core\Exception\NotImplementedException;
 use Kuink\Core\Exception\ParameterNotFound;
+
+
+interface EntityHandlerInterface {
+	public function connect($connector);
+	public function load($params, $operators);
+	public function insert($params);
+	public function update($params);
+	public function delete($params);
+	public function getAll($params, $operators);
+}
+
+
 /**
- * Description of googleAPIAdminSDKConnector
+ * googleAPIAdminSDKConnector is a generic connector for accessing google api based on the project
+ * google-api-php-client
  *
  * @author paulo.tavares
  */
 class googleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
-	var $connector;
-	var $service;
+	var $connector; //The object holding the connection to the service
 	var $accessToken;
 	var $clientID;
 	var $serviceAccountName;
@@ -24,16 +65,21 @@ class googleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 	var $applicationName;
 	var $delegatedAdmin;
 	var $domain;
-	var $scopes;
+	var $scopes; //The scopes that this connection will use
+	var $configEntityHandlers; //Config all the entity handlers
 	
+	function __construct() {
+		$this->configEntityHandlers = [
+			"user" => "googleAPIAdminSDKUserHandler",
+			"calendar.event" => "googleAPIAdminSDKCalendarEventHandler",
+			"audit.activities" => "googleAPIAdminSDKAuditActivitiesHandler"
+		];
+	}
+
+
 	function connect($entity=null) {
-		//$this->service = $this->dataSource->getParam ('service', true );
 		$this->connector = isset ( $this->connector ) ? $this->connector : '';
 		if (! $this->connector) {	
-			//Set common stuff to all connectors
-			//$this->connector->setAccessToken($accessToken);
-			//$accessToken = json_decode(file_get_contents($keyfilePath), true);
-			//var_dump($accessToken);
 			$this->scopes = $this->dataSource->getParam ( 'scopes', true );
 			$scopes = explode(',', $this->scopes);
 			//print_object($scopes);
@@ -52,50 +98,10 @@ class googleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 			$this->connector->useApplicationDefaultCredentials();
 			if ($entity != 'calendar.event')
 				$this->connector->setSubject($this->delegatedAdmin);
-	
-			//Set service specific configuration
-			/*
-			switch ($this->service) {
-				case 'directory':
-					$this->connectDirectoryService();
-					break;
-				case 'calendar':
-					$this->connectCalendarService();
-					break;
-			}*/
 		}
 	}
 
-	function connectDirectoryService() {
-		//Directory Service specific configuration data
-		$this->delegatedAdmin = $this->dataSource->getParam ( 'delegatedAdmin', true );
-		$this->domain = $this->dataSource->getParam ( 'domain', true );
-		$this->connector->useApplicationDefaultCredentials();
-		$this->connector->setSubject($this->delegatedAdmin);
-	}
-
-	function connectCalendarService() {
-		//Directory Service specific configuration data
-		$this->delegatedAdmin = $this->dataSource->getParam ( 'delegatedAdmin', true );
-		//$this->connector->setPrompt('select_account consent');
-		//$this->delegatedAdmin = $this->dataSource->getParam ( 'delegatedAdmin', true );
-		$this->connector->useApplicationDefaultCredentials();
-		//$this->connector->setSubject($this->delegatedAdmin);	
-		//$this->connector->setPrompt('select_account consent');
-		//$this->connector->setSubject($this->delegatedAdmin);
-		//$this->connector->setSubject('gecol-84@api-project-376783883374.in.cscm-lx.pt.iam.gserviceaccount.com');	
-	}
-
-	function getKeyfilePath( ) {
-		global $KUINK_CFG;		
-		//Get the keyfile (credentials) full path
-		$this->keyfile = $this->dataSource->getParam ( 'keyfile', true );
-		if (! file_exists ( $KUINK_CFG->appRoot . '/apps/' . $this->keyfile ))
-			throw new \Exception ( __CLASS__ . ': invalid key file ' . $this->keyfile );
-		return ($KUINK_CFG->appRoot . '/apps/' . $this->keyfile);
-	}
-
-
+	/*
 	function userExists($params) {
 		$this->connect ();
 		
@@ -110,6 +116,7 @@ class googleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 		
 		return 1;
 	}
+	*/
 
 	function load($params) {
 		global $KUINK_TRACE;
@@ -140,6 +147,22 @@ class googleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 		}
 		return $user;
 	}
+
+	/*
+	function load($params, $operators=null) {
+		//From what entity do we want to load the record
+		$entity = (string) $this->getParam ( $params, '_entity', true );
+
+		//Get the handler, because this connector can handle many different entities different from each other
+		$handler = $this->getEntityHandler($entity);
+
+		//Call the melthod from the handler
+		$result = $handler->load($params, $operators);
+
+		//Send the result back to the caller
+		return $result;
+	}
+	*/
 
 	function insert($params) {
 		global $KUINK_TRACE;
@@ -390,6 +413,28 @@ class googleAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
     }
     return $arr;
   }
+
+	/**
+	 * Get the entity Service Object
+	 */
+	private function getEntityHandler($entity) {
+		if (!isset($this->configEntityHandlers[$entity]))
+			throw new \Exception(__CLASS__.': Invalid entity handler for entity:'. $entity);
+
+		$handler = $this->configEntityHandlers[$entity];
+		
+		return new $handler($this, );
+	}
+
+
+	private function getKeyfilePath( ) {
+		global $KUINK_CFG;		
+		//Get the keyfile (credentials) full path
+		$this->keyfile = $this->dataSource->getParam ( 'keyfile', true );
+		if (! file_exists ( $KUINK_CFG->appRoot . '/apps/' . $this->keyfile ))
+			throw new \Exception ( __CLASS__ . ': invalid key file ' . $this->keyfile );
+		return ($KUINK_CFG->appRoot . '/apps/' . $this->keyfile);
+	}
 
 }
 
