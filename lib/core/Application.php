@@ -364,12 +364,14 @@ class Application {
 				$qstrTrace = isset($_GET['trace']) ? $_GET['trace'] : '';
 				$href = $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $qstrId . '&idcontext=' . $_GET ['idcontext'] . '&startuc=' . $node ['startuc'] . '&startnode=' . $node ['startnode'] . '&event=' . $node ['event'] . '&trace=' . $qstrTrace;
 				$hrefNoContext = ($KUINK_CFG->allowMultipleContexts) ? $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $qstrId . '&idcontext=' . uniqid () . '&startuc=' . $node ['startuc'] . '&startnode=' . $node ['startnode'] . '&event=' . $node ['event'] . '&trace=' . $qstrTrace : '';
+				$icon = isset($node['icon']) ? (string)$node['icon'] : '';
 				$menu [] = array (
 						'label' => kuink_get_string ( ( string ) $node ['label'], $this->name ),
 						'target' => isset($this->target) ? kuink_get_string ( ( string ) $node ['target'], $this->target ) : '_self',
 						'href' => $href,
 						'hrefNoContext' => $hrefNoContext,
-						'child' => $childMenus 
+						'child' => $childMenus,
+						'icon' => $icon
 				);
 			}
 			
