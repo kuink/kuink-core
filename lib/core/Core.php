@@ -301,19 +301,19 @@ class Core {
 					if (! empty ( $guid )) {
 						//Guid will be in the form of app/guid.ext
 						$guidParts = explode('/', $guid);
-			
-						$pathName = realpath($KUINK_CFG->uploadRoot.'app_files/'. $guid);
+						$pathNameRaw = $KUINK_CFG->uploadRoot.'/app_files/'. $guid;
+						$pathName = realpath($pathNameRaw);
 						if ($pathName === FALSE) {
 							//The file does not exists
-							$pathName = realpath($KUINK_CFG->uploadRoot.'app_files/'. $guidParts[0]).'/default.jpg';
+							$pathName = realpath($KUINK_CFG->uploadRoot.'/app_files/'. $guidParts[0]).'/default.jpg';
 							if ($pathName === FALSE)
-								$pathName = realpath($KUINK_CFG->uploadRoot.'app_files/'. $guidParts[0]).'/default.png';
+								$pathName = realpath($KUINK_CFG->uploadRoot.'/app_files/'. $guidParts[0]).'/default.png';
 						}
 						//kuink_mydebug('path', $pathName);
 						
 						//Prevent relative paths to get elements from other applications
 						//Check if Someone is trying to get a file out of app_files scope
-						$pos = strpos($pathName, realpath($KUINK_CFG->uploadRoot.'app_files/'));
+						$pos = strpos($pathName, '/app_files/');
 						if ($pos === FALSE) {
 							header ( 'HTTP/1.0 404 not found' );
 							die('Security Exception');
