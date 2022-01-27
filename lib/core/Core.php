@@ -51,10 +51,12 @@ class Core {
 		if ($kuink_session_active != 1 && isset($_GET ['startnode']) && $_GET ['startnode'] != '')
 			redirect ( $KUINK_CFG->wwwRoot, 0 );
 		if (isset($KUINK_CFG->displayNativeErrors) && $KUINK_CFG->displayNativeErrors) {
-			error_reporting(E_ALL);
+			error_reporting(-1);
+			ini_set('display_startup_errors', 1);
 			ini_set('display_errors', 1);
 		} else {
 			error_reporting(0);
+			ini_set('display_startup_errors', 0);
 			ini_set('display_errors', 0);
 		}
 		

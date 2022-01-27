@@ -63,7 +63,7 @@ abstract class Control {
 		$this->skin = ( string ) $this->getProperty ( $this->name, 'skin', false, '' );
 		$this->position = ( string ) $this->getProperty ( $this->name, 'position', false, '' );
 		$this->focus = ( string ) $this->getProperty ( $this->name, 'focus', false, 'false' );		
-		$this->properties [$key] ['focus'] = $this->focus;
+		$this->properties [$this->name] ['focus'] = $this->focus;
 		$this->guid = 'k'.uniqid(); //allways start with a letter
 		$this->refreshing = false;
 		$this->bind_data = array();

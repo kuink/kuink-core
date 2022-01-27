@@ -685,7 +685,7 @@ class Reflection {
 			throw new \Exception('Cannot load node: '.$nodePath);
 		
 		//get all nodes
-		$diagram = new \Neon\Core\Diagram();
+		$diagram = new \Kuink\Core\Diagram();
 		$diagram->addTitle('Process: '.$application.','.$process);
 		$endStates = array();
 		$flowXml = $nodeXml->xpath('//Flow');

@@ -24,7 +24,7 @@ class Url extends Formatter {
     	$label = (string) $this->getParam($params, 'label', false, $value);
 		$icon = (string) $this->getParam($params, 'icon', false, '');
 		$iconSize = (string) $this->getParam($params, 'icon-size', false, '');
-    	$label = ($label != $value) ? \Neon\Core\Language::getString($label, $this->nodeconfiguration[\Neon\Core\NodeConfKey::APPLICATION]) : $label; 
+    	$label = ($label != $value) ? \Kuink\Core\Language::getString($label, $this->nodeconfiguration[\Kuink\Core\NodeConfKey::APPLICATION]) : $label; 
 		if ($icon != '') 
 			$label = '<i class="fa fa-'.$icon.'" style="font-size: '.$iconSize.'px"></i>';
 		

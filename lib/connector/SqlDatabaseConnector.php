@@ -661,7 +661,7 @@ private function encloseIdentifier($identifier) {
 			$bindParams[$bindParam] = str_replace(':', '§§§§§§§§', $bindParams[$bindParam]);
 
 			$errorInfo = $query->errorInfo ();
-			if ($$errorInfo[0] != '') {
+			if ($errorInfo[0] != '') {
 				TraceManager::add ( 'Query bind param error', TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
 				TraceManager::add ( $errorInfo [0] . '|' . $errorInfo [1], TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
 			}

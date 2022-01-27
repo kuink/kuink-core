@@ -386,7 +386,7 @@ class ProcessOrchestrator {
 				$value = $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable];
 		}
 		else
-			if (array_key_exists($key, $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable]))
+			if (isset($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable]) && (array_key_exists($key, $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable])))
 				$value = $_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]->sessionVars[$variable][$key];
 		return $value;
 	}
