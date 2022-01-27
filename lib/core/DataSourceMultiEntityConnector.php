@@ -157,7 +157,7 @@ class DataSourceMultiEntityConnector extends \Kuink\Core\DataSourceConnector{
 	/**
 	 * Auxiliary function to convert an object to an array
 	 */
-  protected function object_to_array($obj) {
+  public function object_to_array($obj) {
 		$arrObj = is_object ( $obj ) ? get_object_vars ( $obj ) : $obj;
 		$arr=array();
     foreach ( $arrObj as $key => $val ) {
