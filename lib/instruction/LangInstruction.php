@@ -23,8 +23,10 @@ class LangInstruction extends \Kuink\Core\Instruction {
 		foreach ( $params as $param )
 			$values [] = (string) $param;
 			
-			// var_dump($nodeconfiguration['customappname']);
-		$string = ( string ) kuink_get_string ( $key, $instManager->nodeConfiguration[\Kuink\Core\NodeConfKey::APPLICATION], $values );
+		// var_dump($nodeconfiguration['customappname']);
+		//$string = ( string ) kuink_get_string ( $key, $instManager->nodeConfiguration[\Kuink\Core\NodeConfKey::APPLICATION], $values );
+		$string = ( string ) \Kuink\Core\Language::getString( $key, $instManager->nodeConfiguration[\Kuink\Core\NodeConfKey::APPLICATION], $values );
+		
 		return $string;		
 	}
 }

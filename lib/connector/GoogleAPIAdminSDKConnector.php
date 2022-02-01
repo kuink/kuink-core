@@ -128,6 +128,7 @@ class GoogleAPIAdminSDKConnector extends \Kuink\Core\DataSourceMultiEntityConnec
 class googleAPIAdminSDKUserHandler implements \Kuink\Core\ConnectorEntityHandlerInterface {
 	var $connector; //The parent connector object to get all the context
 	var $translator; //Array that will contain all mandatory fields for insert and update users
+	var $reversedTranslator; //Calculated reversed translator
 
 	public function __construct($connector) {
 		$this->connector = $connector;
@@ -139,6 +140,18 @@ class googleAPIAdminSDKUserHandler implements \Kuink\Core\ConnectorEntityHandler
 		$this->translator[\Kuink\Core\PersonProperty::PASSWORD] = array('translate'=>'password', 'insertMandatory'=>true, 'updateMandatory'=>false);
 		$this->translator[\Kuink\Core\PersonProperty::RECOVERY_EMAIL] = array('translate'=>'recoveryEmail', 'insertMandatory'=>false, 'updateMandatory'=>false);
 		$this->translator[\Kuink\Core\PersonProperty::CHANGE_PASSWORD] = array('translate'=>'changePasswordAtNextLogin', 'insertMandatory'=>false, 'updateMandatory'=>false);
+		$this->translator['suspend'] = array('translate'=>'suspended', 'insertMandatory'=>false, 'updateMandatory'=>false);
+
+		$this->reversedTranslator = array();
+		foreach ($this->translator as $translatorKey => $translator)
+			if ($translator['translate'] != '') {
+				$newValue = $translator['translate'];
+				$newValueArr = explode('->', $newValue);
+				if (count($newValueArr) > 0) 
+					$newValue = array_pop($newValueArr);
+	
+				$this->reversedTranslator[$newValue] = $translatorKey;
+			}
 	}
 
 	/**
@@ -155,32 +168,111 @@ class googleAPIAdminSDKUserHandler implements \Kuink\Core\ConnectorEntityHandler
 	public function load($params, $operators) {
 		$uid = isset ( $params ['uid'] ) ? ( string ) $params ['uid'] : '';
 		$dir = new \Google_Service_Directory ( $this->connector->connector );
+		$attributes = $params['_attributes'];
 		
 		try {
 			\Kuink\Core\TraceManager::add ( 'Google Query: '.$uid . '@' . $this->connector->domain, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );  	
 			$account = $dir->users->get ( $uid . '@' . $this->connector->domain );
 		} catch ( \Exception $e ) {
-			$entity = (string) $this->getParam ( $params, '_entity', true );
+			$entity = (string) $this->connector->getParam ( $params, '_entity', true );
 			\Kuink\Core\TraceManager::add ( 'ERROR GOOGLE on entity '.$entity, \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
 			$account = null;
 		}
-		$user = array ();
-		if ($account !== null) {
-			$user [\Kuink\Core\PersonProperty::UID] = ( string ) $account->primaryEmail;
-			$user [\Kuink\Core\PersonProperty::EMAIL] = ( string ) $account->primaryEmail;
-			$user [\Kuink\Core\PersonProperty::GIVEN_NAME] = ( string ) $account->getName ()->givenName;
-			$user [\Kuink\Core\PersonProperty::SURNAME] = ( string ) $account->getName ()->familyName;
-			$user [\Kuink\Core\PersonProperty::ID] = ( string ) $account->id;
-		}
+		$user = $this->getFormattedUser($account, $attributes);
+
 		return $user;
 	}
 
 	/**
-	 * Get all users
+	 * Get all users vbased on a filter
+	 * 
+	 * @param params array will be used to filter the data
+	 * @param operators an array with the operators if defined in the DataAcess call
+	 * 
+	 * Example 1: givenName:Paul*
+	 * <Param name="_entity">user</Param>
+   * <Param name="given_name" wildcard="right">Paul</Param>
+   * <Param name="_pageSize">30</Param>
+	 * 
+	 * Example 2: name='Jorge'
+	 * <Param name="_entity">user</Param>
+   * <Param name="name">Jorge</Param>
+   * <Param name="_pageSize">10</Param>
+	 * 
+	 * The result array has:
+	 * 	total - The total number of records is -1 because we cannot know
+	 * 	nextPageToken - The token to be used to get the next page os records
+	 * 	records - an array with the user data
 	 */
 	public function getAll($params, $operators) {
-		\Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+		$maxResults = isset($params['_pageSize']) ? (int) $params['_pageSize'] : 10;
+		$nextPageToken = isset($params['_pageNum']) ? (int) $params['_pageNum'] : 0;
+		//Remove the standard params
+		unset($params['_entity']); 
+		unset($params['_pk']); 
+		unset($params['_pageNum']); 
+		unset($params['_pageSize']); 
+		//Retrieve the attributes to get and remove them from params to prevent query error
+		$attributes = isset($params['_attributes']) ? $params['_attributes'] : null;
+		unset($params['_attributes']); 
+
+		//Determine the query to filter
+		$queryArr=array();
+		foreach ($params as $paramKey=>$paramValue) {
+			//Check for wildcards
+			$pos = strpos($paramValue, '%');
+			if ($pos !== FALSE) {
+				//There's a wildcard, so set the operator directly to : and ignore user operator
+				//Replace the default wildcard char '%' by the wildcard of this connector which is '*'
+				$paramValue = str_replace('%', '*', $paramValue);
+				$stringEnclosure = '';
+				$operator = ':';
+			} else {
+				//Default the operator to =
+				$stringEnclosure = "'";
+				$operator = isset($operators[$paramKey]) ? $operators[$paramKey] : '=';
+			}
+			//Try to translate the key.
+			$paramKeyTranslated = (isset($this->translator[$paramKey])) ? $this->translator[$paramKey]['translate'] : $paramKey;
+			//The translated key can have a path like name->givenName. In this case we must get only the last value
+			$paramKeyTranslatedComposite = explode('->', $paramKeyTranslated);
+			if (count($paramKeyTranslatedComposite) > 0) 
+				$paramKeyTranslated = array_pop($paramKeyTranslatedComposite);
+			
+			$queryArr[] = $paramKeyTranslated.$operator.$stringEnclosure.$paramValue.$stringEnclosure;
+		}
+		$query = implode(' ', $queryArr);
+
+		//Build the query
+		$listParams = array();
+		$listParams['domain'] = $this->connector->domain;
+		$listParams['maxResults'] = $maxResults;
+		if ($nextPageToken != 0)
+			$listParams['nextPageToken'] = $nextPageToken;
+		if ($query != '')
+			$listParams['query'] = $query;
+
+		//Make the call
+		\Kuink\Core\TraceManager::add ( __METHOD__, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ ); 
+		\Kuink\Core\TraceManager::add ( 'Getting users with the filter:', \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ ); 
+		\Kuink\Core\TraceManager::add ( $query, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ ); 
+		$dir = new \Google_Service_Directory ( $this->connector->connector );			
+		$users = $dir->users->listUsers( $listParams );
+
+		$resultUsers = array();
+		foreach ($users as $user) {
+			$resultUsers[] = $this->getFormattedUser($user, $attributes);
+		}
+
+		//Return a paginated array
+		$result=array();
+		//If the total is -1, then we cannot know the total records and the next page token is define as an array element of this result	
+		$result['total'] = -1;
+		$result['nextPageToken'] = $users->nextPageToken;
+		$result['records'] = $resultUsers;
+
+		return $result;
 	}
 
 	/**
@@ -260,7 +352,6 @@ class googleAPIAdminSDKUserHandler implements \Kuink\Core\ConnectorEntityHandler
 
 	/**
 	 * Completes a user from params or create one if no user is supplyed
-	 * @type - insert | update
 	 */
 	protected function getUserFromParams($params, $user = null) {
 		$type = 'update';
@@ -281,12 +372,46 @@ class googleAPIAdminSDKUserHandler implements \Kuink\Core\ConnectorEntityHandler
 			
 			//If $userKeyToSet is empty then this param is only to validatem, don't set it 
 			if (($userKeyToSet != '') && (isset($params[$translatorKey]))) {
-				$this->setObjectProperty($user, $userKeyToSet, $params[$translatorKey]); 				
-			}				
+				$this->setObjectProperty($user, $userKeyToSet, $params[$translatorKey]);
+				unset($params[$translatorKey]);
+			}
 		}
-
+		//Unset unnecessary params
+		unset($params['_entity']);
+		unset($params['_pk']);
+		unset($params['uid']);
+		
+		//Check to see if there are some params left that cannot be translated and try to set them
+		foreach ($params as $paramKey=>$paramValue)
+			$user->$paramKey = $paramValue;
+		
 		//At this point the $user object should have all $params defined in its properties so return it
 		return $user;
+	}
+
+	/**
+	 * Takes a user and returns an array with kuink person fileds translated
+	 * @param user object the user object to return the array 
+	 */
+	protected function getFormattedUser($user, $attributes=null) {
+		$result = array();
+		if (isset($user)) {
+
+			//If we have attributes to get, only get those else, bring them all
+			if (!empty($attributes)) {
+				$attributesArr = explode(',', $attributes);
+				foreach($attributesArr as $attribute) {
+					$attribute = trim($attribute);
+					$translator = $this->translator[$attribute];
+					$translatedKey = isset($translator) ? $translator['translate'] : $attribute;
+					$translatedKey = ($translatedKey != '') ? $translatedKey : $attribute;
+					$result[$attribute] = $this->getObjectProperty($user, $translatedKey);
+				}
+			} else {
+				$result = $userArr = $this->objectToArrayTranslated($user);
+			}
+		}
+		return $result;
 	}
 
 	protected function getObjectProperty($object, $pathString) {
@@ -341,6 +466,21 @@ class googleAPIAdminSDKUserHandler implements \Kuink\Core\ConnectorEntityHandler
 	
 		return $object;
 	}	
+
+		/**
+	 * Auxiliary function to convert an object to an array
+	 */
+  protected function objectToArrayTranslated($obj) {
+		$arrObj = is_object ( $obj ) ? get_object_vars ( $obj ) : $obj;
+		$arr=array();
+    foreach ( $arrObj as $key => $val ) {
+      $val = (is_array ( $val ) || is_object ( $val )) ? $this->objectToArrayTranslated ( $val ) : $val;
+			$translatedKey = isset($this->reversedTranslator[$key]) ?  $this->reversedTranslator[$key] : $key;
+      $arr [$translatedKey] = $val;
+    }
+    return $arr;
+  }
+
 
 }
 

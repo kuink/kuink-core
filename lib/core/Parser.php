@@ -174,7 +174,7 @@ class EvalExpr {
 	 */
 	function e($expr, $variables, $boolean = false, $string = false, $stringIsolation = true, $ignoreOctal = false) {
 		global $KUINK_TRACE;
-		
+
 		$KUINK_TRACE [] = 'EvalExpr: ' . $expr;
 		$expr2 = $expr;
 		// while (preg_match('/[\$@#][a-zA-Z0-9_]+([->]*+[a-zA-Z0-9_]+)/',$expr2, $matches)) {
