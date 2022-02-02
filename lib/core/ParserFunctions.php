@@ -32,7 +32,7 @@ class ParserFunctions {
 	// used only for captchas right now
 	static function __isValid($value) {
 		var_dump($_SESSION['securimage_code_value']);
-		var_dump($_SESSION['securimage_code_display']);
+		var_dump($_SESSION['securimage_code_disp']);
 		$securimage = new \Securimage ();
 		$check = $securimage->check ( strtolower ( $value ) );
 		return ($check) ? 1 : 0;
