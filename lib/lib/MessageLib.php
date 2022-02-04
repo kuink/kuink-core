@@ -101,6 +101,7 @@ class MessageLib {
 		$msg->setBody ( $params ['body'] );
 		$msg->setHeaders ( $headers );
 		if ($KUINK_CFG->enableEmailSending) {
+			\Kuink\Core\TraceManager::add ( 'Sending email to: '.$_headers->To, \Kuink\Core\TraceCategory::GENERAL, __CLASS__ );  	
 			$transport = new Zend\Mail\Transport\Sendmail ();
 			$transport->send ( $msg );
 		}
