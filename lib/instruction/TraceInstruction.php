@@ -19,11 +19,17 @@ class TraceInstruction extends \Kuink\Core\Instruction {
 		// $content= $instruction_xmlnode[0];
 		$label = ( string ) self::getAttribute ( $instructionXmlNode, 'label', $instManager->variables, false, '' );
 		$content = $instManager->executeInnerInstruction ( $instructionXmlNode );
-		if (is_array($content) || is_object($content))
-			$content = 'Array';
-		else
-			$content = (string) $content;
+		$contentToDisplay = (string) $content;
+		if (is_object($content))
+			$content = (array) $content;
 
+		if (is_array($content)) {
+			$contentToDisplay = '';
+			foreach ($content as $entryKey=>$entryValue){
+				$contentToDisplay .= $entryKey.' => '.$entryValue.'\n';
+			}
+			$contentToDisplay = nl2br($contentToDisplay);
+		}
 
 		$msg = '';
 		if ($label != '')
@@ -40,7 +46,7 @@ class TraceInstruction extends \Kuink\Core\Instruction {
 		if ($label != '' && $content != '')
 			$msg .= '<br/>==== / ' . $label . ' ====';
 		
-		$KUINK_MANUAL_TRACE [] = $msg;
+		$KUINK_MANUAL_TRACE [] = '<pre>'.htmlspecialchars($msg).'</pre>';
 		
 		return null;
 	}
