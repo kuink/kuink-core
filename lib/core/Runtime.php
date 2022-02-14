@@ -722,7 +722,7 @@ class Runtime {
 		
 		return $html;
 	}
-
+	
 	function show_documentation($show_documentation) {
 		if ($show_documentation == 'true' && $this->type == 'nodes') {
 			// var_dump($this->nodeconfiguration);
@@ -770,7 +770,7 @@ class Runtime {
 			$nodeUmlText = \Kuink\Core\Reflection::getUml($this->nodeconfiguration [NodeConfKey::APPLICATION], $this->nodeconfiguration [NodeConfKey::PROCESS], $this->nodeconfiguration [NodeConfKey::NODE], $this->executionPath);
 			$nodeUmlText = preg_replace('#<br\s*/?>#i', "\n", $nodeUmlText);		
 			$nodeUmlTextEncoded = $umlControl->encodep($nodeUmlText);			
-			$html .= '<img class="cover-item" src="http://www.plantuml.com/plantuml/png/'.$nodeUmlTextEncoded.'"/>';
+			$html .= '<a href="http://www.plantuml.com/plantuml/png/'.$nodeUmlTextEncoded.'" target="_blank"><img class="cover-item" src="http://www.plantuml.com/plantuml/png/'.$nodeUmlTextEncoded.'"/></a>';
 			$html .= '</div>';
 
 			
