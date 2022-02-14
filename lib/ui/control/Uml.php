@@ -38,7 +38,7 @@ class Uml extends Control {
 
 
 	//Helper funcrtions source: https://plantuml.com/code-php
-	private function encodep($text) {
+	public function encodep($text) {
 		//$data = utf8_encode($text);
 		$compressed = gzdeflate($text, 9);
 		return $this->encode64($compressed);

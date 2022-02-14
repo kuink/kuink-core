@@ -55,18 +55,19 @@ abstract class Control {
 	function __construct($nodeconfiguration, $xml_definition) {
 		$this->nodeconfiguration = $nodeconfiguration;
 		$this->xml_definition = $xml_definition;
-		
-		$this->name = ( string ) $xml_definition ['name'];
-		$this->type = ( string ) $xml_definition->getName ();
-		// kuink_mydebug('NAME::', $this->name);
-		$this->skeleton = ( string ) $this->getProperty ( $this->name, 'skeleton', false, '' );
-		$this->skin = ( string ) $this->getProperty ( $this->name, 'skin', false, '' );
-		$this->position = ( string ) $this->getProperty ( $this->name, 'position', false, '' );
-		$this->focus = ( string ) $this->getProperty ( $this->name, 'focus', false, 'false' );		
-		$this->properties [$this->name] ['focus'] = $this->focus;
-		$this->guid = 'k'.uniqid(); //allways start with a letter
-		$this->refreshing = false;
-		$this->bind_data = array();
+		if ($xml_definition != null) {
+			$this->name = ( string ) $xml_definition ['name'];
+			$this->type = ( string ) $xml_definition->getName ();
+			// kuink_mydebug('NAME::', $this->name);
+			$this->skeleton = ( string ) $this->getProperty ( $this->name, 'skeleton', false, '' );
+			$this->skin = ( string ) $this->getProperty ( $this->name, 'skin', false, '' );
+			$this->position = ( string ) $this->getProperty ( $this->name, 'position', false, '' );
+			$this->focus = ( string ) $this->getProperty ( $this->name, 'focus', false, 'false' );		
+			$this->properties [$this->name] ['focus'] = $this->focus;
+			$this->guid = 'k'.uniqid(); //allways start with a letter
+			$this->refreshing = false;
+			$this->bind_data = array();
+		}
 	}
 	function setRefreshing() {
 		$this->refreshing = true;
@@ -157,6 +158,11 @@ abstract class Control {
 	function render($params) {
 		$layout = \Kuink\UI\Layout\Layout::getInstance ();
 		$idContext = \Kuink\Core\ProcessOrchestrator::getContextId();
+
+		//Build the base url
+		$url = $nodeconfiguration ['baseurl'];
+		$baseUrl = \Kuink\Core\Tools::setUrlParams ( $url );
+
 		// Add the guid to the render
 		$params ['_idContext'] = $idContext;		
 		$params ['_guid'] = $this->guid;
@@ -165,7 +171,9 @@ abstract class Control {
 		$params ['_position'] = $this->position;
 		$params ['_skin'] = $this->skin;
 		$params ['_skeleton'] = $this->skeleton;
-		$params ['_focus'] = ( string ) $this->getProperty ( $this->name, 'focus', true, 'false', $this->xml_definition, true );;
+		$params ['_focus'] = ( string ) $this->getProperty ( $this->name, 'focus', true, 'false', $this->xml_definition, true );
+		$params ['_baseUrl'] = $baseUrl;
+
 		$layout->addControl ( $this->type, $params, $this->skeleton, $this->skin, $this->position );
 		//kuink_mydebug('Focus - '.$this->guid, $this->focus);
 		if ($params ['_focus'] != 'false')

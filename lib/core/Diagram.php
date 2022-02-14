@@ -31,12 +31,18 @@ class DiagramRelationType {
 class Diagram
 {
 	var $source; 
+	var $highlightNodes;
+	var $defaultColor;
+	var $defaultHighlightColor;
 
 	/**
 	 * Base Contructor
 	 */
 	function __construct() {
 		$this->source = '';
+		$this->highlightNodes = array();
+		$this->defaultColor = '';
+		$this->defaultHighlightColor = '#dodgerBlue';
 	}
 
 	public function getUml() {
@@ -47,6 +53,11 @@ class Diagram
 
 	public function addTitle($title) {
 		$this->source .= 'title '.$title.'<br/>';
+	}
+
+	public function addHighlightNode($node, $color=null) {
+		$colorToApply = (isset($color)) ? $color : $this->defaultHighlightColor;
+		$this->highlightNodes[$node] = array('node'=>$node, 'color'=>$colorToApply);
 	}
 
 	public function addStart() {
@@ -72,8 +83,9 @@ class Diagram
 	}
 
 	public function addFlow($startNode, $endNode, $event) {
+		$colorToApply = (isset($this->highlightNodes[$startNode])) ? ' '.$this->highlightNodes[$startNode]['color'] : '';
 		$eventName = isset($event) ? ' : '.$event : '';
-		$this->source .= $startNode.' --> '.$endNode.$eventName.'<br/>';
+		$this->source .= $startNode.$colorToApply.' --> '.$endNode.$eventName.'<br/>';
 	}		
 
 	public function getHyperlink($url, $label) {

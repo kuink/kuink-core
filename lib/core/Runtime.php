@@ -118,9 +118,10 @@ class Runtime {
 	var $event_raised_app; // This event can be raised from another app if we are in a subprocess
 	var $event_raised_process; // This event can be raised from another app,process if we are in a subprocess
 	var $force_position; // Force all controls to this position
-	var $show_trace; // Show trace
+	var $showTrace; // Show trace
 	var $show_source; // Should the source code be exported to the output?
 	var $is_fw_admin; // This user is framework.admin?
+	var $executionPath; //Array containing actions and screens executed in this request
 	function __construct($node, $node_type, $nodeconfiguration, $display = true, $params = null) {
 		global $KUINK_CFG, $SESSION, $KUINK_APPLICATION;
 		
@@ -204,6 +205,9 @@ class Runtime {
 		$nodeContext ['nodeGuid'] = isset($currentNode->nodeGuid) ? $currentNode->nodeGuid : null;
 		$nodeContext ['nid'] = (isset($currentNode) && $currentNode !== false) ? $currentNode->application . ',' . $currentNode->process . ',' . $currentNode->nodeGuid : ',,';
 		$this->variables ['CONTEXT'] = $nodeContext;
+
+		//Initialize execution path
+		$this->executionPath = array();
 		
 		// kuink_mydebug('NODE', $node_name);
 		
@@ -246,6 +250,9 @@ class Runtime {
 			}
 	}
 
+	private function addToExecutionPath($execution){
+		$this->executionPath[$execution] = $execution;
+	}
 
 	/**
 	 * Build capabilities from an access control list
@@ -380,10 +387,10 @@ class Runtime {
 		$this->event_raised_process = $this->process_name;
 		
 		// Getting current action settings
-		$actionname = isset($this->nodeconfiguration [NodeConfKey::ACTION]) ? $this->nodeconfiguration [NodeConfKey::ACTION] : null;
+		$actionName = isset($this->nodeconfiguration [NodeConfKey::ACTION]) ? $this->nodeconfiguration [NodeConfKey::ACTION] : null;
 		$actionvalue = isset($this->nodeconfiguration [NodeConfKey::ACTION_VALUE]) ? $this->nodeconfiguration [NodeConfKey::ACTION_VALUE] : null;
 		
-		// kuink_mydebug('$actionname', $actionname);
+		// kuink_mydebug('$actionName', $actionName);
 		// kuink_mydebug('$actionvalue', $actionvalue);
 		
 		// $baseurl = cur_page_url();
@@ -396,7 +403,7 @@ class Runtime {
 		$roles = isset($this->nodeconfiguration [NodeConfKey::ROLES]) ?  $this->nodeconfiguration [NodeConfKey::ROLES] : null;
 		// var_dump($roles);
 		
-		$showtrace = $get_trace;
+		$showTrace = $get_trace;
 		$impersonate_role = $get_role;
 		
 		$nodexml = null;
@@ -642,10 +649,10 @@ class Runtime {
 			$this->variables['CAPABILITIES'] = isset($this->nodeconfiguration[NodeConfKey::CAPABILITIES]) ? $this->nodeconfiguration[NodeConfKey::CAPABILITIES] : null;			
 			$action_permissions = $this->getActionPermissions ( $nodexml );
 			$this->nodeconfiguration [NodeConfKey::ACTION_PERMISSIONS] = $action_permissions;
-			$actionname = isset($this->nodeconfiguration [NodeConfKey::ACTION]) ? $this->nodeconfiguration [NodeConfKey::ACTION] : null;
+			$actionName = isset($this->nodeconfiguration [NodeConfKey::ACTION]) ? $this->nodeconfiguration [NodeConfKey::ACTION] : null;
 			// Execute the current action, if there's no current action execute the default action init
-			$actionname = ($actionname != '') ? $actionname : 'init';
-			// kuink_mydebug('$actionname', $actionname);
+			$actionName = ($actionName != '') ? $actionName : 'init';
+			// kuink_mydebug('$actionName', $actionName);
 			
 			// var_dump( $nodexml );
 			// Get the action definition xml node
@@ -659,10 +666,10 @@ class Runtime {
 				return $value;
 			} else {
 				// Execute this action
-				//kuink_mydebug('Executing action:',$actionname);
+				//kuink_mydebug('Executing action:',$actionName);
 
-				$action_xmlnode = $this->action_get_xmlnode ( $this->nodeconfiguration, $nodexml, $actionname );
-				$html = $this->action_execute ( $this->nodeconfiguration, $nodexml, $action_xmlnode, $actionname, $this->variables );
+				$action_xmlnode = $this->action_get_xmlnode ( $this->nodeconfiguration, $nodexml, $actionName );
+				$html = $this->action_execute ( $this->nodeconfiguration, $nodexml, $action_xmlnode, $actionName, $this->variables );
 				// var_dump($this->nodeconfiguration);
 			}
 		} catch(\Error $e) {
@@ -709,22 +716,24 @@ class Runtime {
 		
 		// Framework admin have trace by default. Joao Patricio 2014-03-21
 		if ($this->is_fw_admin) {
-			$showtrace = true;
+			$showTrace = true;
 		}
-		$this->show_trace ( $showtrace );
+		$this->showTrace ( $showTrace );
 		
 		return $html;
 	}
+
 	function show_documentation($show_documentation) {
 		if ($show_documentation == 'true' && $this->type == 'nodes') {
 			// var_dump($this->nodeconfiguration);
 			// print('<img src="apps/'.$this->nodeconfiguration['customappname'].'/process/'.$this->nodeconfiguration['master_process_name'].'/process.png"/>');
 		}
 	}
-	function show_trace($show_trace) {
+
+	function showTrace($showTrace) {
 		global $SESSION, $KUINK_TRACE, $KUINK_MANUAL_TRACE;
 		
-		if ($show_trace == 'true' && $this->type == 'nodes' && $this->is_fw_admin) {
+		if ($showTrace == 'true' && $this->type == 'nodes' && $this->is_fw_admin) {
 			$html = '<div class="container-fluid"><div class="row-fluid"><div class="span12">';
 			$html .= '<h4><i class="fa fa-wrench fa-2x" ></i> Developer Tracing Tools</h4>';
 			$html .= '<br/>Manual Trace » ';
@@ -748,13 +757,22 @@ class Runtime {
 						$dump = var_export($value, true);				
 					$html .= $dump; //'<p>' . $key . ' => ' . $dump . '</p>';
 				}
+			
 			$html .= '</pre></div>';
 			
 			$html .= '<br/>Process Stack » ('.ProcessOrchestrator::getContextCount().') ';
 			$html .= '<a href="javascript:;" onmousedown="if(document.getElementById(\'stack\').style.display == \'none\'){ document.getElementById(\'stack\').style.display = \'block\'; }else{ document.getElementById(\'stack\').style.display = \'none\'; }">Show/Hide</a><br/> ';
 			$html .= '<div id="stack" style="display:none">';
 			$html .= ProcessOrchestrator::getContextStackHtml ( false );
+			//Show the node uml
+			$umlControl = \Kuink\Core\Factory::getControl('Uml', $this->nodeconfiguration, null);
+
+			$nodeUmlText = \Kuink\Core\Reflection::getUml($this->nodeconfiguration [NodeConfKey::APPLICATION], $this->nodeconfiguration [NodeConfKey::PROCESS], $this->nodeconfiguration [NodeConfKey::NODE], $this->executionPath);
+			$nodeUmlText = preg_replace('#<br\s*/?>#i', "\n", $nodeUmlText);		
+			$nodeUmlTextEncoded = $umlControl->encodep($nodeUmlText);			
+			$html .= '<img class="cover-item" src="http://www.plantuml.com/plantuml/png/'.$nodeUmlTextEncoded.'"/>';
 			$html .= '</div>';
+
 			
 			$html .= '<br/>Node Configuration » ';
 			$html .= '<a href="javascript:;" onmousedown="if(document.getElementById(\'nodeconf\').style.display == \'none\'){ document.getElementById(\'nodeconf\').style.display = \'block\'; }else{ document.getElementById(\'nodeconf\').style.display = \'none\'; }">Show/Hide</a><br/> ';
@@ -993,18 +1011,19 @@ class Runtime {
 	}
 	
 	// gets the action xml node
-	function action_get_xmlnode($nodeconfiguration, $nodexml, $actionname) {
-		$action_xmlnode = $nodexml->xpath ( '//Node/Actions/Action[@name="' . $actionname . '"]' );
+	function action_get_xmlnode($nodeconfiguration, $nodexml, $actionName) {
+		$action_xmlnode = $nodexml->xpath ( '//Node/Actions/Action[@name="' . $actionName . '"]' );
 		if ($action_xmlnode == null)
-			throw new \Exception ( "Action: $actionname not defined in the curent node." );
+			throw new \Exception ( "Action: $actionName not defined in the curent node." );
 			// var_dump($action_xmlnode);
 		return $action_xmlnode;
 	}
-	function action_execute(&$nodeconfiguration, $nodexml, $action_xmlnode, $actionname, &$variables) {
+
+	function action_execute(&$nodeconfiguration, $nodexml, $action_xmlnode, $actionName, &$variables) {
 		global $KUINK_TRACE;
 		global $KUINK_MANUAL_TRACE;
 		global $KUINK_CFG;
-		//kuink_mydebug('Executing action', $actionname);
+		//kuink_mydebug('Executing action', $actionName);
 		
 		$context = ProcessOrchestrator::getContext ();
 		
@@ -1012,14 +1031,19 @@ class Runtime {
 		$libraries = $this->libraries;
 		
 		$transaction = isset ( $action_xmlnode ['transaction'] ) ? ( string ) $action_xmlnode ['transaction'] : '';
-		$KUINK_TRACE [] = "Action Name: " . $actionname;
+		$KUINK_TRACE [] = "Action Name: " . $actionName;
 		$KUINK_TRACE [] = "Action Transaction: " . $transaction;
-		// kuink_mydebug('DoAction',$actionname);
+		// kuink_mydebug('DoAction',$actionName);
 		
 		// Check if this is a screen action
-		$screen_name = ( string ) $action_xmlnode [0] ['screen'];
+		$screenName = ( string ) $action_xmlnode [0] ['screen'];
 		// var_dump( $nodeconfiguration );
-		// kuink_mydebug( $nodeconfiguration['config']['NODE'], $actionname );
+		// kuink_mydebug( $nodeconfiguration['config']['NODE'], $actionName );
+
+		//Add this action and screen to execution path
+		$this->addToExecutionPath($actionName);
+		if ($screenName != '')
+			$this->addToExecutionPath($screenName);
 		
 		$roles = $nodeconfiguration [NodeConfKey::ROLES];
 		if (in_array ( 'framework.admin', $roles ) && $this->type == 'nodes') {
@@ -1027,15 +1051,15 @@ class Runtime {
 			if ($trace == 'true') {
 				$layout = \Kuink\UI\Layout\Layout::getInstance ();
 				$layout->addHtml ( '------------------------------------', 'context' );
-				$layout->addHtml ( '[' . $nodeconfiguration [NodeConfKey::APPLICATION] . '] [' . $nodeconfiguration [NodeConfKey::PROCESS] . '] [' . $nodeconfiguration [NodeConfKey::NODE] . '] :: Screen [' . $screen_name . ']', 'context' );
+				$layout->addHtml ( '[' . $nodeconfiguration [NodeConfKey::APPLICATION] . '] [' . $nodeconfiguration [NodeConfKey::PROCESS] . '] [' . $nodeconfiguration [NodeConfKey::NODE] . '] :: Screen [' . $screenName . ']', 'context' );
 				$layout->addHtml ( 'Event: ' . $nodeconfiguration [NodeConfKey::EVENT], 'context' );
 				$layout->addHtml ( 'Action: ' . $nodeconfiguration [NodeConfKey::ACTION] . '->' . $nodeconfiguration [NodeConfKey::ACTION_VALUE], 'context' );
 				// $layout->addHtml($html, 'context');
 			}
 		}
 		
-		$action_screen = ($screen_name != '');
-		$KUINK_TRACE [] = "Action Screen: " . $screen_name;
+		$action_screen = ($screenName != '');
+		$KUINK_TRACE [] = "Action Screen: " . $screenName;
 		// var_dump( $KUINK_TRACE );
 		// var_dump($nodexml);
 		
@@ -1064,7 +1088,7 @@ class Runtime {
 					'application' => $nodeconfiguration [NodeConfKey::APPLICATION],
 					'process' => $nodeconfiguration [NodeConfKey::PROCESS],
 					'node' => $nodeconfiguration [NodeConfKey::NODE],
-					'action' => $actionname,
+					'action' => $actionName,
 					'log_key' => $key,
 					'timestamp' => time () 
 			);
@@ -1085,10 +1109,10 @@ class Runtime {
 		if ($action_screen) {
 			$layout = Layout::getInstance ();
 			
-			$screen_obj = $nodexml->xpath ( '//Screen[@id="' . $screen_name . '" or @name="' . $screen_name . '"]' );
+			$screen_obj = $nodexml->xpath ( '//Screen[@id="' . $screenName . '" or @name="' . $screenName . '"]' );
 			
 			if (! $screen_obj)
-				throw new \Exception ( 'Screen "' . $screen_name . '" does not exist. Check the <Action ... screen=""> tag.' );
+				throw new \Exception ( 'Screen "' . $screenName . '" does not exist. Check the <Action ... screen=""> tag.' );
 			
 			if ($this->show_source == 'true') {
 				// Show the source xml
@@ -1160,7 +1184,7 @@ class Runtime {
 				
 				//Check to see if this is a duplicated control
 				if (isset($this->current_controls [$uielem->name]))
-					throw new \Exception('Duplicated control '.$uielem->type.'::'.$uielem->name.' in screen '.$screen_name);
+					throw new \Exception('Duplicated control '.$uielem->type.'::'.$uielem->name.' in screen '.$screenName);
 				// Load in $variables all the objects
 				$variables [$uielem_name] = $uielem;
 				$this->current_controls [$uielem->name] = $uielem;
@@ -1177,8 +1201,8 @@ class Runtime {
 			// kuink_mydebug('Calling instruction', $instruction_xmlnode->getName());
 			// var_dump( $instruction_xmlnode );
 			// Execute this instruction
-				$this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $variables, $exit );
-			// print( $actionname.'::' );
+				$this->instruction_execute ( $nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionName, $variables, $exit );
+			// print( $actionName.'::' );
 			// print( (string)$exit );
 			// Check if there is an event raised
 			if ($this->event_raised) {
@@ -1263,7 +1287,7 @@ class Runtime {
 			}
 			
 			if (! $exit) {
-				$screen_obj = $nodexml->xpath ( '//Screen[@id="' . $screen_name . '"]' );
+				$screen_obj = $nodexml->xpath ( '//Screen[@id="' . $screenName . '"]' );
 				// $screen_frmt_data = '';
 				// foreach ($screen_obj[0]->children() as $screen_uielem)
 				
@@ -1369,7 +1393,7 @@ class Runtime {
 		$libraries = $this->libraries;
 		
 		$local_variables = $param_values;
-		// kuink_mydebug('Executing action', $actionname);
+		// kuink_mydebug('Executing action', $actionName);
 		
 		// Inject general variables to the function
 		$local_variables ['POSTDATA'] = isset ( $variables ['POSTDATA'] ) ? $variables ['POSTDATA'] : '';
@@ -1467,7 +1491,7 @@ class Runtime {
 		return ($value == '') ? $default : $value;
 	}
 
-	function instruction_execute(&$nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, &$variables, &$exit) {
+	function instruction_execute(&$nodeconfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionName, &$variables, &$exit) {
 		global $KUINK_TRACE;
 		
 		$instructionname = $instruction_xmlnode->getName ();
