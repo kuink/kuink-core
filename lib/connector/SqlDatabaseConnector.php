@@ -706,9 +706,7 @@ private function encloseIdentifier($identifier) {
 		//	kuink_mydebugObj('ErrorInfo', $errorInfo);
 
 		if ($errorInfo [0] !== '00000' || $errorInfo [1] != 0) {
-			TraceManager::add ( 'Database Error:', TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
-			TraceManager::add ( $sql, TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
-			TraceManager::add ( $errorInfo [0] . '|' . $errorInfo [1], TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
+			TraceManager::add ( 'Database Error: '.$errorInfo [0] . '|' . $errorInfo [1] . ' | '. $errorInfo [2] , TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
 			throw new \Exception ( 'Internal database error ('.$errorInfo [0].') - '.$errorInfo [1] );
 		}
 

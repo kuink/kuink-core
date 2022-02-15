@@ -792,10 +792,16 @@ class Reflection {
 		$appBase = isset($KUINK_APPLICATION) ?$KUINK_APPLICATION->appManager->getApplicationBase($application) : '';
 		$nodePath = $KUINK_CFG->appRoot.'/apps/'.$appBase.'/'.$application.'/process/'.$process.'/nodes/'.$process.'_'.$node.'.xml';
 		//libxml_use_internal_errors( true );
+
+		$diagram = new \Kuink\Core\Diagram();
+		$diagram->addTitle('Node: '.$application.','.$process.','.$node);
+
 		$nodeXml = simplexml_load_file($nodePath, 'SimpleXmlElement', LIBXML_COMPACT | LIBXML_NOCDATA);
 		//$errors = libxml_get_errors();
-		if ($nodeXml == null)
-			throw new \Exception('Cannot load node: '.$nodePath);
+		if ($nodeXml == null) {
+			//throw new \Exception('Cannot load node: '.$nodePath);
+			return $diagram->getUml();
+		}
 
 		$diagram = new \Kuink\Core\Diagram();
 		$diagram->addTitle('Node: '.$application.','.$process.','.$node);

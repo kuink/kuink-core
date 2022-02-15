@@ -28,7 +28,7 @@ class Json extends Formatter {
 	}
 
 	function prettyPrint($value, $params = null) {
-		$formatted = json_encode(json_decode($value), \JSON_PRETTY_PRINT);
+		$formatted = json_encode(json_decode( $value ), JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE);
 		return $formatted;
 	}
 
