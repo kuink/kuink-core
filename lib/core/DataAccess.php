@@ -119,7 +119,11 @@ class DataAccess {
 		
 		$dataSourceName = $this->dataSourceName;
 		
+		if (!isset($KUINK_DATASOURCES [$dataSourceName]))
+			throw new \Exception('Datasource: '.$dataSourceName.' not found. Check datasource definition sources: framework.xml, table fw_datasource, application.xml or node.xml');
+
 		$dataSource = $KUINK_DATASOURCES [$dataSourceName];
+		
 		$dataSource->setUser($this->user);
 		// var_dump($dataSource);
 		

@@ -25,24 +25,24 @@ class InstalledVersions
     private static $installed = array (
   'root' => 
   array (
-    'pretty_version' => '1.0.0+no-version-set',
-    'version' => '1.0.0.0',
+    'pretty_version' => 'dev-develop',
+    'version' => 'dev-develop',
     'aliases' => 
     array (
     ),
-    'reference' => NULL,
+    'reference' => 'd4b3f7178d72678d6239d625871c85af6a6be047',
     'name' => '__root__',
   ),
   'versions' => 
   array (
     '__root__' => 
     array (
-      'pretty_version' => '1.0.0+no-version-set',
-      'version' => '1.0.0.0',
+      'pretty_version' => 'dev-develop',
+      'version' => 'dev-develop',
       'aliases' => 
       array (
       ),
-      'reference' => NULL,
+      'reference' => 'd4b3f7178d72678d6239d625871c85af6a6be047',
     ),
     'guzzlehttp/guzzle' => 
     array (
@@ -73,12 +73,12 @@ class InstalledVersions
     ),
     'microsoft/microsoft-graph' => 
     array (
-      'pretty_version' => '1.47.0',
-      'version' => '1.47.0.0',
+      'pretty_version' => '1.53.0',
+      'version' => '1.53.0.0',
       'aliases' => 
       array (
       ),
-      'reference' => 'bee71b4b449eb97b69f6df7eda208ffe9875a436',
+      'reference' => 'e5a9fd6285338dfce9d4d044cba7e37ef798d0bf',
     ),
     'psr/http-client' => 
     array (
