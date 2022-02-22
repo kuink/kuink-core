@@ -164,8 +164,10 @@ private function encloseIdentifier($identifier) {
 		// Handle the multilang
 		$originalParams ['id'] = $insertId;
 		$this->handleMultilang ( $originalParams, 1 ); // 1: Insert
-		
-		return (isset ( $params ['id'] )) ? $params ['id'] : $insertId;
+		$paramsId = isset($params ['id']) ? $params ['id'] : '';
+
+		$idToReturn = ($paramsId != '') ? $params ['id'] : $insertId;
+		return $idToReturn;
 	}
 	
 	/**
