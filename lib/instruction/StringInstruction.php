@@ -86,6 +86,13 @@ class StringInstruction extends \Kuink\Core\Instruction {
 		$result = stripslashes ( $search );
 		return $result;
 	}
+	static public function addslashes($instManager, $instructionXmlNode) {
+		$params = $instManager->getParams ( $instructionXmlNode );
+		$search = ( string ) $params [0];
+		
+		$result = addslashes ( $search );
+		return $result;
+	}
 	static public function concatenate($instManager, $instructionXmlNode) {
 		$params = $instManager->getParams ( $instructionXmlNode );
 		$finalString = '';
