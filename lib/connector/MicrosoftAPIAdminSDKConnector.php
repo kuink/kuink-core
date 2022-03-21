@@ -757,10 +757,21 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
 
     $visibility = (string)$this->connector->getParam($params, $this->translator['visibility'], false, "Private");
 
-    $userID = (string)$this->connector->getParam($params, $this->translator['userID'], false);
+    // Set USER by UID or Azure ID
+    $userUID = (string)$this->connector->getParam($params, $this->translator['userUID'], false);
+    if ($userUID !== "")
+      $user = $this->connector->load(array ('_entity'=>'user','uid'=>$userUID))['id'];
+
+    if ($user == null)
+      $userID = (string)$this->connector->getParam($params, $this->translator['userID'], false);
+    else
+      $userID = $user;
+
+    $role = (bool)$this->connector->getParam($params, $this->translator['isOwner'], false, 0);
+                                        
 
     $collaborative = (bool)$this->connector->getParam($params, $this->translator['collaborative'], false, false);
-    if ($collaborative && isset($userID)){
+    if ($collaborative && isset($userID) && $role){
       $groupType = "Unified";
       $mailEnabled = true;
       $owner = "https://graph.microsoft.com/v1.0/users/".$userID;
@@ -783,10 +794,10 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
 
     // Create group
     try {
-      $result = $this->connector->createRequest("POST", "/groups")
-                                ->attachBody($data)
-                                ->setReturnType(Model\Group::class)
-                                ->execute();
+      $result = $this->connector->connector->createRequest("POST", "/groups")
+                                           ->attachBody($data)
+                                           ->setReturnType(Model\Group::class)
+                                           ->execute();
     //var_dump($result);
     } catch ( \Exception $e ) {
         \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
