@@ -327,11 +327,11 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
     $officeLocation = isset ($params['jobTitle']) ? (string)$this->connector->getParam($params, 'officeLocation', false) : null;
 
     $mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], true);
-    $mail = (string)$this->connector->getParam($params, $this->translator['email'], false, $mailNickname.'@'.$this->domain);
-    $userPrincipalName = $mailNickname.'@'.$this->domain;
+    $mail = (string)$this->connector->getParam($params, $this->translator['email'], false, $mailNickname.'@'.$this->connector->domain);
+    $userPrincipalName = $mailNickname.'@'.$this->connector->domain;
 
     $otherMails = (string)$this->connector->getParam($params, $this->translator['otherMails'], false, 
-                    $mailNickname.'@'.$this->alternativeDomain);
+                    $mailNickname.'@'.$this->connector->alternativeDomain);
 
     $password = (string)$this->connector->getParam($params, $this->translator['password'], true);
     $passwordPolicies = (string)$this->connector->getParam($params, 'passwordPolicies', false, "DisablePasswordExpiration,DisableStrongPassword");
@@ -339,9 +339,9 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
     $changePasswordAtNextLogin = ($changePasswordAtNextLogin == 'true' ? true : false);
 
     $preferredLanguage = (string)$this->connector->getParam($params, $this->translator['preferredLanguage'], false, 
-                           (string)$this->dataSource->getParam ('preferredLanguage', true ));
+                           (string)$this->connector->dataSource->getParam ('preferredLanguage', true ));
     $usageLocation = (string)$this->connector->getParam($params, $this->translator['usageLocation'], false,
-                       (string)$this->dataSource->getParam ('usageLocation', true ));
+                       (string)$this->connector->dataSource->getParam ('usageLocation', true ));
 
     $userType = isset ($params['userType']) ? (string)$this->connector->getParam($params, 'userType', false) : "Member";
     $ageGroup = (string)$this->connector->getParam($params, $this->translator['ageGroup'], false, null);
@@ -372,10 +372,10 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 
     //var_dump($data);
     try {
-      $result = $this->connector->createRequest("POST", "/users")
-                                ->attachBody($data)
-                                ->setReturnType(Model\User::class)
-                                ->execute();
+      $result = $this->connector->connector->createRequest("POST", "/users")
+                                           ->attachBody($data)
+                                           ->setReturnType(Model\User::class)
+                                           ->execute();
     //var_dump($result);
     } catch ( \Exception $e ) {
       //var_dump($e);
@@ -394,18 +394,18 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
    */
   public function update($params) {
   	$this->connect();
-
-    $entity = (string)$this->connector->getParam($params, '_entity', false, $this->entity);
-
+    
     $mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
     if ($mailNickname !== '')
-      $id = $mailNickname.'@'.$this->domain;     // Uses userPrincipalName parameter
+      $id = $mailNickname.'@'.$this->connector->domain;     // Uses userPrincipalName parameter
     else
       $id = (string)$this->connector->getParam($params, 'id', true);
 
     if (isset ( $params ['_entity'] ))
 			unset ( $params ['_entity'] );
-		if (isset ( $params [$this->translator['mailNickname']] ))
+    if (isset ( $params ['_method'] ))
+			unset ( $params ['_method'] );
+    if (isset ( $params [$this->translator['mailNickname']] ))
 			unset ( $params [$this->translator['mailNickname']] );
 
     $data = array();         // Data to update
@@ -445,10 +445,10 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 
     //var_dump($data);
     try {
-      $result = $this->connector->createRequest("PATCH", "/$entity/$id")
-                                ->attachBody($data)
-                                ->setReturnType(Model\User::class)
-                                ->execute();
+      $result = $this->connector->connector->createRequest("PATCH", "/users/$id")
+                                           ->attachBody($data)
+                                           ->setReturnType(Model\User::class)
+                                           ->execute();
 
     //var_dump($result);
     } catch ( \Exception $e ) {
@@ -483,6 +483,12 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
   /**
    * Assignes a Licence to a USER
    * 
+   * Example: Assigns a license from connector configuration to user
+   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
+   *     <Param name="_entity">user</Param>
+   *     <Param name="_method">assignLicense</Param>
+   *     <Param name="uid">dummy</Param>
+   *   </DataAccess>
    */
   public function assignLicense($params) {
   	$mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
@@ -525,7 +531,12 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
    * Get USER Licence Details
    */
   function licenseDetails($params){
-    $id = (string)$this->connector->getParam($params, 'id', true);         // User ID
+                                            // Set USER by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->connector->load(array ('_entity'=>'user','uid'=>$uid))['id'];
+    else
+      $id = (string)$this->connector->getParam($params, 'id', true);         // User ID
 
     //var_dump($id);
     try {
@@ -553,7 +564,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 
     $mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
     if ($mailNickname !== '')
-      $id = $mailNickname.'@'.$this->domain;     // Uses userPrincipalName parameter
+      $id = $mailNickname.'@'.$this->connector->domain;     // Uses userPrincipalName parameter
     else
       $id = (string)$this->connector->getParam($params, 'id', true);    
 
@@ -639,17 +650,21 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
     $this->translator['groupType'] = 'group_type';
     $this->translator['mailEnabled'] = 'mail_enabled';
     $this->translator['securityEnabled'] = 'security_enabled';
-    $this->translator['visibility'] = 'visibility';
+    $this->translator['visibility'] = \Kuink\Core\PersonGroupProperty::VISIBILITY;
+    $this->translator['preferredDataLocation'] = \Kuink\Core\PersonGroupProperty::LOCATION;
     $this->translator['collaborative'] = 'is_collaborative';
     $this->translator['userID'] = 'id_user';
     $this->translator['userUID'] = 'uid_user';
     $this->translator['groupID'] = 'id_group';
     $this->translator['owner'] = 'owner';
 
+    $this->translator['allow_external_senders'] = \Kuink\Core\PersonGroupProperty::ALLOW_EXTERNAL_SENDERS;
+    $this->translator['auto_subscribe_new_members'] = \Kuink\Core\PersonGroupProperty::AUTO_SUBSCRIBE_NEW_MEMBERS;
+
     $this->translator['isOwner'] = \Kuink\Core\PersonGroupProperty::IS_OWNER;
     $this->translator['isMember'] = \Kuink\Core\PersonGroupProperty::IS_MEMBER;
 
-    $this->translator['createdDateTime'] = \Kuink\Core\PersonProperty::_CREATION;
+    $this->translator['createdDateTime'] = \Kuink\Core\PersonGroupProperty::_CREATION;
 
     // Set Reverse Translator
     if (isset($this->translator)){
@@ -671,8 +686,9 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
    * Get a GROUP
    * 
    * Example: Get from group "_dummy", attributes "mailNickname,id"
-   *   <DataAccess method="load" datasource="microsoftAPIAdminSDK">
+   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
    *     <Param name="_entity">group</Param>
+   *     <Param name="_method">load</Param>
    *     <Param name="uid">_dummy</Param>
    *     <Param name="_attributes">mailNickname,id</Param>
    *   </DataAccess>
@@ -768,7 +784,6 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
       $userID = $user;
 
     $role = (bool)$this->connector->getParam($params, $this->translator['isOwner'], false, 0);
-                                        
 
     $collaborative = (bool)$this->connector->getParam($params, $this->translator['collaborative'], false, false);
     if ($collaborative && isset($userID) && $role){
@@ -814,11 +829,69 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
    * @param array $params The params that are passed to update an entity record
    */
   function update($params) {
+                                            // Set GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->load(array('uid'=>$uid))['id'];
+                                            // Get GROUP ID
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+
+                                            // Unset config params
+    if (isset ( $params ['_entity'] ))
+			unset ( $params ['_entity'] );
+    if (isset ( $params ['_method'] ))
+			unset ( $params ['_method'] );
+    if (isset ( $params [$this->translator['mailNickname']] ))
+			unset ( $params [$this->translator['mailNickname']] );
+    if (isset ( $params [$this->translator['id']] ))
+			unset ( $params [$this->translator['id']] );
+
+                                          
+    $data = array();                        // Data to update
+
+                                            // Group type, if updated
+    $collaborative = (bool)$this->connector->getParam($params, $this->translator['collaborative'], false, false);
+    if ($collaborative){
+      $data = ['groupTypes' => [ "Unified" ]];
+      $data ['mailEnabled'] = true;
+      unset ( $params [$this->translator['collaborative']] );
+    }
+    elseif (isset ( $params [$this->translator['groupType']] )){
+        $groupType = (string)$this->connector->getParam($params, $this->translator['groupType'], false);
+        $data = ['groupTypes' => [ $groupType ]];
+        unset ( $params [$this->translator['groupType']] );
+      }
+
+
+    foreach ( $params as $key => $value )
+      if (!is_null($value)){
+        $aux = isset ($this->rTranslator[$key]) ? (string)$this->rTranslator[$key] : $key;
+        if ($aux === "securityEnabled")
+          $data['securityEnabled'] = (bool)$this->connector->getParam($params, $this->translator['securityEnabled'], false);
+        else
+          $data[$aux] = is_array ( $value ) ? $value : ( string ) $value;
+      }
+
+  
     /**
      * TODO
      * $allowExternalSenders = (bool)$this->connector->getParam($params, $this->translator['allow_external_senders'], false, false);
      */
-		\Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );      
+    try {
+      $result = $this->connector->connector->createRequest("PATCH", "/groups/".$id)
+                                           ->attachBody($data)
+                                           ->setReturnType(Model\Group::class)
+                                           ->execute();
+    //var_dump($result);
+    } catch ( \Exception $e ) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR assigning licence', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+      return 1;
+    }
+
+    // Translate data before return
+    return $this->objectArrayTranslated($result);	
   }  
 
 
@@ -1129,11 +1202,17 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
    * 
    */
   function insert($params) {
-    $groupID = (string)$this->connector->getParam($params, $this->translator['groupID'], true);
+                                            // Set GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->connector->load(array ('_entity'=>'group','uid'=>$uid))['id'];
+                                            // Get GROUP ID
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
 
     $data = [
       'template@odata.bind' => 'https://graph.microsoft.com/v1.0/teamsTemplates/standard',
-      'group@odata.bind' => 'https://graph.microsoft.com/v1.0/groups/'.$groupID,
+      'group@odata.bind' => 'https://graph.microsoft.com/v1.0/groups/'.$id,
     ];
 
     try {
