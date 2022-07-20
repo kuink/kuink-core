@@ -22,7 +22,7 @@ require_once ('lib/core/ProcessOrchestrator.php');
 
 unset ( $KUINK_CFG );
 $KUINK_CFG = new stdClass ();
-// New kuink configuration object
+// New kuink configuration object...
 $wwwroot = '';
 if (empty ( $KUINK_BRIDGE_CFG->loginHttps )) {
 	$wwwroot = $KUINK_BRIDGE_CFG->wwwRoot;
