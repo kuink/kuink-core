@@ -195,7 +195,12 @@ substr ( $charid, 0, 8 ) . $hyphen . substr ( $charid, 8, 4 ) . $hyphen . substr
 	}
 	function jsonDecode($params) {
 		$str = $params [0];
-		return json_decode ( $str );
+		$associative = $params [1];
+
+		if ( is_null ( $associative ) || $associative == '' )
+			return json_decode ( $str );
+		else
+			return json_decode ( $str, $associative );
 	}
 	
 	/**
