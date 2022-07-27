@@ -60,88 +60,62 @@ use \Microsoft\Graph\Graph;
 use \Microsoft\Graph\Model;
 
 /**
+ * All differenciatied entities handled by this connector
+ */
+class MicrosoftAPIAdminSDKEntity {
+	const USER = 'user';
+	const GROUP = 'group';
+  const TEAM = 'team';
+	const DIRECTORY_SERVICE = 'directory.service';
+}
+
+/**
  * Description of MicrosoftAPIAdminSDKConnector
  * Use Microsoft Graph gateway to manage data and intelligence in Microsoft 365.
  *
  * @author jose.feio
  */
-class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
-  var $accessToken = '';     // The object holding the connection
-  var $connector;
-  var $domain;               // Default Domain
-  var $licenceSkuId;         // Default Licence SKU Id
-    
-  var $entity = 'users';
-
-  var $translator = [
-        'givenName' => 'given_name',
-        'surname' => 'surname',
-        'displayName' => 'display_name',
-        'name' => 'name',
-        'mail' => 'email',
-        'otherMails' => 'recovery_email',
-        'mobilePhone' => 'mobile',
-        'streetAddress' => 'street_address',
-        'postalCode' => 'postal_code',
-        'city' => 'postal_address',
-        'jobTitle' => 'job_title',
-        'officeLocation' => 'office_location',
-        'mailNickname' => 'uid',
-        'preferredLanguage' => 'language',
-        'usageLocation' => 'usage_location',
-        'ageGroup' => 'age_group',
-        'password' => 'password',
-        'changePasswordAtNextLogin' => 'change_password',
-        'extensionAttribute1' => 'attribute1',
-        'extensionAttribute2' => 'attribute2',
-        'extensionAttribute3' => 'attribute3',
-        'extensionAttribute4' => 'attribute4',
-        'extensionAttribute5' => 'attribute5',
-        'extensionAttribute6' => 'attribute6',
-        'extensionAttribute7' => 'attribute7',
-        'extensionAttribute8' => 'attribute8',
-        'createdDateTime' => '_creation',
-        'description' => 'description',
-        'groupType' => 'group_type',
-        'mailEnabled' => 'mail_enabled',
-        'securityEnabled' => 'security_enabled',
-        'visibility' => 'visibility',
-        'collaborative' => 'is_collaborative',
-        'userID' => 'id_user',
-        'groupID' => 'id_group',
-        'isOwner' => 'is_owner',
-        'owner' => 'master',
-      ];
-
-  var $rTranslator;
-
+class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceMultiEntityConnector{
+  var $accessToken = '';      // The Access Token, Azure configuration
+  var $connector;             // The object holding the connection to the service
+  var $domain;                // Default Domain
+  var $licenceSkuId;          // Default Licence SKU Id
 
   function __construct($dataSource) {
     parent::__construct($dataSource);
 
-    if (isset($this->translator)){
-      $this->rTranslator = array();
-      foreach ( $this->translator as $key => $value )
-        $this->rTranslator[$value] = $key;
-    }
+    // Load datasource params
+    $this->url          = $this->dataSource->getParam ('url', true );
+    $this->clientId     = $this->dataSource->getParam ('clientId', true );
+    $this->clientSecret = $this->dataSource->getParam ('clientSecret', true );
+    $this->tenantId     = $this->dataSource->getParam ('tenantId', true );
+    $this->resource     = $this->dataSource->getParam ('resource', true );
+
+    // Generic Microsoft client configuration
+    $this->domain = $this->dataSource->getParam ( 'domain', true );
+    $this->alternativeDomain = $this->dataSource->getParam ( 'alternativeDomain', true );
+    $this->licenceSkuId = $this->dataSource->getParam ( 'licenceSkuId', true );
+
+		//Setup handler class names. The configEntityHandlers variable 
+		$this->configEntityHandlers = [
+      MicrosoftAPIAdminSDKEntity::USER => "\Kuink\Core\DataSourceConnector\MicrosoftAPIAdminSDKUserHandler",
+      MicrosoftAPIAdminSDKEntity::GROUP => "\Kuink\Core\DataSourceConnector\MicrosoftAPIAdminSDKGroupHandler",
+      MicrosoftAPIAdminSDKEntity::TEAM => "\Kuink\Core\DataSourceConnector\MicrosoftAPIAdminSDKTeamHandler",
+      MicrosoftAPIAdminSDKEntity::DIRECTORY_SERVICE => "\Kuink\Core\DataSourceConnector\MicrosoftAPIAdminSDKDirectoryServiceHandler"
+		];
+
   }
 
-  function connect( ) {
-  
-    if (! $this->connector) {
-      $url          = $this->dataSource->getParam ('url', true );          //'https://login.microsoftonline.com/' . TENANTID . '/oauth2/token?api-version=1.0';
-      $clientId     = $this->dataSource->getParam ('clientId', true );     //'94a19cfd-7ac0-4ce1-b010-b297b98142fc';
-      $clientSecret = $this->dataSource->getParam ('clientSecret', true ); //'JAM7Q~-O1ryKQAvbB4Ub_27B~7WYGmg.DfyiW';
-      $tenantId     = $this->dataSource->getParam ('tenantId', true );     //'9f249c92-ae09-4e5c-8637-06a01dbcaeb9';
-      $resource     = $this->dataSource->getParam ('resource', true );     //'https://graph.microsoft.com/'
+  function connect($entity=null) {
+    if (!$this->connector) {
       
       $guzzle = new \GuzzleHttp\Client();
-      $url = str_replace ('TENANTID', $tenantId, $url);
+      $url = str_replace ('TENANTID', $this->tenantId, $this->url);
       $token = json_decode($guzzle->post($url, [
           'form_params' => [
-              'client_id' => $clientId,
-              'client_secret' => $clientSecret,
-              'resource' => $resource,
+              'client_id' => $this->clientId,
+              'client_secret' => $this->clientSecret,
+              'resource' => $this->resource,
               'grant_type' => 'client_credentials',
           ],
       ])->getBody()->getContents());
@@ -150,62 +124,227 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
       $this->connector = new Graph();
       $this->connector->setAccessToken($this->accessToken);
 
-      // Set generic Microsoft client configuration
-      $this->domain = $this->dataSource->getParam ( 'domain', true );
-      $this->alternativeDomain = $this->dataSource->getParam ( 'alternativeDomain', true );
-      $this->licenceSkuId = $this->dataSource->getParam ( 'licenceSkuId', true );
+      //Setup specific entity connection properties
+      if (isset($entity)) {
+        $handler = $this->getEntityHandler($entity);
+        $handler->connect();
+      }
+    }
+  }
+}
 
-      // TMP Set Entity...
-      // Put this into constructor
-      $this->entity = $this->dataSource->getParam ( 'entity.user', true );
 
-      \Kuink\Core\TraceManager::add ( 'Connecting to the datasource Token:'.$this->accessToken, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ ); 
+/**
+ * Description of MicrosoftAPIAdminSDKConnectorCommon
+ * Common methods for MicrosoftAPIAdminSDKConnector implementation.
+ *
+ * @author jose.feio
+ */
+abstract class MicrosoftAPIAdminSDKConnectorCommon{
+
+  /**
+   * Transforms an object to array of values
+   */
+  protected function objectArrayTranslated($params) {
+    $p = is_object($params) ? $params->getProperties() : $params;
+
+    if (is_array($p)){
+      // Set the return array, Translated
+      $result = array();
+      foreach ( $p as $key => $value ){
+        if (isset($value)){
+          if (is_array($value) or is_object($value)){
+            $tmp = isset ($this->translator[$key]) ? (string)$this->translator[$key] : $key;
+            $result[$tmp] = $this->objectArrayTranslated($value);
+          }
+          else {
+            $tmp = isset ($this->translator[$key]) ? (string)$this->translator[$key] : $key;
+            $result[$tmp] = $value;
+          }
+        }
+      }
+    } else
+        return null;
+    
+  	return $result;
+  }
+}
+
+/******************************************************************************
+ *  Entity Handlers
+ ******************************************************************************/
+/**
+ * Class to handle all basic user operations
+ *
+ * @author jose.feio
+ */
+
+class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\MicrosoftAPIAdminSDKConnectorCommon
+                                      implements \Kuink\Core\ConnectorEntityHandlerInterface {
+  var $connector; //The parent connector object to get all the context
+  var $translator; //Array that will contain all mandatory fields for insert and update users
+  var $rTranslator; //Calculated reversed translator
+
+
+  public function __construct($connector) {
+    $this->connector = $connector;
+
+    $this->translator['id'] = \Kuink\Core\PersonProperty::ID;
+    $this->translator['mailNickname'] = \Kuink\Core\PersonProperty::UID;
+    $this->translator['givenName'] = \Kuink\Core\PersonProperty::GIVEN_NAME;
+    $this->translator['surname'] = \Kuink\Core\PersonProperty::SURNAME;
+    $this->translator['display_name'] = \Kuink\Core\PersonProperty::DISPLAY_NAME;
+    $this->translator['name'] = \Kuink\Core\PersonProperty::NAME;
+
+    $this->translator['mobile'] = \Kuink\Core\PersonProperty::MOBILE;
+    $this->translator['mail'] = \Kuink\Core\PersonProperty::EMAIL;
+
+    $this->translator['password'] = \Kuink\Core\PersonProperty::PASSWORD;
+    $this->translator['otherMails'] = \Kuink\Core\PersonProperty::RECOVERY_EMAIL;
+    $this->translator['changePasswordAtNextLogin'] = \Kuink\Core\PersonProperty::CHANGE_PASSWORD;
+
+    $this->translator['streetAddress'] = \Kuink\Core\PersonProperty::STREET_ADDRESS;
+    $this->translator['postalCode'] = \Kuink\Core\PersonProperty::POSTAL_CODE;
+    $this->translator['city'] = \Kuink\Core\PersonProperty::POSTAL_ADDRESS;
+
+    $this->translator['preferredLanguage'] = \Kuink\Core\PersonProperty::PREFERRED_LANGUAGE;
+
+    $this->translator['jobTitle'] = \Kuink\Core\PersonProperty::JOB_TITLE;
+
+    $this->translator['officeLocation'] = 'office_location';
+    $this->translator['usageLocation'] = 'usage_location';
+    $this->translator['ageGroup'] = 'age_group';
+
+    $this->translator['extensionAttribute1'] = 'attribute1';
+    $this->translator['extensionAttribute2'] = 'attribute2';
+    $this->translator['extensionAttribute3'] = 'attribute3';
+    $this->translator['extensionAttribute4'] = 'attribute4';
+    $this->translator['extensionAttribute5'] = 'attribute5';
+    $this->translator['extensionAttribute6'] = 'attribute6';
+    $this->translator['extensionAttribute7'] = 'attribute7';
+    $this->translator['extensionAttribute8'] = 'attribute8';
+
+    $this->translator['suspend'] = 'suspended';
+
+    $this->translator['createdDateTime'] = \Kuink\Core\PersonProperty::_CREATION;
+
+    if (isset($this->translator)){
+      $this->rTranslator = array();
+      foreach ( $this->translator as $key => $value )
+        $this->rTranslator[$value] = $key;
     }
 
   }
 
+  
   /**
-   * ----------------------------------------------------------------------------------------------
-   * USER Stuff
-   */
+	 * Handler specific connection properties
+	 */
+	public function connect() {
+		//In this entity we must set the delegation admin user
+		//$this->connector->connector->setSubject($this->connector->delegatedAdmin);		
+	}
 
 
   /**
-   * Inserts a USER
-   * 
+   * Get a USER
+   * Parameters are optional, example: _attributes => displayName,givenName,id 
    */
-  function insert($params) {
+  public function load($params, $operators) {
   	$this->connect();
 
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
+    $mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($mailNickname !== '')
+      $id = $mailNickname.'@'.$this->connector->domain;     // Uses userPrincipalName parameter
+    else
+      $id = (string)$this->connector->getParam($params, 'id', true);
 
-    $givenName = (string)$this->getParam($params, $this->translator['givenName'], true);
-    $surname = (string)$this->getParam($params, $this->translator['surname'], true);
-    $displayName = (string)$this->getParam($params, $this->translator['displayName'], false, $givenName." ".$surname);
+    $query = (string)$this->connector->getParam($params, '_attributes', false);            // List of parameters
+    if ($query !== ''){
+      $query = '?$select='.$query;
+    }
+    
+    //var_dump($id);
+    try {
+      $result = $this->connector->connector->createRequest("GET", "/users/$id".$query)
+                                           ->setReturnType(Model\User::class)
+                                           ->execute();
+    } catch ( \Exception $e ) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+      return 1;
+    }
 
-    $jobTitle = isset ($params['jobTitle']) ? (string)$this->getParam($params, 'jobTitle', false) : null;
-    $mobilePhone = isset ($params['jobTitle']) ? (string)$this->getParam($params, 'mobilePhone', false) : null;
-    $officeLocation = isset ($params['jobTitle']) ? (string)$this->getParam($params, 'officeLocation', false) : null;
+    // Translate data before return
+    return $this->objectArrayTranslated($result);
+  }
+  
 
-    $mailNickname = (string)$this->getParam($params, $this->translator['mailNickname'], true);
-    $mail = (string)$this->getParam($params, $this->translator['email'], false, $mailNickname.'@'.$this->domain);
-    $userPrincipalName = $mailNickname.'@'.$this->domain;
+  /**
+   * Get all USERs
+   * Parameters are optional, example: query => $select=displayName,givenName,id
+   * https://docs.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0&tabs=http
+   * 
+   */
+  public function getAll($params, $operators) {
+  	$this->connect();
 
-    $otherMails = (string)$this->getParam($params, $this->translator['otherMails'], false, 
-                    $mailNickname.'@'.$this->alternativeDomain);
+    $query = (string)$this->connector->getParam($params, '_attributes', false);            // List of parameters
+    if ($query !== ''){
+      $query = '?$select='.$query.'&$top=999';
+    }
 
-    $password = (string)$this->getParam($params, $this->translator['password'], true);
-    $passwordPolicies = (string)$this->getParam($params, 'passwordPolicies', false, "DisablePasswordExpiration,DisableStrongPassword");
-    $changePasswordAtNextLogin = (string)$this->getParam($params, $this->translator['changePasswordAtNextLogin'], false);
+    //var_dump($id);
+    try {
+      $result = $this->connector->connector->createRequest("GET", "/users".$query)
+                               ->setReturnType(Model\User::class)
+                               ->execute();
+    //var_dump($result);
+    } catch ( \Exception $e ) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+      return 1;
+    }
+
+    // Translate data before return
+    return $this->objectArrayTranslated($result);
+  }
+ 
+  
+  /**
+   * Insert a USER
+   * 
+   */
+  public function insert($params) {
+  	$this->connect();
+
+    $givenName = (string)$this->connector->getParam($params, $this->translator['givenName'], true);
+    $surname = (string)$this->connector->getParam($params, $this->translator['surname'], true);
+    $displayName = (string)$this->connector->getParam($params, $this->translator['displayName'], false, $givenName." ".$surname);
+
+    $jobTitle = isset ($params['jobTitle']) ? (string)$this->connector->getParam($params, 'jobTitle', false) : null;
+    $mobilePhone = isset ($params['jobTitle']) ? (string)$this->connector->getParam($params, 'mobilePhone', false) : null;
+    $officeLocation = isset ($params['jobTitle']) ? (string)$this->connector->getParam($params, 'officeLocation', false) : null;
+
+    $mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], true);
+    $mail = (string)$this->connector->getParam($params, $this->translator['email'], false, $mailNickname.'@'.$this->connector->domain);
+    $userPrincipalName = $mailNickname.'@'.$this->connector->domain;
+
+    $otherMails = (string)$this->connector->getParam($params, $this->translator['otherMails'], false, 
+                    $mailNickname.'@'.$this->connector->alternativeDomain);
+
+    $password = (string)$this->connector->getParam($params, $this->translator['password'], true);
+    $passwordPolicies = (string)$this->connector->getParam($params, 'passwordPolicies', false, "DisablePasswordExpiration,DisableStrongPassword");
+    $changePasswordAtNextLogin = (string)$this->connector->getParam($params, $this->translator['changePasswordAtNextLogin'], false);
     $changePasswordAtNextLogin = ($changePasswordAtNextLogin == 'true' ? true : false);
 
-    $preferredLanguage = (string)$this->getParam($params, $this->translator['preferredLanguage'], false, 
-                           (string)$this->dataSource->getParam ('preferredLanguage', true ));
-    $usageLocation = (string)$this->getParam($params, $this->translator['usageLocation'], false,
-                       (string)$this->dataSource->getParam ('usageLocation', true ));
+    $preferredLanguage = (string)$this->connector->getParam($params, $this->translator['preferredLanguage'], false, 
+                           (string)$this->connector->dataSource->getParam ('preferredLanguage', true ));
+    $usageLocation = (string)$this->connector->getParam($params, $this->translator['usageLocation'], false,
+                       (string)$this->connector->dataSource->getParam ('usageLocation', true ));
 
-    $userType = isset ($params['userType']) ? (string)$this->getParam($params, 'userType', false) : "Member";
-    $ageGroup = (string)$this->getParam($params, $this->translator['ageGroup'], false, null);
+    $userType = isset ($params['userType']) ? (string)$this->connector->getParam($params, 'userType', false) : "Member";
+    $ageGroup = (string)$this->connector->getParam($params, $this->translator['ageGroup'], false, null);
 
 
     $data = [
@@ -233,51 +372,52 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 
     //var_dump($data);
     try {
-      $result = $this->connector->createRequest("POST", "/$entity")
-                                ->attachBody($data)
-                                ->setReturnType(Model\User::class)
-                                ->execute();
+      $result = $this->connector->connector->createRequest("POST", "/users")
+                                           ->attachBody($data)
+                                           ->setReturnType(Model\User::class)
+                                           ->execute();
     //var_dump($result);
     } catch ( \Exception $e ) {
       //var_dump($e);
-      \Kuink\Core\TraceManager::add ( 'Inserting a value on entity'.$e, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-      return 0;
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+      return 1;
     }
 
-    \Kuink\Core\TraceManager::add ( 'Inserting a value on entity'.$entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-    return $result->getProperties();
-}
+    // Translate data before return
+    return $this->objectArrayTranslated($result);
+  }
 
 
   /**
    * Updates a USER
-   * @param array $params The params that are passed to update an entity record
    */
-  function update($params) {
+  public function update($params) {
   	$this->connect();
-
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
-
-    $mailNickname = (string)$this->getParam($params, $this->translator['mailNickname'], false);
+    
+    $mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
     if ($mailNickname !== '')
-      $id = $mailNickname.'@'.$this->domain;     // Uses userPrincipalName parameter
+      $id = $mailNickname.'@'.$this->connector->domain;     // Uses userPrincipalName parameter
     else
-      $id = (string)$this->getParam($params, 'id', true);
+      $id = (string)$this->connector->getParam($params, 'id', true);
 
     if (isset ( $params ['_entity'] ))
 			unset ( $params ['_entity'] );
-		if (isset ( $params [$this->translator['mailNickname']] ))
+    if (isset ( $params ['_method'] ))
+			unset ( $params ['_method'] );
+    if (isset ( $params [$this->translator['mailNickname']] ))
 			unset ( $params [$this->translator['mailNickname']] );
 
     $data = array();         // Data to update
 
     // Password stuff, if updated
     if (isset ( $params [$this->translator['password']] )){
-      $password = (string)$this->getParam($params, 'password', true);
-      $passwordPolicies = (string)$this->getParam($params, 'passwordPolicies', false, "DisablePasswordExpiration,DisableStrongPassword");
-      $changePasswordAtNextLogin = (string)$this->getParam($params, $this->translator['changePasswordAtNextLogin'], false);
+      $password = (string)$this->connector->getParam($params, 'password', true);
+      $passwordPolicies = (string)$this->connector->getParam($params, 'passwordPolicies', false, "DisablePasswordExpiration,DisableStrongPassword");
+      $changePasswordAtNextLogin = (string)$this->connector->getParam($params, $this->translator['changePasswordAtNextLogin'], false);
       $changePasswordAtNextLogin = ($changePasswordAtNextLogin == 'true' ? true : false);
 
+      /* Password, not implemented!
       $data = [
         'passwordPolicies' => $passwordPolicies,
         'passwordProfile' => [
@@ -285,6 +425,7 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
             'forceChangePasswordNextSignIn' => $changePasswordAtNextLogin,
         ],
       ];
+      */
 
       unset ( $params [$this->translator['password']] );
       if (isset ( $params [$this->translator['passwordPolicies']] ))
@@ -304,21 +445,29 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 
     //var_dump($data);
     try {
-      $result = $this->connector->createRequest("PATCH", "/$entity/$id")
-                                ->attachBody($data)
-                                ->setReturnType(Model\User::class)
-                                ->execute();
+      $result = $this->connector->connector->createRequest("PATCH", "/users/$id")
+                                           ->attachBody($data)
+                                           ->setReturnType(Model\User::class)
+                                           ->execute();
 
     //var_dump($result);
     } catch ( \Exception $e ) {
-      //var_dump($e);
-      \Kuink\Core\TraceManager::add ( 'Inserting a value on entity'.$e, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
       return 1;
     }
 
-    \Kuink\Core\TraceManager::add ( 'Updating a value on entity'.$entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-    return 0;	
+    // Translate data before return
+    return $this->objectArrayTranslated($result);	
   }  
+
+
+	/**
+	 * Save a user
+	 */
+	public function save($params) {
+		\Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+	}
 
 
   /**
@@ -326,72 +475,29 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
    * @param array $params The params that are passed to update an entity record
    * ---> Missing: Delegated access!
    */
-  function resetPassword($params) {
-  	$this->connect();
-
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
-
-    $id = (string)$this->getParam($params, 'id', false);
-    if ($id === ''){
-      $mailNickname = (string)$this->getParam($params, $this->translator['mailNickname'], true);
-      $userPrincipalName = $mailNickname.'@'.$this->domain;     // Uses userPrincipalName parameter
-      try {
-        $result = $this->connector->createRequest("GET", "/$entity/$userPrincipalName")
-                                  ->setReturnType(Model\User::class)
-                                  ->execute();
-      } catch ( \Exception $e ) {
-        return 0;
-      }
-      $id = $result->getId();
-    }
-
-    // Password stuff
-    $password = (string)$this->getParam($params, 'password', true);
-    $changePasswordAtNextLogin = (string)$this->getParam($params, $this->translator['changePasswordAtNextLogin'], false);
-    $changePasswordAtNextLogin = ($changePasswordAtNextLogin == 'true' ? true : false);
-
-    $data = [
-      'passwordProfile' => [
-        'password' => $password,
-        'forceChangePasswordNextSignIn' => $changePasswordAtNextLogin,
-      ],
-    ];
-
-    //var_dump($data);
-    try {
-      $result = $this->connector->createRequest("PATCH", "/$entity/$id")
-                                ->attachBody($data)
-                                ->setReturnType(Model\User::class)
-                                ->execute();
-
-    //var_dump($result);
-    } catch ( \Exception $e ) {
-      //var_dump($e);
-      \Kuink\Core\TraceManager::add ( 'Inserting a value on entity'.$e, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-      return 0;
-    }
-
-    \Kuink\Core\TraceManager::add ( 'Updating a value on entity'.$entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-    return $result->getProperties();	
+  public function resetPassword($params) {
+    \Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
   }
 
 
   /**
    * Assignes a Licence to a USER
    * 
+   * Example: Assigns a license from connector configuration to user
+   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
+   *     <Param name="_entity">user</Param>
+   *     <Param name="_method">assignLicense</Param>
+   *     <Param name="uid">dummy</Param>
+   *   </DataAccess>
    */
-  function assignLicense($params) {
-  	$this->connect();
-
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
-
-    $mailNickname = (string)$this->getParam($params, $this->translator['mailNickname'], false);
+  public function assignLicense($params) {
+  	$mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
     if ($mailNickname !== '')
-      $id = $mailNickname.'@'.$this->domain;     // Uses userPrincipalName parameter
+      $id = $mailNickname.'@'.$this->connector->domain;     // Uses userPrincipalName parameter
     else
-      $id = (string)$this->getParam($params, 'id', true);
+      $id = (string)$this->connector->getParam($params, 'id', true);
 
-    $licenceSkuId = (string)$this->getParam($params, 'licenceSkuId', false, $this->licenceSkuId);
+    $licenceSkuId = (string)$this->connector->getParam($params, 'licenceSkuId', false, $this->connector->licenceSkuId);
 
     // Licence Stuff!
     $licences = [
@@ -405,131 +511,88 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
     ];
 
     try {
-      $result = $this->connector->createRequest("POST", "/$entity/$id/assignLicense")
-                                ->attachBody($licences)
-                                ->setReturnType(Model\User::class)
-                                ->execute();
+      $result = $this->connector->connector->createRequest("POST", "/users/$id/assignLicense")
+                                           ->attachBody($licences)
+                                           ->setReturnType(Model\User::class)
+                                           ->execute();
     //var_dump($result);
     } catch ( \Exception $e ) {
-      var_dump($e);
-      return 0;
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR assigning licence', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+      return 1;
     }
 
-    return $result->getProperties(); 	
-  }  
+    // Translate data before return
+    return $this->objectArrayTranslated($result);	
+  }
+
+
+  /**
+   * Get USER Licence Details
+   */
+  function licenseDetails($params){
+                                            // Set USER by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->connector->load(array ('_entity'=>'user','uid'=>$uid))['id'];
+    else
+      $id = (string)$this->connector->getParam($params, 'id', true);         // User ID
+
+    //var_dump($id);
+    try {
+      $result = $this->connector->connector->createRequest("GET", "/users/$id/licenseDetails")
+                                           ->setReturnType(Model\User::class)
+                                           ->execute();
+    //var_dump($result);
+    } catch ( \Exception $e ) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+			return 1;
+    }
+
+    return $this->objectArrayTranslated($result);
+  }
+
   
 
   /**
    * Deletes a USER
    * It goes to trash bin, deleted list
    */
-  function delete($params) {
+  public function delete($params) {
   	$this->connect();
 
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
-
-    $mailNickname = (string)$this->getParam($params, $this->translator['mailNickname'], false);
+    $mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
     if ($mailNickname !== '')
-      $id = $mailNickname.'@'.$this->domain;     // Uses userPrincipalName parameter
+      $id = $mailNickname.'@'.$this->connector->domain;     // Uses userPrincipalName parameter
     else
-      $id = (string)$this->getParam($params, 'id', true);    
+      $id = (string)$this->connector->getParam($params, 'id', true);    
 
     //var_dump($id);
     try {
-      $result = $this->connector->createRequest("DELETE", "/$entity/$id")
+      $result = $this->connector->createRequest("DELETE", "/users/$id")
                                 ->setReturnType(Model\User::class)
                                 ->execute();
     //var_dump($result);
     } catch ( \Exception $e ) {
-      //var_dump($e);
-      return 0;
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR deleting user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+      return 1;
     }
 
-    \Kuink\Core\TraceManager::add ( 'Deleting id:'.$id.'  on entity:'.$entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-    return $result->getProperties();
+    return 0;
   }
   
 
-  /**
-   * Get a USER
-   * Parameters are optional, example: query => displayName,givenName,id 
-   */
-  function load($params) {
-  	$this->connect();
-
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
-
-    $mailNickname = (string)$this->getParam($params, $this->translator['mailNickname'], false);
-    if ($mailNickname !== '')
-      $id = $mailNickname.'@'.$this->domain;     // Uses userPrincipalName parameter
-    else
-      $id = (string)$this->getParam($params, 'id', true);
-
-    $query = (string)$this->getParam($params, 'query', false);            // List of parameters
-    if ($query !== ''){
-      $query = '?$select='.$query;
-    }
-    
-    //var_dump($id);
-    try {
-      $result = $this->connector->createRequest("GET", "/$entity/$id".$query)
-                                ->setReturnType(Model\User::class)
-                                ->execute();
-    } catch ( \Exception $e ) {
-      return 0;
-    }
-
-    // Set the return array, Translated
-    $user = $this->objectArrayTranslated($result);
-
-    return $user;
-  }
-  
-
-  /**
-   * Get all USERs
-   * Parameters are optional, example: query => $select=displayName,givenName,id
-   * https://docs.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0&tabs=http
-   * 
-   */
-  function getAll($params) {
-  	$this->connect();
-
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
- 
-    $query = (string)$this->getParam($params, 'query', false);            // List of parameters
-    if ($query !== ''){
-      $query = '?$select='.$query.'&$top=999';
-    }
-
-    //var_dump($id);
-    try {
-      $result = $this->connector->createRequest("GET", "/$entity".$query)
-                               ->setReturnType(Model\User::class)
-                               ->execute();
-    //var_dump($result);
-    } catch ( \Exception $e ) {
-      //var_dump($e);
-      return 0;
-    }
-
-    // Set the return array, Translated
-    $users = $this->objectArrayTranslated($result);
-
-    return $users;
-  }
- 
-  
   /**
    * Changed USERs
    * Parameters are optional, example: query => $select=displayName,givenName,id
    * 
    */
-  function changed($params) {
+  protected function changed($params) {
   	$this->connect();
 
-    $entity = isset ($params['_entity']) ? (string)$this->getParam($params, '_entity', false) : $this->entity;
-    $query = (string)$this->getParam($params, 'query', false);            // List of parameters
+    $query = (string)$this->connector->getParam($params, '_attributes', false);      // List of parameters
 
     if ($query !== ''){
       $query = '?$select='.$query;
@@ -537,16 +600,18 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
     
     //var_dump($id);
     try {
-      $result = $this->connector->createRequest("GET", "/$entity/delta".$query)
+      $result = $this->connector->createRequest("GET", "/users/delta".$query)
                                 ->setReturnType(Model\User::class)
                                 ->execute();
     //var_dump($result);
     } catch ( \Exception $e ) {
-      //var_dump($e);
-      return 0;
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+      return 1;
     }
 
-    return $result;
+    // Translate data before return
+    return $this->objectArrayTranslated($result);
   }
 
 
@@ -558,40 +623,170 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 	public function getSchemaName($params) {
   	return null;
   }
+}
+
+
+/**
+ * Class to handle all basic GROUP operations
+ *
+ * @author jose.feio
+ */
+
+class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\MicrosoftAPIAdminSDKConnectorCommon
+                                       implements \Kuink\Core\ConnectorEntityHandlerInterface {
+  var $connector;   //The parent connector object to get all the context
+  var $translator;  //Array that will contain all mandatory fields for insert and update users
+  var $rTranslator; //Calculated reversed translator
+
+
+  public function __construct($connector) {
+    $this->connector = $connector;
+
+    $this->translator['id'] = \Kuink\Core\PersonGroupProperty::ID;
+    $this->translator['mailNickname'] = \Kuink\Core\PersonGroupProperty::UID;
+    $this->translator['displayName'] = \Kuink\Core\PersonGroupProperty::DISPLAY_NAME;
+    $this->translator['description'] = \Kuink\Core\PersonGroupProperty::DESCRIPTION;
+
+    $this->translator['groupType'] = 'group_type';
+    $this->translator['mailEnabled'] = 'mail_enabled';
+    $this->translator['securityEnabled'] = 'security_enabled';
+    $this->translator['visibility'] = \Kuink\Core\PersonGroupProperty::VISIBILITY;
+    $this->translator['preferredDataLocation'] = \Kuink\Core\PersonGroupProperty::LOCATION;
+    $this->translator['collaborative'] = 'is_collaborative';
+    $this->translator['userID'] = 'id_user';
+    $this->translator['userUID'] = 'uid_user';
+    $this->translator['groupID'] = 'id_group';
+    $this->translator['owner'] = 'owner';
+
+    $this->translator['allow_external_senders'] = \Kuink\Core\PersonGroupProperty::ALLOW_EXTERNAL_SENDERS;
+    $this->translator['auto_subscribe_new_members'] = \Kuink\Core\PersonGroupProperty::AUTO_SUBSCRIBE_NEW_MEMBERS;
+
+    $this->translator['isOwner'] = \Kuink\Core\PersonGroupProperty::IS_OWNER;
+    $this->translator['isMember'] = \Kuink\Core\PersonGroupProperty::IS_MEMBER;
+
+    $this->translator['createdDateTime'] = \Kuink\Core\PersonGroupProperty::_CREATION;
+
+    // Set Reverse Translator
+    if (isset($this->translator)){
+      $this->rTranslator = array();
+      foreach ( $this->translator as $key => $value )
+        $this->rTranslator[$value] = $key;
+    }
+  }
+
+  
+  /**
+	 * Handler specific connection properties
+	 */
+	public function connect() {
+	}
 
 
   /**
-   * ----------------------------------------------------------------------------------------------
-   * Group Stuff
+   * Get a GROUP
+   * 
+   * Example: Get from group "_dummy", attributes "mailNickname,id"
+   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
+   *     <Param name="_entity">group</Param>
+   *     <Param name="_method">load</Param>
+   *     <Param name="uid">_dummy</Param>
+   *     <Param name="_attributes">mailNickname,id</Param>
+   *   </DataAccess>
    */
+  function load($params, $operators=null) {
+                                            // Set GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== ""){
+      $groups = $this->connector->getAll(array('_entity'=>'group','_attributes'=>'mailNickname,id'));
+      foreach ( $groups as $key => $value )
+        if ($value[$this->translator['mailNickname']] == $uid){
+          $id = $value[$this->translator['id']];
+          break;
+        }
+    }                                       // Get GROUP ID
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+
+                                            // List of parameters
+    $query = (string)$this->connector->getParam($params, '_attributes', false);
+    if ($query !== ''){
+      $query = '?$select='.$query;
+    }
+    
+    //var_dump($id);
+    try {
+      $result = $this->connector->connector->createRequest("GET", "/groups/$id".$query)
+                                           ->setReturnType(Model\Group::class)
+                                           ->execute();
+    //var_dump($result);
+    } catch ( \Exception $e ) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+			return 1;
+    }
+
+    return $this->objectArrayTranslated($result);
+  }
+
 
   /**
-   * Inserts a GROUP | +/-
+   * Get all GROUPs
+   * Parameters are optional, example: query => $select=displayName,givenName,id
+   * https://docs.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0&tabs=http
    * 
    */
-  function insertG($params) {
-  	$this->connect();
+  function getAll($params, $operators=null) {
+                                            // List of parameters
+    $query = (string)$this->connector->getParam($params, '_attributes', false);
+    if ($query !== ''){
+      $query = '?$select='.$query.'&$top=999';
+    }
+    
+    //var_dump($id);
+    try {
+      $result = $this->connector->connector->createRequest("GET", "/groups".$query)
+                                ->setReturnType(Model\Group::class)
+                                ->execute();
+    //var_dump($result);
+    } catch ( \Exception $e ) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+			return 1;
+    }
 
-    // TMP -> Goes into constructor
-    $this->entity = $this->dataSource->getParam ( 'entity.group', true );
-    // ------------------------------------------------------------------
+    return $this->objectArrayTranslated($result);
+  }
 
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
 
-    $displayName = (string)$this->getParam($params, $this->translator['displayName'], true);
-    $description = isset ($params[$this->translator['description']]) ? (string)$this->getParam($params, $this->translator['description'], false) : $displayName;
+  /**
+   * Inserts a GROUP
+   * 
+   */
+  function insert($params) {
+    $displayName = (string)$this->connector->getParam($params, $this->translator['displayName'], true);
+    $description = isset ($params[$this->translator['description']]) ? (string)$this->connector->getParam($params, $this->translator['description'], false) : $displayName;
 
-    $mailNickname = (string)$this->getParam($params, $this->translator['mailNickname'], true);
-    $groupType = (string)$this->getParam($params, $this->translator['groupType'], false, "Unified");
-    $mailEnabled = isset ($params[$this->translator['mailEnabled']]) ? (string)$this->getParam($params, $this->translator['mailEnabled'], false) : true;
-    $securityEnabled = isset ($params[$this->translator['securityEnabled']]) ? (bool)$this->getParam($params, $this->translator['securityEnabled'], false) : true;
+    $mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], true);
+    $groupType = (string)$this->connector->getParam($params, $this->translator['groupType'], false, "Unified");
+    $mailEnabled = isset ($params[$this->translator['mailEnabled']]) ? (string)$this->connector->getParam($params, $this->translator['mailEnabled'], false) : true;
+    $securityEnabled = isset ($params[$this->translator['securityEnabled']]) ? (bool)$this->connector->getParam($params, $this->translator['securityEnabled'], false) : true;
 
-    $visibility = (string)$this->getParam($params, $this->translator['visibility'], false, "Private");
+    $visibility = (string)$this->connector->getParam($params, $this->translator['visibility'], false, "Private");
 
-    $userID = (string)$this->getParam($params, $this->translator['userID'], false);
+    // Set USER by UID or Azure ID
+    $userUID = (string)$this->connector->getParam($params, $this->translator['userUID'], false);
+    if ($userUID !== "")
+      $user = $this->connector->load(array ('_entity'=>'user','uid'=>$userUID))['id'];
 
-    $collaborative = (bool)$this->getParam($params, $this->translator['collaborative'], false, false);
-    if ($collaborative && isset($userID)){
+    if ($user == null)
+      $userID = (string)$this->connector->getParam($params, $this->translator['userID'], false);
+    else
+      $userID = $user;
+
+    $role = (bool)$this->connector->getParam($params, $this->translator['isOwner'], false, 0);
+
+    $collaborative = (bool)$this->connector->getParam($params, $this->translator['collaborative'], false, false);
+    if ($collaborative && isset($userID) && $role){
       $groupType = "Unified";
       $mailEnabled = true;
       $owner = "https://graph.microsoft.com/v1.0/users/".$userID;
@@ -614,222 +809,176 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 
     // Create group
     try {
-      $result = $this->connector->createRequest("POST", "/$entity")
-                                ->attachBody($data)
-                                ->setReturnType(Model\Group::class)
-                                ->execute();
+      $result = $this->connector->connector->createRequest("POST", "/groups")
+                                           ->attachBody($data)
+                                           ->setReturnType(Model\Group::class)
+                                           ->execute();
     //var_dump($result);
     } catch ( \Exception $e ) {
-      //var_dump($e);
-      \Kuink\Core\TraceManager::add ( 'Inserting a value on entity'.$e, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-      return 0;
-    }
-
-    $group = $this->objectArrayTranslated($result);
-
-
-    \Kuink\Core\TraceManager::add ( 'Inserting a value on entity'.$entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-    return $group;
+        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+        \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+        return 1;
+      }
+    
+    return $this->objectArrayTranslated($result);
   }
 
 
   /**
-   * Updates a GROUP | Not Ok
+   * Updates a GROUP
    * @param array $params The params that are passed to update an entity record
    */
-  function updateG($params) {
-  	$this->connect();
+  function update($params) {
+                                            // Set GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->load(array('uid'=>$uid))['id'];
+                                            // Get GROUP ID
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
 
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
-
-    $mailNickname = (string)$this->getParam($params, $this->translator['mailNickname'], false);
-    if ($mailNickname !== '')
-      $id = $mailNickname.'@'.$this->domain;     // Uses userPrincipalName parameter
-    else
-      $id = (string)$this->getParam($params, 'id', true);
-
-    /**
-     * TODO
-     * $allowExternalSenders = (bool)$this->getParam($params, $this->translator['allow_external_senders'], false, false);
-     */
-      
+                                            // Unset config params
     if (isset ( $params ['_entity'] ))
 			unset ( $params ['_entity'] );
-		if (isset ( $params [$this->translator['mailNickname']] ))
+    if (isset ( $params ['_method'] ))
+			unset ( $params ['_method'] );
+    if (isset ( $params [$this->translator['mailNickname']] ))
 			unset ( $params [$this->translator['mailNickname']] );
+    if (isset ( $params [$this->translator['id']] ))
+			unset ( $params [$this->translator['id']] );
 
-    // Password stuff, if updated
-    if (isset ( $params [$this->translator['password']] )){
-      $password = (string)$this->getParam($params, 'password', true);
-      $passwordPolicies = (string)$this->getParam($params, 'passwordPolicies', false, "DisablePasswordExpiration,DisableStrongPassword");
-      $changePasswordAtNextLogin = (string)$this->getParam($params, $this->translator['changePasswordAtNextLogin'], false);
-      $changePasswordAtNextLogin = ($changePasswordAtNextLogin == 'true' ? true : false);
+                                          
+    $data = array();                        // Data to update
 
-      $data = [
-        'passwordPolicies' => $passwordPolicies,
-        'passwordProfile' => [
-            'password' => $password,
-            'forceChangePasswordNextSignIn' => $changePasswordAtNextLogin,
-        ],
-      ];
-
-      unset ( $params [$this->translator['password']] );
-      if (isset ( $params [$this->translator['passwordPolicies']] ))
-        unset ( $params [$this->translator['passwordPolicies']] );
-      if (isset ( $params [$this->translator['changePasswordAtNextLogins']] ))
-        unset ( $params [$this->translator['changePasswordAtNextLogin']] );
+                                            // Group type, if updated
+    $collaborative = (bool)$this->connector->getParam($params, $this->translator['collaborative'], false, false);
+    if ($collaborative){
+      $data = ['groupTypes' => [ "Unified" ]];
+      $data ['mailEnabled'] = true;
+      unset ( $params [$this->translator['collaborative']] );
     }
-
-
-    foreach ( $params as $key => $value ){
-      if (!is_null($value)){
-        $aux = $this->rTranslator[$key];
-        $data->$aux = is_array ( $value ) ? $value : ( string ) $value;
+    elseif (isset ( $params [$this->translator['groupType']] )){
+        $groupType = (string)$this->connector->getParam($params, $this->translator['groupType'], false);
+        $data = ['groupTypes' => [ $groupType ]];
+        unset ( $params [$this->translator['groupType']] );
       }
-    }
 
-    //var_dump($data);
+
+    foreach ( $params as $key => $value )
+      if (!is_null($value)){
+        $aux = isset ($this->rTranslator[$key]) ? (string)$this->rTranslator[$key] : $key;
+        if ($aux === "securityEnabled")
+          $data['securityEnabled'] = (bool)$this->connector->getParam($params, $this->translator['securityEnabled'], false);
+        else
+          $data[$aux] = is_array ( $value ) ? $value : ( string ) $value;
+      }
+
+  
+    /**
+     * TODO
+     * $allowExternalSenders = (bool)$this->connector->getParam($params, $this->translator['allow_external_senders'], false, false);
+     */
     try {
-      $result = $this->connector->createRequest("PATCH", "/$entity/$id")
-                                ->attachBody($data)
-                                ->setReturnType(Model\User::class)
-                                ->execute();
-
+      $result = $this->connector->connector->createRequest("PATCH", "/groups/".$id)
+                                           ->attachBody($data)
+                                           ->setReturnType(Model\Group::class)
+                                           ->execute();
     //var_dump($result);
     } catch ( \Exception $e ) {
-      //var_dump($e);
-      \Kuink\Core\TraceManager::add ( 'Inserting a value on entity'.$e, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-      return 0;
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR assigning licence', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+      return 1;
     }
 
-    \Kuink\Core\TraceManager::add ( 'Updating a value on entity'.$entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-    return $result;	
+    // Translate data before return
+    return $this->objectArrayTranslated($result);	
   }  
 
 
   /**
-   * Deletes a GROUP | Not Ok
-   * It goes to trash bin, deleted list
-   */
-  function deleteG($params) {
-  	$this->connect();
+	 * Save a GROUP
+	 */
 
-    // TMP -> Goes into constructor
-    $this->entity = $this->dataSource->getParam ( 'entity.group', true );
-    // ------------------------------------------------------------------
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
-
-    $mailNickname = (string)$this->getParam($params, $this->translator['mailNickname'], false);
-    if ($mailNickname !== '')
-      $id = $mailNickname.'@'.$this->domain;     // Uses userPrincipalName parameter
-    else
-      $id = (string)$this->getParam($params, 'id', true);    
-
-    //var_dump($id);
-    try {
-      $result = $this->connector->createRequest("DELETE", "/$entity/$id")
-                                ->setReturnType(Model\User::class)
-                                ->execute();
-    //var_dump($result);
-    } catch ( \Exception $e ) {
-      //var_dump($e);
-      return 0;
-    }
-
-    \Kuink\Core\TraceManager::add ( 'Deleting id:'.$id.'  on entity:'.$entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-    return 1;
-  }
+	public function save($params) {
+		\Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+	}
 
 
   /**
-   * Get a GROUP
-   * Parameters are optional, example: query => displayName,givenName,id 
-   */
-  function loadG($params) {
-  	$this->connect();
-
-    // TMP -> Goes into constructor
-    $this->entity = $this->dataSource->getParam ( 'entity.group', true );
-    // ------------------------------------------------------------------
-
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
-    $id = (string)$this->getParam($params, 'id', true);
-
-    $query = (string)$this->getParam($params, 'query', false);            // List of parameters
-    if ($query !== ''){
-      $query = '?$select='.$query;
-    }
-    
-    //var_dump($id);
-    try {
-      $result = $this->connector->createRequest("GET", "/$entity/$id".$query)
-                                ->setReturnType(Model\Group::class)
-                                ->execute();
-    //var_dump($result);
-    } catch ( \Exception $e ) {
-      //var_dump($e);
-      return 0;
-    }
-
-    return $result;
-  }
-  
-
-  /**
-   * Get all GROUPs
-   * Parameters are optional, example: query => $select=displayName,givenName,id
-   * https://docs.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0&tabs=http
+   * Assignes a Licence to GROUP
    * 
    */
-  function getAllG($params) {
-  	$this->connect();
-    
-    // TMP -> Goes into constructor
-    $this->entity = $this->dataSource->getParam ( 'entity.group', true );
-    // ------------------------------------------------------------------
+  public function assignLicense($params) {
+                                            // Set GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->load(array('uid'=>$uid))['id'];
+                                            // Get GROUP ID
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+                                        
+    $licenceSkuId = (string)$this->connector->getParam($params, 'licenceSkuId', false, $this->connector->licenceSkuId);
 
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
- 
-    $query = (string)$this->getParam($params, 'query', false);            // List of parameters
-    if ($query !== ''){
-      $query = '?'.$query;
-    }
-    
-    //var_dump($id);
+    // Licence Stuff!
+    $licences = [
+      'addLicenses' => [
+          [
+            'disabledPlans' => [],
+            'skuId' => $licenceSkuId,
+          ],
+      ],
+      'removeLicenses' => []
+    ];
+
     try {
-      $result = $this->connector->createRequest("GET", "/$entity".$query)
-                                ->setReturnType(Model\Group::class)
-                                ->execute();
+      $result = $this->connector->connector->createRequest("POST", "/groups/$id/assignLicense")
+                                           ->attachBody($licences)
+                                           ->setReturnType(Model\Group::class)
+                                           ->execute();
     //var_dump($result);
     } catch ( \Exception $e ) {
-      //var_dump($e);
-      return 0;
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR assigning licence', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+      return 1;
     }
 
-    // Set the return array, Translated
-    $groups = $this->objectArrayTranslated($result);
+    // Translate data before return
+    return $this->objectArrayTranslated($result);	
+  }  
 
-    \Kuink\Core\TraceManager::add ( 'Get All:'.$entity.'  ~>'.$groups, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-    return $groups;
-  }
- 
 
   /**
-   * Add User to GROUP | +/-
+   * Add User to GROUP
    * 
+   * Example: Add user "dummy" to group "_dummy"
+   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
+   *    <Param name="_entity">group</Param>
+   *    <Param name="_method">addUser</Param>
+   *    <Param name="uid">_dummy</Param>
+   *    <Param name="uid_user">dummy</Param>
+   *    <Param name="is_owner">0</Param>
+   *   </DataAccess>
    */
   function addUser($params) {
-  	$this->connect();
+                                            // Set GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->connector->load(array ('_entity'=>'group','uid'=>$uid))['id'];
+                                            // Get GROUP ID
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
 
-    // TMP -> Goes into constructor
-    $this->entity = $this->dataSource->getParam ( 'entity.group', true );
-    // ------------------------------------------------------------------
+                                            // Set USER by UID or Azure ID
+    $userUID = (string)$this->connector->getParam($params, $this->translator['userUID'], false);
+    if ($userUID !== "")
+      $user = $this->connector->load(array ('_entity'=>'user','uid'=>$userUID))['id'];
 
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
+    if ($user == null)
+      $userID = (string)$this->connector->getParam($params, $this->translator['userID'], true);
+    else
+      $userID = $user;
 
-    $groupID = (string)$this->getParam($params, $this->translator['groupID'], true);
-    $userID = (string)$this->getParam($params, $this->translator['userID'], true);
-    $role = (bool)$this->getParam($params, $this->translator['isOwner'], false, 0);
+    $role = (bool)$this->connector->getParam($params, $this->translator['isOwner'], false, 0);
 
     if ($role)
       $data = [
@@ -842,26 +991,92 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 
     //var_dump($data);
     try {
-      $result = $this->connector->createRequest("PATCH", "/$entity/".$groupID)
-                                ->attachBody($data)
-                                ->setReturnType(Model\Group::class)
-                                ->execute();
+      $result = $this->connector->connector->createRequest("PATCH", "/groups/".$id)
+                                           ->attachBody($data)
+                                           ->setReturnType(Model\Group::class)
+                                           ->execute();
     //var_dump($result);
     } catch ( \Exception $e ) {
-      //var_dump($e);
-      \Kuink\Core\TraceManager::add ( 'Inserting a value on entity'.$e, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-      return 0;
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+			return 1;
     }
 
-    // Set the return array, Translated
-    $groups = $this->objectArrayTranslated($result);
-
-    \Kuink\Core\TraceManager::add ( 'Inserting a value on entity'.$entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-    return $groups;
+    return 0;
   }
 
 
   /**
+   * List GROUP Users (members/owners)
+   * Parameter:
+   *    .is_owner => 1 -> List owners
+   *    .is_owner = 0 or null -> List members
+   */
+  function listUsers($params) {
+                                            // Set GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->connector->load(array ('_entity'=>'group','uid'=>$uid))['id'];
+                                            // Get GROUP ID
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+                                        
+                                            // Get role!
+    if ((bool)$this->connector->getParam($params, $this->translator['isOwner'], false, 0))
+      $role = 'owners';
+    else
+      $role = 'members';
+
+    try {
+      $result = $this->connector->connector->createRequest("GET", "/groups/".$id."/".$role)
+                                           ->setReturnType(Model\Group::class)
+                                           ->execute();
+    //var_dump($result);
+    } catch ( \Exception $e ) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+			return 1;
+    }
+
+    return $this->objectArrayTranslated($result);
+  }
+
+
+  /**
+   * Remove User from GROUP
+   * 
+   */
+  function removeUser($params) {
+		\Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+  }
+
+
+ /**
+   * Deletes a GROUP
+   * It goes to trash bin, deleted list
+   */
+  function delete($params) {
+  	$this->connect();
+
+    $id = (string)$this->connector->getParam($params, 'id', true);  
+
+    //var_dump($id);
+    try {
+      $result = $this->connector->createRequest("DELETE", "/groups/$id")
+                                ->setReturnType(Model\Group::class)
+                                ->execute();
+    //var_dump($result);
+    } catch ( \Exception $e ) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+			return 1;
+    }
+
+    return 0;
+  }
+
+
+   /**
    * If this datasource have more than one schema then get it
    * For instance in a database server this could return the database name 
    * @param array  $params The params that are passed to get all records of an entity
@@ -869,227 +1084,327 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 	public function getSchemaNameG($params) {
   	return null;
   }
+}
+
+
+/**
+ * Class to handle all basic TEAM operations
+ *
+ * @author jose.feio
+ */
+
+class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\MicrosoftAPIAdminSDKConnectorCommon
+                                      implements \Kuink\Core\ConnectorEntityHandlerInterface {
+  var $connector;   //The parent connector object to get all the context
+  var $translator;  //Array that will contain all mandatory fields for insert and update users
+  var $rTranslator; //Calculated reversed translator
+
+
+  public function __construct($connector) {
+    $this->connector = $connector;
+
+    $this->translator['id'] = \Kuink\Core\PersonGroupProperty::ID;
+    $this->translator['mailNickname'] = \Kuink\Core\PersonGroupProperty::UID;
+    $this->translator['displayName'] = \Kuink\Core\PersonGroupProperty::DISPLAY_NAME;
+    $this->translator['description'] = \Kuink\Core\PersonGroupProperty::DESCRIPTION;
+
+    $this->translator['groupType'] = 'group_type';
+    $this->translator['mailEnabled'] = 'mail_enabled';
+    $this->translator['securityEnabled'] = 'security_enabled';
+    $this->translator['visibility'] = 'visibility';
+    $this->translator['collaborative'] = 'is_collaborative';
+    $this->translator['userID'] = 'id_user';
+    $this->translator['userUID'] = 'uid_user';
+    $this->translator['groupID'] = 'id_group';
+    $this->translator['owner'] = 'owner';
+
+    $this->translator['isOwner'] = \Kuink\Core\PersonGroupProperty::IS_OWNER;
+    $this->translator['isMember'] = \Kuink\Core\PersonGroupProperty::IS_MEMBER;
+
+    $this->translator['createdDateTime'] = \Kuink\Core\PersonProperty::_CREATION;
+
+    // Set Reverse Translator
+    if (isset($this->translator)){
+      $this->rTranslator = array();
+      foreach ( $this->translator as $key => $value )
+        $this->rTranslator[$value] = $key;
+    }
+  }
+
+  
+  /**
+	 * Handler specific connection properties
+	 */
+	public function connect() {
+	}
 
 
   /**
-   * ----------------------------------------------------------------------------------------------
-   * Team Stuff
+   * Get a TEAM
+   * Parameters are optional, example: query => displayName,givenName,id 
+   *  .'convertToArray': 0,N,n -> return as object 
    */
+  function load($params, $operators) {
+                                            // Set GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== ""){
+      $teams = $this->connector->getAll(array('_entity'=>'team','_attributes'=>'mailNickname,id'));
+      foreach ( $teams as $key => $value )
+        if ($value[$this->translator['mailNickname']] == $uid){
+          $id = $value[$this->translator['id']];
+          break;
+        }
+    }                                       // Get GROUP ID
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+    
+    //var_dump($id);
+    try {
+      $result = $this->connector->connector->createRequest("GET", "/teams/$id")
+                                           ->setReturnType(Model\Team::class)
+                                           ->execute();
+    //var_dump($result);
+    } catch ( \Exception $e ) {
+      \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+      \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+      return 1;
+    }
+
+                                                // Convert TEAM to array?
+    $c = (string)$this->connector->getParam($params, 'convertToArray', false, true);
+    if ($c==0 OR $c=='N' OR $c=='n' OR $c=false)
+      return $result;
+    else
+      return $this->objectArrayTranslated($result);
+  }
+
 
   /**
-   * Inserts a Team
+   * Get all TEAMSs
    * 
    */
-  function insertT($params) {
-  	$this->connect();
+  function getAll($params, $operators) {
+    $teams = $this->connector->getAll(array('_entity'=>'group','_attributes'=>'id,resourceProvisioningOptions,mailNickname,displayName'));
 
-    // TMP -> Goes into constructor
-    $this->entity = $this->dataSource->getParam ( 'entity.team', true );
-    // ------------------------------------------------------------------
+    $result = array();                      // Search for "Team" in 'resourceProvisioningOptions' array key
+    foreach ( $teams as $key => $value )
+      if (in_array("Team",$value['resourceProvisioningOptions']))
+        $result[]=array ($this->translator['id']=>$value[$this->translator['id']],
+                         $this->translator['mailNickname']=>$value[$this->translator['mailNickname']],
+                         $this->translator['displayName']=>$value[$this->translator['displayName']]);
 
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
+    return $result;
+  }
 
-    $groupID = (string)$this->getParam($params, $this->translator['groupID'], true);
+
+  /**
+   * Inserts a TEAM, from GROUP
+   * 
+   */
+  function insert($params) {
+                                            // Set GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->connector->load(array ('_entity'=>'group','uid'=>$uid))['id'];
+                                            // Get GROUP ID
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
 
     $data = [
-      'template@odata.bind' => "https://graph.microsoft.com/v1.0/teamsTemplates('standard')",
-      'group@odata.bind' => "https://graph.microsoft.com/v1.0/groups('".$groupID."')"
+      'template@odata.bind' => 'https://graph.microsoft.com/v1.0/teamsTemplates/standard',
+      'group@odata.bind' => 'https://graph.microsoft.com/v1.0/groups/'.$id,
     ];
 
     try {
-      $result = $this->connector->createRequest("POST", "/$entity")
-                                ->attachBody($data)
-                                ->setReturnType(Model\Team::class)
-                                ->execute();
+      $result = $this->connector->connector->createRequest("POST", "/teams")
+                                           ->attachBody($data)
+                                           ->setReturnType(Model\Team::class)
+                                           ->execute();
     //var_dump($result);
     } catch ( \Exception $e ) {
-      //var_dump($e);
-      \Kuink\Core\TraceManager::add ( 'Assign Group to Team'.$e, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-      return 0;
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+			return 1;
     }
-    $team = $this->objectArrayTranslated($result);
 
-
-    \Kuink\Core\TraceManager::add ( 'Inserting a value on entity'.$entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-    return $result;
+    return $this->objectArrayTranslated($result);
   }
 
 
   /**
-   * Updates a GROUP | Not Ok
-   * @param array $params The params that are passed to update an entity record
+   * Updates a TEAM
+   * 
    */
-  function updateT($params) {
-  	$this->connect();
+  function update($params) {
+  	\Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+	}  
 
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
 
-    $mailNickname = (string)$this->getParam($params, $this->translator['mailNickname'], false);
-    if ($mailNickname !== '')
-      $id = $mailNickname.'@'.$this->domain;     // Uses userPrincipalName parameter
+  /**
+	 * Save a TEAM
+	 */
+
+	public function save($params) {
+		\Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+	}
+
+
+  /**
+   * List TEAM Users (members/owners)
+   * 
+   */
+  function listUsers($params) {
+                                            // Set TEAM by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->connector->load(array ('_entity'=>'group','uid'=>$uid))['id'];
+                                            // Get GROUP ID
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+
+    try {
+      $result = $this->connector->connector->createRequest("GET", "/teams/".$id."/members")
+                                           ->setReturnType(Model\Group::class)
+                                           ->execute();
+    //var_dump($result);
+    } catch ( \Exception $e ) {
+      \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+      \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+      return 1;
+    }
+
+    return $this->objectArrayTranslated($result);
+  }
+
+
+  /**
+   * Add User to TEAM
+   * 
+   * Example: Add user "dummy" to group "_dummy"
+   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
+   *    <Param name="_entity">group</Param>
+   *    <Param name="_method">addUser</Param>
+   *    <Param name="uid">_dummy</Param>
+   *    <Param name="uid_user">dummy</Param>
+   *    <Param name="is_owner">0</Param>
+   *   </DataAccess>
+   */
+  function addUser($params) {
+                                            // Get TEAM by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->connector->load(array('_entity'=>'team','uid'=>$uid))['id'];
     else
-      $id = (string)$this->getParam($params, 'id', true);
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
 
-    if (isset ( $params ['_entity'] ))
-			unset ( $params ['_entity'] );
-		if (isset ( $params [$this->translator['mailNickname']] ))
-			unset ( $params [$this->translator['mailNickname']] );
+    if (!isset($id))
+      return 1;
+    
+                                            // Get USER ID by UID or Azure ID
+    $userUID = (string)$this->connector->getParam($params, $this->translator['userUID'], false);
+    if ($userUID !== "")
+      $userID = $this->connector->load(array ('_entity'=>'user','uid'=>$userUID))['id'];
 
-    // Password stuff, if updated
-    if (isset ( $params [$this->translator['password']] )){
-      $password = (string)$this->getParam($params, 'password', true);
-      $passwordPolicies = (string)$this->getParam($params, 'passwordPolicies', false, "DisablePasswordExpiration,DisableStrongPassword");
-      $changePasswordAtNextLogin = (string)$this->getParam($params, $this->translator['changePasswordAtNextLogin'], false);
-      $changePasswordAtNextLogin = ($changePasswordAtNextLogin == 'true' ? true : false);
+    if (!isset($userID))
+      $userID = (string)$this->connector->getParam($params, $this->translator['userID'], true);
+                                        
+    $role = (bool)$this->connector->getParam($params, $this->translator['isOwner'], false, 0);
 
+    if ($role)
       $data = [
-        'passwordPolicies' => $passwordPolicies,
-        'passwordProfile' => [
-            'password' => $password,
-            'forceChangePasswordNextSignIn' => $changePasswordAtNextLogin,
-        ],
+        '@odata.type' => '#microsoft.graph.aadUserConversationMember',
+        'roles' => ["owner"],
+        'user@odata.bind' => 'https://graph.microsoft.com/v1.0/users/'.$userID,
       ];
-
-      unset ( $params [$this->translator['password']] );
-      if (isset ( $params [$this->translator['passwordPolicies']] ))
-        unset ( $params [$this->translator['passwordPolicies']] );
-      if (isset ( $params [$this->translator['changePasswordAtNextLogins']] ))
-        unset ( $params [$this->translator['changePasswordAtNextLogin']] );
-    }
-
-
-    foreach ( $params as $key => $value ){
-      if (!is_null($value)){
-        $aux = $this->rTranslator[$key];
-        $data->$aux = is_array ( $value ) ? $value : ( string ) $value;
-      }
-    }
+    else
+      $data = [
+        '@odata.type' => '#microsoft.graph.aadUserConversationMember',
+        'roles' => ["member"],
+        'user@odata.bind' => 'https://graph.microsoft.com/v1.0/users/'.$userID,
+      ];
 
     //var_dump($data);
     try {
-      $result = $this->connector->createRequest("PATCH", "/$entity/$id")
-                                ->attachBody($data)
-                                ->setReturnType(Model\User::class)
-                                ->execute();
-
+      $result = $this->connector->connector->createRequest("POST", "/teams/".$id."/members")
+                                           ->attachBody($data)
+                                           ->setReturnType(Model\Team::class)
+                                           ->execute();
     //var_dump($result);
     } catch ( \Exception $e ) {
-      //var_dump($e);
-      \Kuink\Core\TraceManager::add ( 'Inserting a value on entity'.$e, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-      return 0;
-    }
+        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+        \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+        return 1;
+      }
 
-    \Kuink\Core\TraceManager::add ( 'Updating a value on entity'.$entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-    return $result;	
-  }  
+    return 0;
+  }
 
 
   /**
-   * Deletes a GROUP | Not Ok
+   * Remove User from TEAM | Not Ok
+   * 
+   * Example: Remove user "dummy" from team "_dummy"
+   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
+   *    <Param name="_entity">team</Param>
+   *    <Param name="_method">removeUser</Param>
+   *    <Param name="uid">_dummy</Param>
+   *    <Param name="uid_user">dummy</Param>
+   *   </DataAccess>
+   */
+  function removeUser($params) {
+                                            // Get TEAM by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->connector->load(array('_entity'=>'team','uid'=>$uid))['id'];
+    else
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+
+    if (!isset($id))
+      return 1;
+    
+                                            // Get USER ID by UID or Azure ID
+    $userUID = (string)$this->connector->getParam($params, $this->translator['userUID'], false);
+    if ($userUID !== "")
+      $userID = $this->connector->load(array ('_entity'=>'user','uid'=>$userUID))['id'];
+
+    if (!isset($userID))
+      $userID = (string)$this->connector->getParam($params, $this->translator['userID'], true);
+
+                                            // Get USER Membership ID
+    $teamUsers = $this->listUsers(array('id'=>$id));
+    foreach ( $teamUsers as $key => $value )
+      if ($value['userId'] == $userID){
+        $memberID = $value['id'];
+        break;
+      }
+
+    if (!isset($memberID))
+      return 1;
+
+    //var_dump($data);
+    try {
+      $result = $this->connector->connector->createRequest("DELETE", "/teams/".$id."/members/".$memberID)
+                                            ->setReturnType(Model\Group::class)
+                                            ->execute();
+    //var_dump($result);
+    } catch ( \Exception $e ) {
+      \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+      \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+      return 1;
+    }
+
+    return 0;
+  }
+
+
+  /**
+   * Deletes a TEAM
    * It goes to trash bin, deleted list
    */
-  function deleteT($params) {
-  	$this->connect();
-
-    // TMP -> Goes into constructor
-    $this->entity = $this->dataSource->getParam ( 'entity.group', true );
-    // ------------------------------------------------------------------
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
-
-    $mailNickname = (string)$this->getParam($params, $this->translator['mailNickname'], false);
-    if ($mailNickname !== '')
-      $id = $mailNickname.'@'.$this->domain;     // Uses userPrincipalName parameter
-    else
-      $id = (string)$this->getParam($params, 'id', true);    
-
-    //var_dump($id);
-    try {
-      $result = $this->connector->createRequest("DELETE", "/$entity/$id")
-                                ->setReturnType(Model\User::class)
-                                ->execute();
-    //var_dump($result);
-    } catch ( \Exception $e ) {
-      //var_dump($e);
-      return 0;
-    }
-
-    \Kuink\Core\TraceManager::add ( 'Deleting id:'.$id.'  on entity:'.$entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-    return 1;
+  function delete($params) {
+  	\Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
   }
 
-
-  /**
-   * Get a GROUP
-   * Parameters are optional, example: query => displayName,givenName,id 
-   */
-  function loadT($params) {
-  	$this->connect();
-
-    // TMP -> Goes into constructor
-    $this->entity = $this->dataSource->getParam ( 'entity.group', true );
-    // ------------------------------------------------------------------
-
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
-    $id = (string)$this->getParam($params, 'id', true);
-
-    $query = (string)$this->getParam($params, 'query', false);            // List of parameters
-    if ($query !== ''){
-      $query = '?$select='.$query;
-    }
-    
-    //var_dump($id);
-    try {
-      $result = $this->connector->createRequest("GET", "/$entity/$id".$query)
-                                ->setReturnType(Model\Group::class)
-                                ->execute();
-    //var_dump($result);
-    } catch ( \Exception $e ) {
-      //var_dump($e);
-      return 0;
-    }
-
-    return $result;
-  }
-  
-
-  /**
-   * Get all GROUPs
-   * Parameters are optional, example: query => $select=displayName,givenName,id
-   * https://docs.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0&tabs=http
-   * 
-   */
-  function getAllT($params) {
-  	$this->connect();
-    
-    // TMP -> Goes into constructor
-    $this->entity = $this->dataSource->getParam ( 'entity.group', true );
-    // ------------------------------------------------------------------
-
-    $entity = (string)$this->getParam($params, '_entity', false, $this->entity);
- 
-    $query = (string)$this->getParam($params, 'query', false);            // List of parameters
-    if ($query !== ''){
-      $query = '?'.$query;
-    }
-    
-    //var_dump($id);
-    try {
-      $result = $this->connector->createRequest("GET", "/$entity".$query)
-                                ->setReturnType(Model\Group::class)
-                                ->execute();
-    //var_dump($result);
-    } catch ( \Exception $e ) {
-      //var_dump($e);
-      return 0;
-    }
-
-    // Set the return array, Translated
-    $groups = $this->objectArrayTranslated($result);
-
-    \Kuink\Core\TraceManager::add ( 'Get All:'.$entity.'  ~>'.$groups, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-    return $groups;
-  }
- 
 
   /**
    * If this datasource have more than one schema then get it
@@ -1099,71 +1414,137 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceConnector{
 	public function getSchemaNameT($params) {
   	return null;
   }
+}
+
+
+/**
+ * Class to handle all basic DIRECTORY SERVICE operations
+ *
+ * @author jose.feio
+ */
+
+class MicrosoftAPIAdminSDKDirectoryServiceHandler extends \Kuink\Core\DataSourceConnector\MicrosoftAPIAdminSDKConnectorCommon
+                                                  implements \Kuink\Core\ConnectorEntityHandlerInterface {
+  var $connector;   //The parent connector object to get all the context
+
+
+  public function __construct($connector) {
+    $this->connector = $connector;
+  }
+
+  
+  /**
+	 * Handler specific connection properties
+	 */
+	public function connect() {
+	}
 
 
   /**
-   * ----------------------------------------------------------------------------------------------
-   * Directory Service Stuff
+   * Get a DIRECTORY SERVICE
+   * Parameters are optional, example: query => displayName,givenName,id 
    */
+  function load($params, $operators) {
+    \Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+  }
+
+
+  /**
+   * Get all DIRECTORY SERVICE
+   * 
+   */
+  function getAll($params, $operators) {
+    \Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+  }
+
+
+  /**
+   * Inserts a DIRECTORY SERVICE item
+   * 
+   */
+  function insert($params) {
+    \Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+  }
+
+
+  /**
+   * Updates a DIRECTORY SERVICE
+   * 
+   */
+  function update($params) {
+  	\Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+	}  
+
+
+  /**
+	 * Save a DIRECTORY SERVICE
+	 */
+
+	public function save($params) {
+		\Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+	}
+
+
+  /**
+   * Deletes a DIRECTORY SERVICE
+   * It goes to trash bin, deleted list
+   */
+  function delete($params) {
+  	\Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+  }
+
 
   /**
    * Permanently Deletes a ITEM
    * It goes to trash bin, deleted list
    */
   function permanentlyDelete($params) {
-  	$this->connect();
-
-    $entity = "/directory/deletedItems/";
-    $id = (string)$this->getParam($params, 'id', true);    
+    $id = (string)$this->connector->getParam($params, 'id', true);    
 
     //var_dump($id);
     try {
-      $result = $this->connector->createRequest("DELETE", "/$entity/$id")
-                                ->setReturnType(Model\Directory::class)
-                                ->execute();
+      $result = $this->connector->connector->createRequest("DELETE", "/directory/deletedItems/$id")
+                                           ->setReturnType(Model\Directory::class)
+                                           ->execute();
     //var_dump($result);
     } catch ( \Exception $e ) {
-      //var_dump($e);
-      return 0;
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+			return 1;
     }
 
-    \Kuink\Core\TraceManager::add ( 'Deleting id:'.$id.'  on entity:'.$entity, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__ );
-    return 1;
+    return 0;
   }
 
 
   /**
-   * ====================================================================================
-   * Auxiliary Functions | Methods
+   * Restore Deleted ITEM
    */
+  function restore($params) {
+    $id = (string)$this->connector->getParam($params, 'id', true);         // Deleted Item ID
+
+    //var_dump($id);
+    try {
+      $result = $this->connector->connector->createRequest("POST", "/directory/deletedItems/$id/restore")
+                                           ->setReturnType(Model\Directory::class)
+                                           ->execute();
+    //var_dump($result);
+    } catch ( \Exception $e ) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+			return 1;
+    }
+
+    return 0;
+  }
+
 
   /**
-   * Transforms an object to array of values
+   * If this datasource have more than one schema then get it
+   * For instance in a database server this could return the database name 
+   * @param array  $params The params that are passed to get all records of an entity
    */
-  private function objectArrayTranslated($params) {
-
-    $p = is_object($params) ? $params->getProperties() : $params;
-
-    if (is_array($p)){
-      // Set the return array, Translated
-      $result = array();
-      foreach ( $p as $key => $value ){
-        if (isset($value)){
-          if (is_array($value) or is_object($value)){
-            $tmp = isset ($this->translator[$key]) ? (string)$this->translator[$key] : $key;
-            $result[$tmp] = $this->objectArrayTranslated($value);
-          }
-          else {
-            $tmp = isset ($this->translator[$key]) ? (string)$this->translator[$key] : $key;
-            $result[$tmp] = $value;
-          }
-        }
-      }
-    } else
-        return null;
-    
-  	return $result;
+	public function getSchemaNameT($params) {
+  	return null;
   }
 }
-
-?>

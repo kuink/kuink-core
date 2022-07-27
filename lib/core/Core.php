@@ -282,6 +282,15 @@ class Core {
 					//print_error ( 'filenotfound', 'error' );
 				}
 				break;
+			case 'captcha':
+				//Generate a captcha image
+				ob_clean();
+				$image = Core\Captcha::getImage();
+				header('Content-type: image/png');
+				imagepng($image);
+				imagedestroy($image);	
+				die();				
+				break;
 			case "daily":
 				$pathName = realPath($KUINK_CFG->dataRoot.'/kuink/files/daily/'.$guid);
 				if ((file_exists($pathName) and !is_dir($pathName)) and (strpos($pathName, $KUINK_CFG->dataRoot.'/kuink/files/daily/') !== false)) {

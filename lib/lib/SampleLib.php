@@ -31,7 +31,7 @@
  * 			</Libraries>
  * 
  * 
- *    Tocall the method sample from SampleLib just add in the logic flow of an action or function:
+ *    To call the method sample from SampleLib just add in the logic flow of an action or function:
  * 
  * 		<Var name="example">
  * 			<SampleLib method="sample">

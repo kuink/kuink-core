@@ -120,7 +120,7 @@ class DataSourceMultiEntityConnector extends \Kuink\Core\DataSourceConnector{
 		//Get the handler, because this connector can handle many different entities different from each other
 		$handler = $this->getEntityHandler($entity);
 
-		//Call the melthod from the handler
+		//Call the method from the handler
 		$result = $handler->delete($params);
 
 		//Send the result back to the caller
@@ -130,7 +130,7 @@ class DataSourceMultiEntityConnector extends \Kuink\Core\DataSourceConnector{
 	/**
 	 * Get all records of an entity
 	 */
-	function getAll($params, $operators) {
+	function getAll($params, $operators=null) {
 		//From what entity do we want to update the record
 		$entity = (string) $this->getParam ( $params, '_entity', true);
 
@@ -140,8 +140,31 @@ class DataSourceMultiEntityConnector extends \Kuink\Core\DataSourceConnector{
 		//Get the handler, because this connector can handle many different entities different from each other
 		$handler = $this->getEntityHandler($entity);
 
-		//Call the melthod from the handler
+		//Call the method from the handler
 		$result = $handler->getAll($params, $operators);
+
+		//Send the result back to the caller
+		return $result;
+	}
+
+	/**
+	 * Execute a custom method of an entity
+	 */
+	function execute($params, $operators=null) {
+		//From what entity do we want to update the record
+		$entity = (string) $this->getParam ( $params, '_entity', true);
+
+		//From what entity do we want to update the record
+		$method = (string) $this->getParam ( $params, '_method', true);
+
+		//Connect to the datasource
+		$this->connect($entity);
+
+		//Get the handler, because this connector can handle many different entities different from each other
+		$handler = $this->getEntityHandler($entity);
+
+		//Call the method from the handler
+		$result = $handler->$method($params, $operators);
 
 		//Send the result back to the caller
 		return $result;
@@ -158,8 +181,8 @@ class DataSourceMultiEntityConnector extends \Kuink\Core\DataSourceConnector{
 	 * Auxiliary function to convert an object to an array
 	 */
   public function object_to_array($obj) {
-		$arrObj = is_object ( $obj ) ? get_object_vars ( $obj ) : $obj;
-		$arr=array();
+	  $arrObj = is_object ( $obj ) ? get_object_vars ( $obj ) : $obj;
+	  $arr=array();
     foreach ( $arrObj as $key => $val ) {
       $val = (is_array ( $val ) || is_object ( $val )) ? $this->object_to_array ( $val ) : $val;
       $arr [$key] = $val;
