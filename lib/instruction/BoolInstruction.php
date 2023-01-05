@@ -33,6 +33,13 @@ class BoolInstruction extends \Kuink\Core\Instruction {
 		return (bool) ($content);
 	}
 
+	static public function string($instManager, $instructionXmlNode) {
+		$content = $instManager->executeInnerInstruction ( $instructionXmlNode );
+		$eval = new \Kuink\Core\EvalExpr ();
+		$content = $eval->e ( $content, $instManager->variables, FALSE, FALSE, FALSE );
+		return ((filter_var($content,  FILTER_VALIDATE_BOOLEAN)) ? 'true' : 'false');
+	}
+
 }
 
 ?>
