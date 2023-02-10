@@ -440,14 +440,15 @@ class Grid extends Control {
 		$attributes [GridColumnProperty::NAME] = $name;
 		$attributes [GridColumnProperty::ID] = $id;
 		
-		$label = $this->getProperty ( $name, GridColumnProperty::LABEL, false, $name, $column );
-		$label = Core\Language::getString ( $label, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+		$labelId = $this->getProperty ( $name, GridColumnProperty::LABEL, false, $name, $column );
+		$label = Core\Language::getString ( $labelId, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		$attributes [GridColumnProperty::LABEL] = $label;
 		
 		$showHelp = $this->getProperty ( $name, GridColumnProperty::HELP, false, GridColumnDefaults::HELP, $column );
 		$help = '';
 		if ($showHelp != 'false')
-			$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $id, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+			$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $labelId, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+			//$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $id, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		$attributes [GridColumnProperty::HELP] = $help;
 		
 		$attributes [GridColumnProperty::TYPE] = ($grid_freezed == 'true') ? GridColumnType::CSTATIC : $this->getProperty ( $name, GridColumnProperty::TYPE, false, GridColumnDefaults::TYPE, $column );

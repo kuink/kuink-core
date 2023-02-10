@@ -499,8 +499,8 @@ class Form extends Control {
 			$confirmText = Core\Language::getString ( $confirm, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		$attributes [FieldProperty::CONFIRM] = ($confirm == 'false') ? $confirm : $confirmText;
 		
-		$label = $this->getProperty ( $id, FieldProperty::LABEL, false, $id, $formfield );
-		$label = Core\Language::getString ( $label, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+		$labelId = $this->getProperty ( $id, FieldProperty::LABEL, false, $id, $formfield );
+		$label = Core\Language::getString ( $labelId, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		$attributes [FieldProperty::LABEL] = $label;
 		
 		$title = $this->getProperty ( $id, FieldProperty::TITLE, false, $id, $formfield );
@@ -518,7 +518,8 @@ class Form extends Control {
 		$showHelp = $this->getProperty ( $id, FieldProperty::HELP, false, FieldPropertyDefaults::HELP, $formfield );
 		$help = '';
 		if ($showHelp != 'false')
-			$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $id, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+			$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $labelId, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+			//$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $id, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		$attributes [FieldProperty::HELP] = $help;
 		$attributes [FieldProperty::NAME] = $this->getProperty ( $id, FieldProperty::NAME, false, FieldPropertyDefaults::NAME, $formfield );
 		$attributes [FieldProperty::REQUIRED] = $this->getProperty ( $id, FieldProperty::REQUIRED, false, FieldPropertyDefaults::REQUIRED, $formfield, true ); //Parse Bool to evaluate conditions
