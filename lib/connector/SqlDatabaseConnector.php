@@ -1163,18 +1163,20 @@ private function encloseIdentifier($identifier) {
 		$entName = ( string ) $params ['_entity'];
 		$this->db->exec ('SET GLOBAL innodb_stats_on_metadata=0;');
 		$sql = "
-  			SELECT
+		SELECT
  					c.ordinal_position as 'id',
  					c.column_name as 'name',
  					c.column_default as 'default',
  					IF(c.is_nullable = 'NO', 'true', 'false') as 'required',
  					c.data_type as 'type',
- 					IF(c.character_maximum_length IS NULL, replace(replace(c.column_type, concat(c.data_type,'('),''),')', ''), c.character_maximum_length) as length,
- 					c.column_key as 'key',
+ 					IF(c.character_maximum_length IS NULL, replace(replace(c.column_type, concat(c.data_type,'('),''),')', ''), c.character_maximum_length) as 'attributes',
+					IF(c.character_maximum_length IS NULL, SUBSTRING_INDEX(REPLACE(SUBSTRING_INDEX(c.column_type, '(', -1), ')', ''), ' ', 1), c.character_maximum_length) as 'length',
+					(REGEXP_SUBSTR(c.column_type, '(?<=\\\\)).*')) as 'modifiers',
+					c.column_key as 'key',
  					k.referenced_table_name as 'datasource',
  					k.referenced_column_name as 'bindid',
-					 c.extra,
-					 c.column_comment as comment
+					c.extra,
+					c.column_comment as comment
  				FROM
  					INFORMATION_SCHEMA.COLUMNS c
  					LEFT JOIN information_schema.KEY_COLUMN_USAGE k ON (c.column_name = k.column_name AND c.table_name = k.table_name)
@@ -1595,6 +1597,7 @@ private function encloseIdentifier($identifier) {
 				$phRequired = $this->getAttribute ( $physicalAttr, 'required', false, 'physical', 'false' );
 				$phType = $this->getAttribute ( $physicalAttr, 'type', false, 'physical' );
 				$phLength = $this->getAttribute ( $physicalAttr, 'length', false, 'physical' );
+				$phModifiers = $this->getAttribute ( $physicalAttr, 'modifiers', false, 'physical' );
 				$phKey = $this->getAttribute ( $physicalAttr, 'key', false, 'physical' );
 				$phDatasource = $this->getAttribute ( $physicalAttr, 'datasource', false, 'physical' );
 				$phBindId = $this->getAttribute ( $physicalAttr, 'bindid', false, 'physical' );
@@ -1605,13 +1608,14 @@ private function encloseIdentifier($identifier) {
 				$phDebug = $phDebug . 'Required: ' . $phRequired . '; ';
 				$phDebug = $phDebug . 'Type: ' . $phType . '; ';
 				$phDebug = $phDebug . 'Length: ' . $phLength . '; ';
+				$phDebug = $phDebug . 'Modifiers: ' . $phModifiers . '; ';
 				$phDebug = $phDebug . 'Key: ' . $phKey . '; ';
 				$phDebug = $phDebug . 'Datasource: ' . $phDatasource . '; ';
 				$phDebug = $phDebug . 'BindId: ' . $phBindId . '; ';
 				$phDebug = $phDebug . 'Default: ' . $phDefault . '; ';
 				$phDebug = $phDebug . 'Comment: ' . $phComment . '; ';
 				// print_object('PHYSYCAL- '.$phDebug);
-				
+
 				// The corresponding entity model
 				$entAttr = isset($entity [$phName]) ? $entity [$phName] : null; // $entity->xpath('Attributes/Attribute[@name="'.$phName.'"]');
 				// $entAttr = @$entAttr[0];
@@ -1631,12 +1635,14 @@ private function encloseIdentifier($identifier) {
 						$domain ['name'] = ( string ) $attr ['domain'];
 						$domain ['type'] = ( string ) $this->getAttribute ( $entAttr, 'type', true, 'entity' );
 						$domain ['size'] = ( string ) $this->getAttribute ( $entAttr, 'size', false, 'entity' );
+						$domain ['unsigned'] = ( string ) $this->getAttribute ( $entAttr, 'unsigned', false, 'entity' );
 						$domain ['autonumber'] = ( string ) $this->getAttribute ( $entAttr, 'autonumber', false, 'entity' );
 						$domain ['pk'] = ( string ) $this->getAttribute ( $entAttr, 'pk', false, 'entity' );
 						$domain ['required'] = ( string ) $this->getAttribute ( $entAttr, 'required', false, 'entity', 'false' );
 					}
 					
 					$attr ['pk'] = isset($domain ['pk']) ? $domain ['pk'] : ''; $attr ['pk'] = isset($entAttr ['pk']) ? $entAttr ['pk'] : $attr['pk'];
+					$attr ['unsigned'] = isset($domain ['unsigned']) ? $domain ['unsigned'] : ''; $attr ['unsigned'] = isset($entAttr ['unsigned']) ? $entAttr ['unsigned'] : $attr['unsigned'];
 					$attr ['autonumber'] = isset($domain ['autonumber']) ? $domain ['autonumber'] : ''; $attr ['autonumber'] = isset($entAttr ['autonumber']) ? $entAttr ['autonumber'] : $attr['autonumber'];
 					$attr ['required'] = isset($domain ['required']) ? $domain ['required'] : ''; $attr ['required'] = isset($entAttr ['required']) ? $entAttr ['required'] : $attr['required'];
 					$attr ['foreign'] = isset($domain ['foreign']) ? $domain ['foreign'] : ''; $attr ['foreign'] = isset($entAttr ['foreign']) ? $entAttr ['foreign'] : $attr['foreign'];
@@ -1666,10 +1672,12 @@ private function encloseIdentifier($identifier) {
 					$check ['length'] = ($domain ['convLength'] != '') ? ( string ) $domain ['convLength'] : ( string ) $phLength; // If there's no length in domain or attribute, then use the physical
 					$check ['required'] = ($attr ['required'] != '') ? ( string ) $attr ['required'] : ( string ) $domain ['required'];
 					$check ['required'] = ($check ['required'] != '') ? ( string ) $check ['required'] : 'false';
+					$check ['unsigned'] = ($attr ['unsigned'] != '') ? ( string ) $attr ['unsigned'] : ( string ) $domain ['unsigned'];
+					$check ['unsigned'] = ($check ['unsigned'] != '') ? ( string ) $check ['unsigned'] : 'false';
 					$check ['default'] = ($attr ['default'] != '') ? ( string ) $attr ['default'] : ( string ) $domain ['default'];
 					$check ['comment'] = ($attr ['comment'] != '') ? ( string ) $attr ['comment'] : ( string ) $domain ['comment'];
-					
-					if ($check ['type'] != $phType || $check ['length'] != $phLength || $check ['required'] != $phRequired || (($check ['default'] != $phDefault) && ($phDefault != 'NULL')) || $check ['comment'] != $phComment ) {
+
+					if ($check ['type'] != $phType || $check ['length'] != $phLength || $check ['required'] != $phRequired || (($check ['default'] != $phDefault) && ($phDefault != 'NULL')) || $check ['comment'] != $phComment  || ( (($check ['unsigned'] == 'true')) xor ((strpos($phModifiers, 'unsigned') !== false)) ) ) {
 						$change = DDChanges::CHANGE;
 						$attrChanges = DDChanges::CHANGE;
 					} else
@@ -1681,6 +1689,8 @@ private function encloseIdentifier($identifier) {
 						$attr ['debug'] .= ' <i class="fa fa-arrow-circle-right" style="color:#0044cc">&nbsp;Change&nbsp;</i>';
 					
 					$attr ['debug'] .= '<strong>' . $attr ['name'] . '</strong> ' . $check ['type'] . '(' . $check ['length'] . ')';
+					if ($check ['unsigned'] == 'true')
+						$attr ['debug'] .= ' unsigned';
 					if ($check ['required'] == 'true')
 						$attr ['debug'] .= ' required';
 					if ($domain ['pk'] == 'true')
@@ -1690,10 +1700,11 @@ private function encloseIdentifier($identifier) {
 					if ($attr ['default'] != '')
 						$attr ['debug'] .= ' default(' . $attr ['default'] . ')';
 					$attr ['debug'] .= ' comment(' . $attr ['comment'] . ')';
+					$attr ['debug'] .= ' sss';
 					
 					if ($attrChanges == DDChanges::CHANGE) {
 						$phRequiredStr = ($phRequired == 'true') ? 'required' : '';
-						$attr ['debug'] .= ' <i>from&nbsp;</i>' . $phName . ' ' . $phType . '(' . $phLength . ') ' . $phRequiredStr;
+						$attr ['debug'] .= ' <i>from&nbsp;</i>' . $phName . ' ' . $phType . '(' . $phLength . ') ' . $phModifiers . ' ' . $phRequiredStr;
 						if ($phDefault != '')
 							$attr ['debug'] .= ' default(' . $phDefault . ')';
 						$attr ['debug'] .= ' comment(' . $phComment . ')';
@@ -1767,11 +1778,13 @@ private function encloseIdentifier($identifier) {
 					$domain ['type'] = $this->getAttribute ( $attr, 'type', true, 'entity' );
 					$domain ['size'] = $this->getAttribute ( $attr, 'size', false, 'entity' );
 					$domain ['pk'] = $this->getAttribute ( $attr, 'pk', false, 'entity', 'false' );
+					$domain ['unsigned'] = $this->getAttribute ( $attr, 'unsigned', false, 'entity' );
 					$domain ['autonumber'] = $this->getAttribute ( $attr, 'autonumber', false, 'entity' );
 					$domain ['required'] = ($attr ['required'] == '') ? $this->getAttribute ( $attr, 'required', false, 'entity', 'false' ) : $attr ['required'];
 				}
 				
 				$attr ['pk'] = isset($domain ['pk']) ? $domain ['pk'] : ''; $attr ['pk'] = isset($entAttr ['pk']) ? $entAttr ['pk'] : $attr['pk'];
+				$attr ['unsigned'] = isset($domain ['unsigned']) ? $domain ['unsigned'] : ''; $attr ['unsigned'] = isset($entAttr ['unsigned']) ? $entAttr ['unsigned'] : $attr['unsigned'];
 				$attr ['autonumber'] = isset($domain ['autonumber']) ? $domain ['autonumber'] : ''; $attr ['autonumber'] = isset($entAttr ['autonumber']) ? $entAttr ['autonumber'] : $attr['autonumber'];
 				$attr ['required'] = isset($domain ['required']) ? $domain ['required'] : 'false'; $attr ['required'] = isset($entAttr ['required']) ? $entAttr ['required'] : $attr['required'];
 				$attr ['foreign'] = isset($domain ['foreign']) ? $domain ['foreign'] : ''; $attr ['foreign'] = isset($entAttr ['foreign']) ? $entAttr ['foreign'] : $attr['foreign'];
@@ -1812,6 +1825,8 @@ private function encloseIdentifier($identifier) {
 					$attr['after'] = isset($previousAttr) ? $previousAttr['name'] : '';
 				}
 				$attr ['debug'] .= '<strong>' . $entAttr ['name'] . '</strong> ' . $domain ['convType'] . '(' . $domain ['convLength'] . ')';
+				if ($check ['unsigned'] == 'true')
+					$attr ['debug'] .= ' unsigned';
 				if ($check ['required'] == 'true')
 					$attr ['debug'] .= ' required';
 				if ($attr ['pk'] == 'true')
@@ -1891,6 +1906,7 @@ private function encloseIdentifier($identifier) {
 				else if (($attribute ['size'] != ''))
 					$sqlAttribute .= ' (' . $attribute ['size'] . ')';
 					// print_object($attribute);
+				$sqlAttribute .= ($attribute ['unsigned'] == 'true') ? ' UNSIGNED' : '';
 				$sqlAttribute .= ($attribute ['required'] == 'true') ? ' NOT NULL' : '';
 				$sqlAttribute .= ($attribute ['autonumber'] == 'true') ? ' AUTO_INCREMENT' : '';
 				$sqlAttribute .= ($attribute ['default'] != '') ? ' DEFAULT \'' . ( string ) $attribute ['default'] . '\'' : '';
