@@ -1636,6 +1636,7 @@ private function encloseIdentifier($identifier) {
 						$domain ['type'] = ( string ) $this->getAttribute ( $entAttr, 'type', true, 'entity' );
 						$domain ['size'] = ( string ) $this->getAttribute ( $entAttr, 'size', false, 'entity' );
 						$domain ['unsigned'] = ( string ) $this->getAttribute ( $entAttr, 'unsigned', false, 'entity' );
+						$domain ['zerofill'] = ( string ) $this->getAttribute ( $entAttr, 'zerofill', false, 'entity' );
 						$domain ['autonumber'] = ( string ) $this->getAttribute ( $entAttr, 'autonumber', false, 'entity' );
 						$domain ['pk'] = ( string ) $this->getAttribute ( $entAttr, 'pk', false, 'entity' );
 						$domain ['required'] = ( string ) $this->getAttribute ( $entAttr, 'required', false, 'entity', 'false' );
@@ -1643,6 +1644,7 @@ private function encloseIdentifier($identifier) {
 					
 					$attr ['pk'] = isset($domain ['pk']) ? $domain ['pk'] : ''; $attr ['pk'] = isset($entAttr ['pk']) ? $entAttr ['pk'] : $attr['pk'];
 					$attr ['unsigned'] = isset($domain ['unsigned']) ? $domain ['unsigned'] : ''; $attr ['unsigned'] = isset($entAttr ['unsigned']) ? $entAttr ['unsigned'] : $attr['unsigned'];
+					$attr ['zerofill'] = isset($domain ['zerofill']) ? $domain ['zerofill'] : ''; $attr ['zerofill'] = isset($entAttr ['zerofill']) ? $entAttr ['zerofill'] : $attr['zerofill'];
 					$attr ['autonumber'] = isset($domain ['autonumber']) ? $domain ['autonumber'] : ''; $attr ['autonumber'] = isset($entAttr ['autonumber']) ? $entAttr ['autonumber'] : $attr['autonumber'];
 					$attr ['required'] = isset($domain ['required']) ? $domain ['required'] : ''; $attr ['required'] = isset($entAttr ['required']) ? $entAttr ['required'] : $attr['required'];
 					$attr ['foreign'] = isset($domain ['foreign']) ? $domain ['foreign'] : ''; $attr ['foreign'] = isset($entAttr ['foreign']) ? $entAttr ['foreign'] : $attr['foreign'];
@@ -1674,10 +1676,18 @@ private function encloseIdentifier($identifier) {
 					$check ['required'] = ($check ['required'] != '') ? ( string ) $check ['required'] : 'false';
 					$check ['unsigned'] = ($attr ['unsigned'] != '') ? ( string ) $attr ['unsigned'] : ( string ) $domain ['unsigned'];
 					$check ['unsigned'] = ($check ['unsigned'] != '') ? ( string ) $check ['unsigned'] : 'false';
+					$check ['zerofill'] = ($attr ['zerofill'] != '') ? ( string ) $attr ['zerofill'] : ( string ) $domain ['zerofill'];
+					$check ['zerofill'] = ($check ['zerofill'] != '') ? ( string ) $check ['zerofill'] : 'false';
 					$check ['default'] = ($attr ['default'] != '') ? ( string ) $attr ['default'] : ( string ) $domain ['default'];
 					$check ['comment'] = ($attr ['comment'] != '') ? ( string ) $attr ['comment'] : ( string ) $domain ['comment'];
 
-					if ($check ['type'] != $phType || $check ['length'] != $phLength || $check ['required'] != $phRequired || (($check ['default'] != $phDefault) && ($phDefault != 'NULL')) || $check ['comment'] != $phComment  || ( (($check ['unsigned'] == 'true')) xor ((strpos($phModifiers, 'unsigned') !== false)) ) ) {
+					if ($check ['type'] != $phType || 
+						$check ['length'] != $phLength || 
+						$check ['required'] != $phRequired || 
+						(($check ['default'] != $phDefault) && ($phDefault != 'NULL')) || 
+						$check ['comment'] != $phComment  ||
+						(($check ['unsigned'] == 'true' && $check ['zerofill'] != 'true') xor ( strpos($phModifiers, 'unsigned') !== false && strpos($phModifiers, 'zerofill') === false )) ||
+						($check ['zerofill'] == 'true' xor  strpos($phModifiers, 'zerofill') !== false) ) {
 						$change = DDChanges::CHANGE;
 						$attrChanges = DDChanges::CHANGE;
 					} else
@@ -1689,7 +1699,9 @@ private function encloseIdentifier($identifier) {
 						$attr ['debug'] .= ' <i class="fa fa-arrow-circle-right" style="color:#0044cc">&nbsp;Change&nbsp;</i>';
 					
 					$attr ['debug'] .= '<strong>' . $attr ['name'] . '</strong> ' . $check ['type'] . '(' . $check ['length'] . ')';
-					if ($check ['unsigned'] == 'true')
+					if ($check ['zerofill'] == 'true')
+						$attr ['debug'] .= ' unsigned zerofill';
+					elseif ($check ['unsigned'] == 'true')
 						$attr ['debug'] .= ' unsigned';
 					if ($check ['required'] == 'true')
 						$attr ['debug'] .= ' required';
@@ -1700,7 +1712,6 @@ private function encloseIdentifier($identifier) {
 					if ($attr ['default'] != '')
 						$attr ['debug'] .= ' default(' . $attr ['default'] . ')';
 					$attr ['debug'] .= ' comment(' . $attr ['comment'] . ')';
-					$attr ['debug'] .= ' sss';
 					
 					if ($attrChanges == DDChanges::CHANGE) {
 						$phRequiredStr = ($phRequired == 'true') ? 'required' : '';
@@ -1779,12 +1790,14 @@ private function encloseIdentifier($identifier) {
 					$domain ['size'] = $this->getAttribute ( $attr, 'size', false, 'entity' );
 					$domain ['pk'] = $this->getAttribute ( $attr, 'pk', false, 'entity', 'false' );
 					$domain ['unsigned'] = $this->getAttribute ( $attr, 'unsigned', false, 'entity' );
+					$domain ['zerofill'] = $this->getAttribute ( $attr, 'zerofill', false, 'entity' );
 					$domain ['autonumber'] = $this->getAttribute ( $attr, 'autonumber', false, 'entity' );
 					$domain ['required'] = ($attr ['required'] == '') ? $this->getAttribute ( $attr, 'required', false, 'entity', 'false' ) : $attr ['required'];
 				}
 				
 				$attr ['pk'] = isset($domain ['pk']) ? $domain ['pk'] : ''; $attr ['pk'] = isset($entAttr ['pk']) ? $entAttr ['pk'] : $attr['pk'];
 				$attr ['unsigned'] = isset($domain ['unsigned']) ? $domain ['unsigned'] : ''; $attr ['unsigned'] = isset($entAttr ['unsigned']) ? $entAttr ['unsigned'] : $attr['unsigned'];
+				$attr ['zerofill'] = isset($domain ['zerofill']) ? $domain ['zerofill'] : ''; $attr ['zerofill'] = isset($entAttr ['zerofill']) ? $entAttr ['zerofill'] : $attr['zerofill'];
 				$attr ['autonumber'] = isset($domain ['autonumber']) ? $domain ['autonumber'] : ''; $attr ['autonumber'] = isset($entAttr ['autonumber']) ? $entAttr ['autonumber'] : $attr['autonumber'];
 				$attr ['required'] = isset($domain ['required']) ? $domain ['required'] : 'false'; $attr ['required'] = isset($entAttr ['required']) ? $entAttr ['required'] : $attr['required'];
 				$attr ['foreign'] = isset($domain ['foreign']) ? $domain ['foreign'] : ''; $attr ['foreign'] = isset($entAttr ['foreign']) ? $entAttr ['foreign'] : $attr['foreign'];
@@ -1803,6 +1816,8 @@ private function encloseIdentifier($identifier) {
 				$domain ['convLength'] = (isset($domain ['size']) && $domain ['size'] != '') ? $domain ['size'] : $domain ['convLength'];
 				$check ['type'] = $domain ['convType'];
 				$check ['length'] = $domain ['convLength'];
+				$check ['unsigned'] = $attr ['unsigned'];
+				$check ['zerofill'] = $attr ['zerofill'];
 				$check ['required'] = $attr ['required'];
 				//$check ['required'] = ($check ['required']) ? $check ['required'] : 'false';
 				
@@ -1825,8 +1840,10 @@ private function encloseIdentifier($identifier) {
 					$attr['after'] = isset($previousAttr) ? $previousAttr['name'] : '';
 				}
 				$attr ['debug'] .= '<strong>' . $entAttr ['name'] . '</strong> ' . $domain ['convType'] . '(' . $domain ['convLength'] . ')';
-				if ($check ['unsigned'] == 'true')
-					$attr ['debug'] .= ' unsigned';
+				if ($check ['zerofill'] == 'true')
+					$attr ['debug'] .= ' unsigned zerofill';
+				elseif ($check ['unsigned'] == 'true')
+						$attr ['debug'] .= ' unsigned';
 				if ($check ['required'] == 'true')
 					$attr ['debug'] .= ' required';
 				if ($attr ['pk'] == 'true')
@@ -1906,7 +1923,7 @@ private function encloseIdentifier($identifier) {
 				else if (($attribute ['size'] != ''))
 					$sqlAttribute .= ' (' . $attribute ['size'] . ')';
 					// print_object($attribute);
-				$sqlAttribute .= ($attribute ['unsigned'] == 'true') ? ' UNSIGNED' : '';
+				$sqlAttribute .= ($attribute ['zerofill'] == 'true') ? ' UNSIGNED ZEROFILL' : (($attribute ['unsigned'] == 'true') ? ' UNSIGNED' : '');
 				$sqlAttribute .= ($attribute ['required'] == 'true') ? ' NOT NULL' : '';
 				$sqlAttribute .= ($attribute ['autonumber'] == 'true') ? ' AUTO_INCREMENT' : '';
 				$sqlAttribute .= ($attribute ['default'] != '') ? ' DEFAULT \'' . ( string ) $attribute ['default'] . '\'' : '';
