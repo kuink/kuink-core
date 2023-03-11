@@ -1886,9 +1886,11 @@ private function encloseIdentifier($identifier) {
 		
 		// CreateForeignKeyIndexes?
 		$createForeignKeyIndexes = (isset ( $params ['createForeignIndexes'] )) ? ( string ) $params ['createForeignIndexes'] : 'false';
+		$removeExistingIndexes = (isset ( $params ['removeExistingIndexes'] )) ? ( string ) $params ['removeExistingIndexes'] : 'false';
 		$createForeignKeys = (isset ( $params ['createForeignKeys'] )) ? ( string ) $params ['createForeignKeys'] : 'false';
+		$removeExistingForeignKeys = (isset ( $params ['removeExistingForeignKeys'] )) ? ( string ) $params ['removeExistingForeignKeys'] : 'false';
 		$dropTablesBeforeCreate = (isset ( $params ['dropTablesBeforeCreate'] )) ? ( string ) $params ['dropTablesBeforeCreate'] : 'false';
-		
+
 		// build the SQL Statement
 		$log = array ();
 		$sqlStatementsArray = array ();
@@ -2015,12 +2017,38 @@ private function encloseIdentifier($identifier) {
 			
 			TraceManager::add ( $sqlStatement, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );
 		}
-		
+		if ($removeExistingForeignKeys == 'true') {
+			$database = $this->dataSource->getParam ( 'database', true );
+			$table = $entity ['name'];
+			$sqlStatementExistingFKs = "
+				SELECT CONSTRAINT_NAME
+				FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+				WHERE
+					CONSTRAINT_SCHEMA = '$database' AND	TABLE_NAME = '$table' AND REFERENCED_TABLE_NAME IS NOT NULL;";
+			$existingFKs = $this->executeSql ( $sqlStatementExistingFKs, null );
+			foreach ( $existingFKs as $fk ) {
+				$sqlStatement = 'ALTER TABLE  ' . $this->encloseIdentifier($table) . ' DROP FOREIGN KEY ' . $this->encloseIdentifier($fk['CONSTRAINT_NAME']) . ';';
+				$sqlStatementsArray ['-'.$table . ':' . $fk ['CONSTRAINT_NAME']] = $sqlStatement;
+			}
+		}		
+		if ($removeExistingIndexes == 'true') {
+			$database = $this->dataSource->getParam ( 'database', true );
+			$table = $entity ['name'];
+			$sqlStatementExistingIndexes = "
+				SELECT INDEX_NAME
+				FROM INFORMATION_SCHEMA.STATISTICS
+				WHERE TABLE_SCHEMA = '$database' AND TABLE_NAME = '$table' AND INDEX_NAME != 'PRIMARY';";
+			$existingIndexes = $this->executeSql ( $sqlStatementExistingIndexes, null );
+			foreach ( $existingIndexes as $index ) {
+				$sqlStatement = 'DROP INDEX ' . $this->encloseIdentifier($index['INDEX_NAME']) . ' ON ' . $this->encloseIdentifier($table) . ';';
+				$sqlStatementsArray ['-'.$table . ':' . $index ['INDEX_NAME']] = $sqlStatement;
+			}
+		}
 		// Add the foreign keys indexes after the table creations to avoid invalid references
 		if ($createForeignKeyIndexes == 'true') {
 			foreach ( $sqlForeignKeysArray as $fk ) {
 				$sqlStatement = 'CREATE INDEX ' . $this->encloseIdentifier('ix_'.$fk ['attribute']) . ' ON ' . $this->encloseIdentifier($fk ['entity']) . ' ( ' . $this->encloseIdentifier($fk ['attribute']) . ');';
-				$sqlStatementsArray [$fk ['entity'] . ':ix_' . $fk ['attribute']] = $sqlStatement;
+				$sqlStatementsArray ['+'.$fk ['entity'] . ':ix_' . $fk ['attribute']] = $sqlStatement;
 			}
 		}
 		if ($createForeignKeys == 'true') {
@@ -2028,7 +2056,7 @@ private function encloseIdentifier($identifier) {
 				// ALTER TABLE Orders ADD CONSTRAINT fk_PerOrders FOREIGN KEY (P_Id) REFERENCES Persons(P_Id)
 				
 				$sqlStatement = 'ALTER TABLE  ' . $this->encloseIdentifier($fk ['entity']) . ' ADD CONSTRAINT ' .$this->encloseIdentifier( 'fk_'.$fk ['entity'] . '_' . $fk ['attribute']) . ' FOREIGN KEY(' . $this->encloseIdentifier($fk ['attribute']) . ') REFERENCES ' . $this->encloseIdentifier($fk ['refentity']) . '( ' . $this->encloseIdentifier($fk ['refattr']) . ');';
-				$sqlStatementsArray [$fk ['entity'] . ':fk_' . $fk ['attribute']] = $sqlStatement;
+				$sqlStatementsArray ['+'.$fk ['entity'] . ':fk_' . $fk ['attribute']] = $sqlStatement;
 			}
 		}
 		
