@@ -128,6 +128,7 @@ class GridColumnProperty {
 	const INPUT_SIZE = 'inputsize';
 	const SIZE = 'size';
 	const COLS = 'cols';
+	const COLSIZE = 'colsize';
 	const ROWS = 'rows';
 	const FREEZE = 'freeze';
 	const DISABLED = 'disabled';
@@ -168,6 +169,7 @@ class GridColumnDefaults {
 	const TYPE = GridColumnType::CSTATIC;
 	const INPUT_SIZE = 'medium';
 	const COLS = 20;
+	const COLSIZE = 0;
 	const ROWS = 4;
 	const SIZE = 'medium';
 	const FREEZE = 'false';
@@ -461,6 +463,7 @@ class Grid extends Control {
 		$attributes [GridColumnProperty::SIZE] = $this->getProperty ( $name, GridColumnProperty::SIZE, false, GridColumnDefaults::SIZE, $column );
 		$attributes [GridColumnProperty::ICON] = $this->getProperty ( $name, GridColumnProperty::ICON, false, GridColumnDefaults::ICON, $column );
 		$attributes [GridColumnProperty::COLS] = $this->getProperty ( $name, GridColumnProperty::COLS, false, GridColumnDefaults::COLS, $column );
+		$attributes [GridColumnProperty::COLSIZE] = $this->getProperty ( $name, GridColumnProperty::COLSIZE, false, GridColumnDefaults::COLSIZE, $column );
 		$attributes [GridColumnProperty::ROWS] = $this->getProperty ( $name, GridColumnProperty::ROWS, false, GridColumnDefaults::ROWS, $column );
 		$attributes [GridColumnProperty::DATASOURCE] = $this->getProperty ( $name, GridColumnProperty::DATASOURCE, false, GridColumnDefaults::DATASOURCE, $column );
 		$attributes [GridColumnProperty::BINDID] = $this->getProperty ( $name, GridColumnProperty::BINDID, false, GridColumnDefaults::BINDID, $column );
