@@ -191,7 +191,7 @@ substr ( $charid, 0, 8 ) . $hyphen . substr ( $charid, 8, 4 ) . $hyphen . substr
 	}
 	function jsonEncode($params) {
 		$arr = $params [0];
-		return json_encode ( $arr );
+		return json_encode ( $arr, JSON_UNESCAPED_UNICODE );
 	}
 	function jsonDecode($params) {
 		$str = $params [0];
