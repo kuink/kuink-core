@@ -1883,26 +1883,52 @@ private function encloseIdentifier($identifier) {
 	public function applyEntityChanges($params) {
 		$entityChanges = $this->getEntityChanges ( $params );
 		// print_object($entityChanges);
-		
+
 		// CreateForeignKeyIndexes?
 		$createForeignKeyIndexes = (isset ( $params ['createForeignIndexes'] )) ? ( string ) $params ['createForeignIndexes'] : 'false';
 		$removeExistingIndexes = (isset ( $params ['removeExistingIndexes'] )) ? ( string ) $params ['removeExistingIndexes'] : 'false';
 		$createForeignKeys = (isset ( $params ['createForeignKeys'] )) ? ( string ) $params ['createForeignKeys'] : 'false';
 		$removeExistingForeignKeys = (isset ( $params ['removeExistingForeignKeys'] )) ? ( string ) $params ['removeExistingForeignKeys'] : 'false';
 		$dropTablesBeforeCreate = (isset ( $params ['dropTablesBeforeCreate'] )) ? ( string ) $params ['dropTablesBeforeCreate'] : 'false';
+		$dropPermanentlyExcludedColumns = (isset ( $params ['dropPermanentlyExcludedColumns'] )) ? ( string ) $params ['dropPermanentlyExcludedColumns'] : 'false';
 
 		// build the SQL Statement
 		$log = array ();
 		$sqlStatementsArray = array ();
 		$sqlForeignKeysArray = array ();
+
+	/*	if ($createForeignKeyIndexes != 'true' && $removeExistingIndexes != 'true' && $createForeignKeys != 'true' && $removeExistingForeignKeys != 'true' && $dropPermanentlyExcludedColumns != 'true')
+			foreach ( $entityChanges as $entity )
+				if ($entity ['change'] == DDChanges::NOTHING)
+					$entityChanges[entity ['entity']] = DDChanges::CHANGE;*/
 		
 		foreach ( $entityChanges as $entity ) {
-			if ($entity ['change'] == DDChanges::NOTHING)
+			if ($entity ['change'] == DDChanges::NOTHING &&
+				$createForeignKeyIndexes != 'true' &&
+				$removeExistingIndexes != 'true' &&
+				$createForeignKeys != 'true' &&
+				$removeExistingForeignKeys != 'true' &&
+				$dropPermanentlyExcludedColumns != 'true')
 				continue;
 			$sqlStatement = '';
 			// print_object($entity);
 			if ($dropTablesBeforeCreate == 'true') {
 				$sqlStatement .= 'SET FOREIGN_KEY_CHECKS = 0; DROP TABLE IF EXISTS ' . $this->encloseIdentifier($entity ['name']) . '; ';
+			}
+			if ($dropPermanentlyExcludedColumns == 'true') {
+				$database = $this->dataSource->getParam ( 'database', true );
+				$table = $entity ['name'];
+				$sqlExistingExcludedColumns = "
+					SELECT COLUMN_NAME
+					FROM INFORMATION_SCHEMA.COLUMNS
+					WHERE
+						TABLE_SCHEMA = '$database' AND	TABLE_NAME = '$table' AND COLUMN_NAME LIKE '__rem_%';";
+				$existingExcludedColumns = $this->executeSql ( $sqlExistingExcludedColumns, null );
+				$sqlStatement .= 'SET FOREIGN_KEY_CHECKS = 0; ';	
+				foreach ( $existingExcludedColumns as $column ) {
+					$sqlStatement .= 'ALTER TABLE ' . $this->encloseIdentifier($table) . ' DROP COLUMN ' . $this->encloseIdentifier($column['COLUMN_NAME']) . '; ' ;
+				}
+				//$sqlStatement .= 'SET FOREIGN_KEY_CHECKS = 0; DROP TABLE IF EXISTS ' . $this->encloseIdentifier($entity ['name']) . '; ';
 			}
 			if ($entity ['change'] == DDChanges::ADD) {
 				$sqlStatement .= 'CREATE TABLE IF NOT EXISTS ' . $this->encloseIdentifier($entity ['name']) . ' (';
@@ -2004,8 +2030,6 @@ private function encloseIdentifier($identifier) {
 				$sqlStatement .= $sqlAttributes . ' ';
 			}
 			
-			$sqlStatementsArray [$entity ['name']] = $sqlStatement;
-			
 			// Add unique indexes
 			foreach ( $sqlUniquesArray as $uk ) {
 				$sqlStatement = 'CREATE UNIQUE INDEX '.$this->encloseIdentifier('ix_' . $uk) . ' ON ' . $this->encloseIdentifier($entity ['name']) . ' ( ' . $this->encloseIdentifier($uk) . ');';
@@ -2014,36 +2038,40 @@ private function encloseIdentifier($identifier) {
 			
 			// print_object($entity);
 			// print_object($sqlStatement);
+
+			if ($removeExistingForeignKeys == 'true') {
+				$database = $this->dataSource->getParam ( 'database', true );
+				$table = $entity ['name'];
+				$sqlStatementExistingFKs = "
+					SELECT CONSTRAINT_NAME
+					FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+					WHERE
+						CONSTRAINT_SCHEMA = '$database' AND	TABLE_NAME = '$table' AND REFERENCED_TABLE_NAME IS NOT NULL;";
+				$existingFKs = $this->executeSql ( $sqlStatementExistingFKs, null );
+				foreach ( $existingFKs as $fk ) {
+					$sqlStatement = 'ALTER TABLE  ' . $this->encloseIdentifier($table) . ' DROP FOREIGN KEY ' . $this->encloseIdentifier($fk['CONSTRAINT_NAME']) . ';';
+					$sqlStatementsArray ['-'.$table . ':' . $fk ['CONSTRAINT_NAME']] = $sqlStatement;
+				}
+			}		
+			if ($removeExistingIndexes == 'true') {
+				$database = $this->dataSource->getParam ( 'database', true );
+				$table = $entity ['name'];
+				$sqlStatementExistingIndexes = "
+					SELECT INDEX_NAME
+					FROM INFORMATION_SCHEMA.STATISTICS
+					WHERE TABLE_SCHEMA = '$database' AND TABLE_NAME = '$table' AND INDEX_NAME != 'PRIMARY';";
+				$existingIndexes = $this->executeSql ( $sqlStatementExistingIndexes, null );
+				foreach ( $existingIndexes as $index ) {
+					$sqlStatement = 'DROP INDEX ' . $this->encloseIdentifier($index['INDEX_NAME']) . ' ON ' . $this->encloseIdentifier($table) . ';';
+					$sqlStatementsArray ['-'.$table . ':' . $index ['INDEX_NAME']] = $sqlStatement;
+				}
+			}
+
+
 			
 			TraceManager::add ( $sqlStatement, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );
 		}
-		if ($removeExistingForeignKeys == 'true') {
-			$database = $this->dataSource->getParam ( 'database', true );
-			$table = $entity ['name'];
-			$sqlStatementExistingFKs = "
-				SELECT CONSTRAINT_NAME
-				FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-				WHERE
-					CONSTRAINT_SCHEMA = '$database' AND	TABLE_NAME = '$table' AND REFERENCED_TABLE_NAME IS NOT NULL;";
-			$existingFKs = $this->executeSql ( $sqlStatementExistingFKs, null );
-			foreach ( $existingFKs as $fk ) {
-				$sqlStatement = 'ALTER TABLE  ' . $this->encloseIdentifier($table) . ' DROP FOREIGN KEY ' . $this->encloseIdentifier($fk['CONSTRAINT_NAME']) . ';';
-				$sqlStatementsArray ['-'.$table . ':' . $fk ['CONSTRAINT_NAME']] = $sqlStatement;
-			}
-		}		
-		if ($removeExistingIndexes == 'true') {
-			$database = $this->dataSource->getParam ( 'database', true );
-			$table = $entity ['name'];
-			$sqlStatementExistingIndexes = "
-				SELECT INDEX_NAME
-				FROM INFORMATION_SCHEMA.STATISTICS
-				WHERE TABLE_SCHEMA = '$database' AND TABLE_NAME = '$table' AND INDEX_NAME != 'PRIMARY';";
-			$existingIndexes = $this->executeSql ( $sqlStatementExistingIndexes, null );
-			foreach ( $existingIndexes as $index ) {
-				$sqlStatement = 'DROP INDEX ' . $this->encloseIdentifier($index['INDEX_NAME']) . ' ON ' . $this->encloseIdentifier($table) . ';';
-				$sqlStatementsArray ['-'.$table . ':' . $index ['INDEX_NAME']] = $sqlStatement;
-			}
-		}
+
 		// Add the foreign keys indexes after the table creations to avoid invalid references
 		if ($createForeignKeyIndexes == 'true') {
 			foreach ( $sqlForeignKeysArray as $fk ) {
