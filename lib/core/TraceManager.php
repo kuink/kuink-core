@@ -12,6 +12,8 @@ class TraceCategory {
 	const GENERAL = 'GENERAL';
 	const CONNECTOR = 'CONNECTOR';
 	const INSTRUCTION = 'INSTRUCTION';
+	const SQL = 'SQL';
+	const ERROR = 'ERROR';
 }
 
 /**
@@ -24,9 +26,15 @@ class TraceManager {
 	static public function add($message, $category = TraceCategory::GENERAL, $class = '') {
 		global $KUINK_TRACE;
 		
-		$message = ($class == '') ? $message : $class . '::' . $message;
+		if (is_array($message)) {
+			$newMessage = '';
+			foreach ($message as $key=>$value) {
+				$newMessage .= (! (is_object($value) || is_string($value))) ? $key.' => '.$value .'<br/>': '';
+			}
+		} else
+			$newMessage = ($class == '') ? $message : $class . '::' . $message;
 		
-		$KUINK_TRACE [] = $category . '::' . $message;
+		$KUINK_TRACE[] = $category . '::' . htmlentities($newMessage);
 	}
 }
 

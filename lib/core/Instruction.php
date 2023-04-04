@@ -30,20 +30,34 @@ abstract class Instruction {
 			return $default;
 		
 		if ($mandatory && ! isset ( $instruction [$attrName] )) {
-			$inst_name = $instruction->getname ();
-			throw new \Exception ( 'Instruction "' . $inst_name . '" needs attribute "' . $attrName . '" which was not supplied.' );
+			$instName = $instruction->getname ();
+			throw new \Exception ( 'Instruction "' . $instName . '" needs attribute "' . $attrName . '" which was not supplied.' );
 		}
-		$attr_value = ( string ) $instruction [$attrName];
-		$type = $attr_value [0];
-		$var_name = substr ( $attr_value, 1, strlen ( $attr_value ) - 1 );
+		$attrValue = ( string ) $instruction [$attrName];
+		$type = isset($attrValue [0]) ? $attrValue [0] : '';
+		$var_name = substr ( $attrValue, 1, strlen ( $attrValue ) - 1 );
 		
 		if ($type == '$' || $type == '#' || $type == '@') {
 			$eval = new \Kuink\Core\EvalExpr ();
-			$value = $eval->e ( $attr_value, $variables, FALSE, TRUE, FALSE ); // Eval and return a value without ''
+			$value = $eval->e ( $attrValue, $variables, FALSE, TRUE, FALSE ); // Eval and return a value without ''
 		} else
-			$value = $attr_value;
-		return ($value == '') ? $default : $value;
+			$value = $attrValue;
+		return ($value == '') ? $default : trim($value);
 	}
+
+	static function getAttributeRaw($instruction, $attrName, $variables, $mandatory = 'false', $default = '') {
+		if (! $mandatory && ! isset ( $instruction [$attrName] ))
+			return $default;
+		
+		if ($mandatory && ! isset ( $instruction [$attrName] )) {
+			$instName = $instruction->getname ();
+			throw new \Exception ( 'Instruction "' . $instName . '" needs attribute "' . $attrName . '" which was not supplied.' );
+		}
+		$attrValue = ( string ) $instruction [$attrName];
+		
+		return $attrValue;
+	}
+
 	static function dumpVariable($var, $value) {
 		global $KUINK_MANUAL_TRACE;
 		$msg = '<xmp class="prettyprint linenums">' . $var . '::';
@@ -51,6 +65,39 @@ abstract class Instruction {
 		$msg .= '</xmp>';
 		$KUINK_MANUAL_TRACE [] = $msg;
 	}
+
+	/*
+	 * This function will look for any child elements given the $elementName 
+	 * 
+	 * @param    string  $elementName The element name to search the attribute
+	 * @param    bool		 $mandatory The attribute is mandatory
+	 * @param    object  $xml The root xmlDefinition
+ 	 * @return   string		the inner element xml
+	 */
+	static function getInnerElements($elementName, $mandatory=false, $xml=null) {
+		$innerElementXmlCollection = $xml->xpath ( './'.$elementName);
+		
+		if (!isset($innerElementXmlCollection) && $mandatory)
+			throw new \Exception ( ': Required xml element &lt;' . $elementName . '/&gt; not found.' );		
+
+		return $innerElementXmlCollection;
+	}	
+
+	/*
+	 * This function will look for any child elements given the $elementName 
+	 * 
+	 * @param    string  $elementName The element name to search the attribute
+	 * @param    bool		 $mandatory The attribute is mandatory
+	 * @param    object  $xml The root xmlDefinition
+ 	 * @return   string		the inner element xml
+	 */
+	static function getInnerElement($elementName, $mandatory=false, $xml=null) {
+		$innerElementXmlCollection = self::getInnerElements($elementName, $mandatory, $xml);
+		$innerElementXml = isset($innerElementXmlCollection[0]) ? $innerElementXmlCollection[0] : null;
+
+		return $innerElementXml;
+	}	
+
 	abstract static public function execute($instManager, $instructionXmlNode);
 }
 

@@ -36,6 +36,26 @@ class Tools {
 		
 		return $pageURL;
 	}
+
+	static public function getBaseUrl() {
+		global $KUINK_CFG;
+		
+		$get_trace = isset ( $_GET [QueryStringParam::TRACE] ) ? ( string ) $_GET [QueryStringParam::TRACE] : '';
+		$get_modal = isset ( $_GET [QueryStringParam::MODAL] ) ? ( string ) $_GET [QueryStringParam::MODAL] : 'false';
+		$baseUrl = $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $qstrId;
+		$baseUrlParams = array (
+				QueryStringParam::ID => isset($_GET [QueryStringParam::ID]) ? $_GET [QueryStringParam::ID] : '',			
+				QueryStringParam::ID_CONTEXT => $_GET [QueryStringParam::ID_CONTEXT],
+				QueryStringParam::ACTION_VALUE => isset($currentNode->action_value) ? $currentNode->action_value : '',
+				QueryStringParam::TRACE => $get_trace 
+		);
+		if ($get_modal != 'false' && $get_modal != 'widget')
+			$baseUrlParams [QueryStringParam::MODAL] = $get_modal;
+		
+		$baseUrl = \Kuink\Core\Tools::setUrlParams ( $baseUrl, $baseUrlParams );
+		return $baseUrl;
+	}
+
 	static public function getWWWRoot() {
 		global $KUINK_CFG;
 		

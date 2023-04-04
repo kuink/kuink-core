@@ -22,7 +22,7 @@ require_once ('lib/core/ProcessOrchestrator.php');
 
 unset ( $KUINK_CFG );
 $KUINK_CFG = new stdClass ();
-// New neon configuration object
+// New kuink configuration object...
 $wwwroot = '';
 if (empty ( $KUINK_BRIDGE_CFG->loginHttps )) {
 	$wwwroot = $KUINK_BRIDGE_CFG->wwwRoot;
@@ -35,18 +35,21 @@ if (empty ( $KUINK_BRIDGE_CFG->loginHttps )) {
 // Initialize the contextid if it isn't set yet, important for api's
 $contextId = \Kuink\Core\ProcessOrchestrator::getContextId ();
 
+$KUINK_CFG->bridge = $KUINK_BRIDGE_CFG->bridge;
 $KUINK_CFG->wwwRoot = $wwwroot;
 $KUINK_CFG->dirRoot = $KUINK_BRIDGE_CFG->dirRoot;
 $KUINK_CFG->kuinkRoot = $KUINK_BRIDGE_CFG->kuinkRoot; // 'mod/kuink/';
-$KUINK_CFG->themeRoot = 'kuink-core/';
+//$KUINK_CFG->themeRoot = 'kuink-core/';
+$KUINK_CFG->themeRoot = $KUINK_BRIDGE_CFG->themeRoot;; //defaults to the bridge... let the bridge control the theme
 $KUINK_CFG->apiUrl = $KUINK_CFG->kuinkRoot.'/api.php?idcontext=' . $contextId;
-$KUINK_CFG->streamUrl = $KUINK_CFG->wwwRoot.'stream.php';
+$KUINK_CFG->streamUrl = $KUINK_CFG->kuinkRoot.'/stream.php';
 $KUINK_CFG->streamFileUrl = $KUINK_CFG->streamUrl.'?type=file&guid=';
 $KUINK_CFG->apiCompleteUrl = $wwwroot . '/' . $KUINK_CFG->apiUrl . '&neonfunction=';
 $KUINK_CFG->guestUrl = $wwwroot . '/mod/kuink/auth_guest.php';
 $KUINK_CFG->dataRoot = $KUINK_BRIDGE_CFG->dataRoot;
 $KUINK_CFG->appRoot = $KUINK_BRIDGE_CFG->appRoot;
-$KUINK_CFG->uploadRoot = $KUINK_CFG->appRoot . 'files/';
+$KUINK_CFG->tmpRoot = $KUINK_BRIDGE_CFG->tmpRoot;
+$KUINK_CFG->uploadRoot = $KUINK_BRIDGE_CFG->uploadRoot . 'files/';
 $KUINK_CFG->uploadVirtualPrefix = $KUINK_BRIDGE_CFG->uploadVirtualPrefix;//Only for neon compatibility. Leave blank in a fresh install.
 
 $KUINK_CFG->layoutCache = false;
@@ -66,34 +69,42 @@ $KUINK_CFG->environment = str_replace ( array (
 ), '', $fileContents );
 
 // If imageRemote is defined, then this location is used to load image instead of local folder
+$KUINK_CFG->useTransactions = $KUINK_BRIDGE_CFG->useTransactions;
 
 switch ($KUINK_CFG->environment) {
 	case 'dev' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
-		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';		
+		$KUINK_CFG->imageRemote = 'https://portal.cscm-lx.pt/mod/neon/theme/adminlte/img/';
 		$KUINK_CFG->enableEmailSending = false;
+		$KUINK_CFG->useCache = true; //Use caching system in framework
 		$KUINK_CFG->useGlobalACL = false;
-		$KUINK_CFG->displayNativeErrors = false;		
+		$KUINK_CFG->displayNativeErrors = false;
+		$KUINK_CFG->serverTimezone = 'Europe/Lisbon';
+
 		break;
 	case 'test' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
-		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';
+		$KUINK_CFG->imageRemote = 'theme/' . $KUINK_CFG->theme . '/img/';
 		$KUINK_CFG->enableEmailSending = false;
+		$KUINK_CFG->useCache = true; //Use caching system in framework
 		$KUINK_CFG->useGlobalACL = false;		
-		$KUINK_CFG->displayNativeErrors = false;		
+		$KUINK_CFG->displayNativeErrors = false;
+		$KUINK_CFG->serverTimezone = 'Europe/Lisbon';	
 		break;
 	case 'prod' :
 		$KUINK_CFG->theme = 'adminlte'; // "default" or "adminLTE" for experimental theme
-		$KUINK_CFG->imageRemote = '/kuink/kuink-core/theme/' . $KUINK_CFG->theme . '/img/';
+		$KUINK_CFG->imageRemote = 'theme/' . $KUINK_CFG->theme . '/img/';
 		$KUINK_CFG->enableEmailSending = true;
+		$KUINK_CFG->useCache = true; //Use caching system in framework
 		$KUINK_CFG->useGlobalACL = false;		
-		$KUINK_CFG->displayNativeErrors = false;		
+		$KUINK_CFG->displayNativeErrors = false;
+		$KUINK_CFG->serverTimezone = 'Europe/Lisbon';	
 		break;
 	default :
 		throw new \Exception ( 'Invalid environment' . $KUINK_CFG->environment, 1 );
 }
 
-$KUINK_CFG->imageRoot = $KUINK_CFG->dirRoot . $KUINK_CFG->kuinkRoot . $KUINK_CFG->themeRoot . '/theme/' . $KUINK_CFG->theme . '/img/';
+$KUINK_CFG->imageRoot = $KUINK_CFG->dirRoot .'/'. $KUINK_CFG->kuinkRoot .'/'.$KUINK_CFG->themeRoot . '/theme/' . $KUINK_CFG->theme . '/img/';
 
 $KUINK_CFG->photoRemote = $KUINK_CFG->imageRemote . 'photo/';
 

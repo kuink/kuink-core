@@ -39,11 +39,10 @@ class Image extends Formatter {
 			$imageRoot = $KUINK_CFG->imageRemote;
 		
 		$file = $imageRoot . $path . '/' . $filename . '.' . $ext;
-		
-		// if ( file_exists($file) )
-		// $photo = $file;
-		// else
-		// $photo = $imageRoot.$path.'/default.png';
+		 if ( file_exists($file) )
+		 $photo = $file;
+		 else
+		 $photo = $imageRoot.$path.'/default.png';
 		
 		$photo = $file;
 		if ($path != '' && $KUINK_CFG->imageRemote == '') {

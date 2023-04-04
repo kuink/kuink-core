@@ -16,40 +16,6 @@
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\UI\Formatter;
 
-class Pallete {
-	var $light;
-	var $medium;
-	var $dark;
-	function __construct($pallete) {
-		switch ($pallete) {
-			case 'blue' :
-				$this->light = '#99ccff';
-				$this->medium = '#6699cc';
-				$this->dark = '#003366';
-				break;
-			case 'green' :
-				$this->light = '#c0f92a';
-				$this->medium = '#339900';
-				$this->dark = '#015a01';
-				break;
-			case 'yellow' :
-				$this->light = '#ffff00';
-				$this->medium = '#fdca01';
-				$this->dark = '#986601';
-				break;
-			case 'red' :
-				$this->light = '#fd3301';
-				$this->medium = '#d40000';
-				$this->dark = '#980101';
-				break;
-			default :
-				$this->light = '#99ccff';
-				$this->medium = '#6699cc';
-				$this->dark = '#003366';
-				break;
-		}
-	}
-}
 class Badge extends Formatter {
 	function format($value, $params = null) {
 		$min = ( int ) $this->getParam ( $params, 'min', true, 0 );

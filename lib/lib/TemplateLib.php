@@ -1,5 +1,6 @@
 <?php
 use Kuink\Core\NodeManager;
+use Kuink\UI\Layout\Layout;
 // This file is part of Kuink Application Framework
 //
 // Kuink Application Framework is free software: you can redistribute it and/or modify
@@ -23,12 +24,14 @@ class TemplateLib {
 		return;
 	}
 	function GetTemplateHtml($params) {
+		global $KUINK_BRIDGE_CFG;
 		$templateName = $params [0];
 		$data = $params [1];
-		// echo "<pre>";
-		// var_dump($data);
-		// echo "</pre>";
-		$d = \Kuink\UI\Layout\Adapter\Smarty::getTemplate ( $templateName, $data );
+		//echo "<pre>";
+		//var_dump($templateName);
+		//var_dump($data);
+		//echo "</pre>";
+		$d = \Kuink\UI\Layout\Adapter\Smarty::getTemplate ( $templateName, $data, $KUINK_BRIDGE_CFG->theme );
 		return $d;
 	}
 	function ExecuteTemplate($params) {
@@ -48,7 +51,9 @@ class TemplateLib {
 					'source' => $src 
 			);
 			// print_object($data);
-		$d = \Kuink\UI\Layout\Adapter\Smarty::getApplicationTemplate ( $application, $process, $templateName, $data );
+		$layout = Layout::getInstance ();			
+		$d = $layout->getApplicationTemplate ( $application, $process, $templateName, $data );
+		
 		return $d;
 	}
 	function ExecuteStandardTemplate($params) {
@@ -63,12 +68,15 @@ class TemplateLib {
 		$application = (trim ( $nameParts [0] ) == 'this') ? $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] : trim ( $nameParts [0] );
 		$process = (trim ( $nameParts [1] ) == 'this') ? $this->nodeconfiguration [\Kuink\Core\NodeConfKey::PROCESS] : trim ( $nameParts [1] );
 		$templateName = trim ( $nameParts [2] );
-		
+
 		$lang = isset ( $params [1] ) ? $params [1] : $KUINK_APPLICATION->getLang ();
 		$data = $params [2];
 		
+
+
 		// Read the template file
 		$nodeManager = new \Kuink\Core\NodeManager ( $application, $process, 'templates', $templateName . '.' . $lang );
+
 		
 		// check if the file exists, else try to open in portuguese
 		if (! $nodeManager->exists ())
@@ -100,16 +108,18 @@ class TemplateLib {
 				$parsedValue = $childs;
 			} else {
 				// If template isset then get the template from smarty
-				if ($template)
-					$parsedValue = \Kuink\UI\Layout\Adapter\Smarty::getApplicationTemplate ( $application, $process, $template, $data );
+				if ($template) {
+					$layout = Layout::getInstance ();
+					$parsedValue = $layout->getApplicationTemplate ( $application, $process, $template, $data );
+				}
 				else {
 					$eval = new \Kuink\Core\EvalExpr ();
 					$cleanedData = array ();
 					foreach ( $data as $key => $value ) {
 						$cleanedData [$key] = ($value === null) ? '' : $value;
 					}
-					
 					$parsedValue = $eval->e ( $keyValue, $cleanedData, FALSE, TRUE, FALSE ); // Eval and return a value without ''
+					$parsedValue = str_replace('\"','"',$parsedValue); //To prevent bad urls on hyperlinks
 				}
 			}
 			$result [$keyName] = $parsedValue;
@@ -120,7 +130,8 @@ class TemplateLib {
 	function expandTemplate($params) {
 		$templateCode = ( string ) $params [0];
 		$data = $params [1];
-		$d = \Kuink\UI\Layout\Adapter\Smarty::expandTemplate ( $templateCode, $data );
+		$layout = Layout::getInstance ();
+		$d = $layout->expandTemplate($templateCode, $data);
 		return $d;
 	}
 }

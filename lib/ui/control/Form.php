@@ -34,7 +34,8 @@ class FormProperty {
 	const TYPE = 'type';
 	const INFER = 'infer';
 	const TABS = 'tabs'; // The tabs position top | left | right
-	const BUTTONS_POSITION = 'buttonsposition'; // The tabs position top |bottom | both
+	const BUTTONS_POSITION = 'buttonsposition'; // The tabs position top | bottom | both
+	const BUTTONS_ALIGN = 'buttonsalign'; // The buttons align left | center | right
 	const PERSIST = 'persist'; // persist the data of the form through screens
 }
 
@@ -54,6 +55,7 @@ class FormPropertyDefaults {
 	const INFER = 'false';
 	const TABS = 'top';
 	const BUTTONS_POSITION = 'bottom';
+	const BUTTONS_ALIGN = 'left';
 	const PERSIST = 'false';
 }
 
@@ -102,8 +104,10 @@ class FieldProperty {
 	const EVENT = 'event';
 	const DECORATION = 'decoration';
 	const INPUT_SIZE = 'inputsize';
-	const LABEL_SIZE = 'labelsize';
-	const LABEL_POSITION = 'labelposition';	
+	const LABEL_SIZE = 'label-size';
+	const LABEL_POSITION = 'label-position';
+	const LABEL_URL = 'label-url';
+	const LABEL_URL_DESCRIPTION = 'label-url-description';
 	const MODAL = 'modal';
 	const SEARCHABLE = 'searchable';
 	const PRINTABLE = 'printable';
@@ -116,6 +120,7 @@ class FieldProperty {
 	const VALIDATE = 'validate';
 	const ALLOW_DELETE = 'allowdelete';
 	const CLOSE = 'close';	
+	const POSITION = 'position';	
 }
 
 /**
@@ -165,6 +170,8 @@ class FieldPropertyDefaults {
 	const INPUT_SIZE = 'large';
 	const LABEL_SIZE = 'small';
 	const LABEL_POSITION = 'left';	
+	const LABEL_URL = '';
+	const LABEL_URL_DESCRIPTION = '';	
 	const MODAL = 'false';
 	const SEARCHABLE = 'false';
 	const PRINTABLE = 'true';
@@ -177,6 +184,7 @@ class FieldPropertyDefaults {
 	const VALIDATE = 'true';
 	const ALLOW_DELETE = 'false';	
 	const CLOSE = 'false';	
+	const POSITION = 'left';	
 }
 
 /**
@@ -252,6 +260,7 @@ class Form extends Control {
 	var $rulesClient; // Array to hold client side rules (dynamic rules)
 	var $rulesServer; // Array to hold server side rules (dynamic rules)
 	var $buttonsPosition; // Position of the button group top | bottom | both
+	var $buttonsAlign; // Alignment of the button group left | center | right
 	var $defaultData; // Form default data
 	var $postData; // Form post data
 	function __construct($nodeconfiguration, $xml_definition) {
@@ -278,6 +287,19 @@ class Form extends Control {
 		$this->static_bind = array ();
 	}
 	
+	/***
+	 * Gets a form field ID attribute. If id is defined then return id else if name is defined it will return the name.
+	 * The goal is to slowly remove the id option from a field and replace it with the name property. But id will prevail over name if both are defined to keep compatibility
+	 * @param $field The field object to get the id
+	 */
+	function getId($field) {
+		$id = (string) $field [FieldProperty::ID];
+		if ($id == '')
+			//return the name instead
+			$id = (string) $field [FieldProperty::NAME];
+		return $id;
+	}	
+
 	/***
 	 * Adds a tab to the form
 	 * @param $id tabid
@@ -477,8 +499,8 @@ class Form extends Control {
 			$confirmText = Core\Language::getString ( $confirm, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		$attributes [FieldProperty::CONFIRM] = ($confirm == 'false') ? $confirm : $confirmText;
 		
-		$label = $this->getProperty ( $id, FieldProperty::LABEL, false, $id, $formfield );
-		$label = Core\Language::getString ( $label, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+		$labelId = $this->getProperty ( $id, FieldProperty::LABEL, false, $id, $formfield );
+		$label = Core\Language::getString ( $labelId, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		$attributes [FieldProperty::LABEL] = $label;
 		
 		$title = $this->getProperty ( $id, FieldProperty::TITLE, false, $id, $formfield );
@@ -496,15 +518,16 @@ class Form extends Control {
 		$showHelp = $this->getProperty ( $id, FieldProperty::HELP, false, FieldPropertyDefaults::HELP, $formfield );
 		$help = '';
 		if ($showHelp != 'false')
-			$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $id, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+			$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $labelId, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+			//$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $id, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		$attributes [FieldProperty::HELP] = $help;
 		$attributes [FieldProperty::NAME] = $this->getProperty ( $id, FieldProperty::NAME, false, FieldPropertyDefaults::NAME, $formfield );
-		$attributes [FieldProperty::REQUIRED] = $this->getProperty ( $id, FieldProperty::REQUIRED, false, FieldPropertyDefaults::REQUIRED, $formfield );
-		$attributes [FieldProperty::DISABLED] = $this->getProperty ( $id, FieldProperty::DISABLED, false, FieldPropertyDefaults::DISABLED, $formfield );
+		$attributes [FieldProperty::REQUIRED] = $this->getProperty ( $id, FieldProperty::REQUIRED, false, FieldPropertyDefaults::REQUIRED, $formfield, true ); //Parse Bool to evaluate conditions
+		$attributes [FieldProperty::DISABLED] = $this->getProperty ( $id, FieldProperty::DISABLED, false, FieldPropertyDefaults::DISABLED, $formfield, true ); //Parse Bool to evaluate conditions
 		$attributes [FieldProperty::MAXLENGTH] = $this->getProperty ( $id, FieldProperty::MAXLENGTH, false, FieldPropertyDefaults::MAXLENGTH, $formfield );
-		$attributes [FieldProperty::VISIBLE] = $this->getProperty ( $id, FieldProperty::VISIBLE, false, FieldPropertyDefaults::VISIBLE, $formfield );
-		$attributes [FieldProperty::FREEZE] = $this->getProperty ( $id, FieldProperty::FREEZE, false, FieldPropertyDefaults::FREEZE, $formfield );
-		$attributes [FieldProperty::INLINE] = $this->getProperty ( $id, FieldProperty::INLINE, false, FieldPropertyDefaults::INLINE, $formfield );
+		$attributes [FieldProperty::VISIBLE] = $this->getProperty ( $id, FieldProperty::VISIBLE, false, FieldPropertyDefaults::VISIBLE, $formfield, true ); //Parse Bool to evaluate conditions
+		$attributes [FieldProperty::FREEZE] = $this->getProperty ( $id, FieldProperty::FREEZE, false, FieldPropertyDefaults::FREEZE, $formfield, true ); //Parse Bool to evaluate conditions
+		$attributes [FieldProperty::INLINE] = $this->getProperty ( $id, FieldProperty::INLINE, false, FieldPropertyDefaults::INLINE, $formfield, true ); //Parse Bool to evaluate conditions
 		$attributes [FieldProperty::SIZE] = $this->getProperty ( $id, FieldProperty::SIZE, false, FieldPropertyDefaults::SIZE, $formfield );
 		$attributes [FieldProperty::ICON] = $this->getProperty ( $id, FieldProperty::ICON, false, FieldPropertyDefaults::ICON, $formfield );
 		$attributes [FieldProperty::COLS] = $this->getProperty ( $id, FieldProperty::COLS, false, FieldPropertyDefaults::COLS, $formfield );
@@ -530,6 +553,8 @@ class Form extends Control {
 		$attributes [FieldProperty::INPUT_SIZE] = $this->getProperty ( $id, FieldProperty::INPUT_SIZE, false, FieldPropertyDefaults::INPUT_SIZE, $formfield );
 		$attributes [FieldProperty::LABEL_SIZE] = $this->getProperty($id, FieldProperty::LABEL_SIZE, false, FieldPropertyDefaults::LABEL_SIZE, $formfield);
 		$attributes [FieldProperty::LABEL_POSITION] = $this->getProperty($id, FieldProperty::LABEL_POSITION, false, FieldPropertyDefaults::LABEL_POSITION, $formfield);
+		$attributes [FieldProperty::LABEL_URL] = $this->getProperty($id, FieldProperty::LABEL_URL, false, FieldPropertyDefaults::LABEL_URL, $formfield);
+		$attributes [FieldProperty::LABEL_URL_DESCRIPTION] = $this->getProperty($id, FieldProperty::LABEL_URL_DESCRIPTION, false, FieldPropertyDefaults::LABEL_URL_DESCRIPTION, $formfield);
 		$attributes [FieldProperty::DEFAULT_BUTTON] = $this->getProperty ( $id, FieldProperty::DEFAULT_BUTTON, false, FieldPropertyDefaults::DEFAULT_BUTTON, $formfield );
 		$attributes [FieldProperty::MODAL] = $this->getProperty ( $id, FieldProperty::MODAL, false, FieldPropertyDefaults::MODAL, $formfield );
 		$attributes [FieldProperty::SEARCHABLE] = $this->getProperty ( $id, FieldProperty::SEARCHABLE, false, FieldPropertyDefaults::SEARCHABLE, $formfield );
@@ -541,6 +566,7 @@ class Form extends Control {
 		$attributes [FieldProperty::VALIDATE] = $this->getProperty ( $id, FieldProperty::VALIDATE, false, FieldPropertyDefaults::VALIDATE, $formfield );
 		$attributes [FieldProperty::ALLOW_DELETE] = $this->getProperty($id, FieldProperty::ALLOW_DELETE, false, FieldPropertyDefaults::ALLOW_DELETE, $formfield);
 		$attributes [FieldProperty::CLOSE] = $this->getProperty($id, FieldProperty::CLOSE, false, FieldPropertyDefaults::CLOSE, $formfield);
+		$attributes [FieldProperty::POSITION] = $this->getProperty($id, FieldProperty::POSITION, false, FieldPropertyDefaults::POSITION, $formfield);
 		
 		return $attributes;
 	}
@@ -569,10 +595,11 @@ class Form extends Control {
 		// (1)bind data: Data bound by the action
 		// (2)context stored data: stored data in a process variable
 		// (3)default data: if none of the above set the
+		$currentData = null;
 		$persist = $this->getProperty ( $this->name, FormProperty::PERSIST, false, FormPropertyDefaults::PERSIST );
 		$storedData = $this->getContextVariable ( $this->name . '_contextData' );
+		//var_dump($storedData);
 		// print_object($this->name.'_contextData');
-		// print_object($storedData);
 		if (count ( $this->bind_data ) > 0) {
 			// print_object('currentData::POSTDATA');
 			// print_object($this->bind_data);
@@ -580,19 +607,22 @@ class Form extends Control {
 			foreach ( $this->bind_data as $bind_data )
 				foreach ( $bind_data as $newBindKey => $newBindData )
 					$newBindDataArray [$newBindKey] = $newBindData;
-				// print_object($newBindDataArray);
-			return $newBindDataArray;
+			//print_object($newBindDataArray);
+			$currentData = $newBindDataArray;
 			// return $this->bind_data[0];
-		}
+		} else
 		if (count ( $storedData ) > 0) {
 			// print_object('currentData::CONTEXT');
 			// return $storedData[0];
-			return $storedData;
-		}
+			$currentData =  $storedData;
+		} else
 		if (count ( $this->defaultData ) > 0) {
 			// print_object('currentData::DEFAULT');
-			return $this->defaultData;
+			$currentData =  $this->defaultData;
 		}
+		//var_dump($storedData);
+		//var_dump($currentData);
+		return $currentData;
 	}
 	
 	/**
@@ -682,7 +712,7 @@ class Form extends Control {
 				$datasource = isset ( $child ['datasource'] ) ? ( string ) $child ['datasource'] : '';
 				$datasourceParams = isset ( $child ['datasourceparams'] ) ? ( string ) $child ['datasourceparams'] : '';
 				
-				$oldAttrValue = ( string ) $attributes [$ruleAttr];
+				$oldAttrValue = isset($attributes [$ruleAttr]) ? ( string ) $attributes [$ruleAttr] : '';
 				if ($ruleRunAt == 'client') {
 					$clientCondition = $this->conditionToJavascript($ruleCondition ,($theme=='default') ? $this->name : $this->guid);
 					if ($datasource != '') {
@@ -751,11 +781,12 @@ class Form extends Control {
 	 * Builds the form from the current state
 	 */
 	function build() {
-		$freeze = $this->getProperty ( $this->name, FormProperty::FREEZE, false, FormPropertyDefaults::FREEZE );
-		$visible = $this->getProperty ( $this->name, FormProperty::VISIBLE, false, FormPropertyDefaults::VISIBLE );
+		$freeze = $this->getProperty ( $this->name, FormProperty::FREEZE, false, FormPropertyDefaults::FREEZE, $this->xml_definition, true );
+		$visible = $this->getProperty ( $this->name, FormProperty::VISIBLE, false, FormPropertyDefaults::VISIBLE, $this->xml_definition, true);
 		$title = $this->getProperty ( $this->name, FormProperty::TITLE, false, FormPropertyDefaults::TITLE );
 		
 		$this->buttonsPosition = $this->getProperty ( $this->name, FormProperty::BUTTONS_POSITION, false, FormPropertyDefaults::BUTTONS_POSITION );
+		$this->buttonsAlign = $this->getProperty ( $this->name, FormProperty::BUTTONS_ALIGN, false, FormPropertyDefaults::BUTTONS_ALIGN );
 		
 		if ($visible != 'true')
 			return;
@@ -773,7 +804,8 @@ class Form extends Control {
 		
 		foreach ( $form->children () as $formfield ) {
 			$type = ( string ) $formfield->getname ();
-			$id = ( string ) $formfield ['id'];
+			//$id = ( string ) $formfield ['id'];
+			$id = $this->getId($formfield);
 			
 			// $field = new FormField($id, $type, $attributes, $options, $skeleton, $skin);
 			$field = $this->expandField ( $formfield, $id, $type );
@@ -795,6 +827,7 @@ class Form extends Control {
 		
 		$visible = $attributes [FieldProperty::VISIBLE];
 		$datasourcename = ( string ) $attributes [FieldProperty::DATASOURCE];
+		$datasourceparams = ( string ) $attributes [FieldProperty::DATASOURCE_PARAMS];
 		$bindid = ( string ) $attributes [FieldProperty::BINDID];
 		$bindvalue = ( string ) $attributes [FieldProperty::BINDVALUE];
 		$skeleton = $attributes [FieldProperty::SKELETON];
@@ -807,7 +840,7 @@ class Form extends Control {
 		if ($multilang == 'true') {
 			// load the datasource
 			if (! isset ( $this->datasources ['_lang'] )) {
-				$dataAccess = new \Kuink\Core\DataAccess ( 'getAll' );
+				$dataAccess = new \Kuink\Core\DataAccess ( 'getAll', framework, config );
 				$params ['_entity'] = 'fw_lang';
 				// $params['id_company'] = 1; //Hard coded for now... $variables['USER']['idCompany'];
 				$params ['is_active'] = 1;
@@ -905,7 +938,8 @@ class Form extends Control {
 			if ($datasourcename != '')
 				// Store this field to be bind when setting the data
 				// This is usefull to when the bind as the id but we want to show the bind value
-				$this->static_bind [$id] = $datasourcename . ',' . $bindid . ',' . $bindvalue;
+				$datasourceparams = ($datasourceparams != '') ? '('.$datasourceparams.')': $datasourceparams;
+				$this->static_bind [$id] = $datasourcename.$datasourceparams . '|' . $bindid . '|' . $bindvalue;
 			$this->static_fields [$id] = true;
 			
 			
@@ -984,16 +1018,21 @@ class Form extends Control {
 			// var_dump( $options );
 			
 			// Put all dynamic field properties in the property array
-			foreach ( $dynamic_field as $key => $value )
-				parent::setProperty ( array (
-						$id,
-						$key,
-						$value 
-				) );
+			foreach ( $dynamic_field as $key => $value ) {
+				//kuink_mydebug('setProperty id('.$id.') key('.$key.') value('.$value.')', '');
+				
+				if ($value !== null)
+					parent::setProperty ( array (
+							$id,
+							$key,
+							$value 
+					) );
+			}
 				
 				// If there are options, then create a datasource and set it
 			if (! is_null ( $options )) {
 				$datasource = $dyn . '.' . $id;
+
 				parent::setProperty ( array (
 						$id,
 						'datasource',
@@ -1062,7 +1101,8 @@ class Form extends Control {
 		$hasDefault = false;
 		
 		foreach ( $formfield->children () as $button ) {
-			$id = ( string ) $button [FieldProperty::ID];
+			//$id = ( string ) $button [FieldProperty::ID];
+			$id = $this->getId($button);
 			$attributes = $this->getFormfieldAttributes ( $button, $id );
 			
 			$default = ( string ) $attributes [FieldProperty::DEFAULT_BUTTON];
@@ -1074,7 +1114,8 @@ class Form extends Control {
 		}
 		
 		foreach ( $formfield->children () as $button ) {
-			$id = ( string ) $button [FieldProperty::ID];
+			//$id = ( string ) $button [FieldProperty::ID];
+			$id = $this->getId($button);
 			$attributes = $this->getFormfieldAttributes ( $button, $id );
 			$type = ( string ) $attributes [FieldProperty::TYPE];
 			$visible = ( string ) $attributes [FieldProperty::VISIBLE];
@@ -1096,7 +1137,7 @@ class Form extends Control {
 				$event = ( string ) $button [FieldProperty::EVENT];
 				
 				$actionPermissions = $this->nodeconfiguration [NodeConfKey::ACTION_PERMISSIONS];
-				if ($event != '' || $runat == 'client' || $actionPermissions [$action]) {
+				if ($event != '' || $runat == 'client' || (isset($actionPermissions [$action]) && $actionPermissions [$action])) {
 					// $attributes = $this->getFormfieldAttributes($button, $id);
 					$skeleton = $attributes [FieldProperty::SKELETON];
 					$skin = $attributes [FieldProperty::SKIN];
@@ -1120,7 +1161,7 @@ class Form extends Control {
 		if (count ( $this->bind_data ) == 0) {
 			// No bind data
 			// print_object('NO POST DATA');
-			if (count ( $storedData ) > 0) {
+			if (is_array($storedData) && count ( $storedData ) > 0) {
 				// Set context Data
 				// print_object('SET CONTEXT DATA');
 				// $this->bind_data = $storedData;
@@ -1139,13 +1180,13 @@ class Form extends Control {
 						foreach ( $bind_data as $newBindKey => $newBindData )
 							$newStoredData [$newBindKey] = $newBindData;
 				}
-					// print_object($newStoredData);
+				//kuink_mydebugObj('Setting...', $newStoredData);
 				$this->setContextVariable ( $this->name . '_contextData', $newStoredData );
 			}
 		
 		//var_dump( $this->bind_data );
 		// print_object( $this->static_bind );
-		// print_object( $this->datasources );
+		//print_object( $this->datasources );
 		// print_object( $this->dynamic_fields);
 		
 		$infer = $this->getProperty ( $this->name, FormProperty::INFER, false, FormPropertyDefaults::INFER );
@@ -1200,23 +1241,28 @@ class Form extends Control {
 
 				$fieldOptions = array ();
 				$fieldOptions [''] = ''; //Add empty option		
-				$selectoptions = $this->datasources [$datasourcename];
-				foreach ( $selectoptions as $selectoption ) {
-					if ((gettype ( $selectoption ) == 'array'))
-						$id = isset($selectoption [$bindid]) ? $selectoption [$bindid] : null;	
-					else
-						$id = isset($selectoption->$bindid) ? $selectoption->$bindid : null;
-					if ((gettype ( $selectoption ) == 'array'))
-						$name = isset($selectoption [$bindid]) ? $selectoption [$bindvalue] : null;	
-					else
-						$name = isset($selectoption->$bindid) ? $selectoption->$bindvalue : null;
-					$fieldOptions [$id] = $name;
-				}				
+				$selectoptions = array();
+				if (isset($this->datasources [$datasourcename]))
+					$selectoptions = $this->datasources [$datasourcename];
+
+				if (is_array($selectoptions))
+					foreach ( $selectoptions as $selectoption ) {
+						if ((gettype ( $selectoption ) == 'array'))
+							$id = isset($selectoption [$bindid]) ? $selectoption [$bindid] : null;	
+						else
+							$id = isset($selectoption->$bindid) ? $selectoption->$bindid : null;
+						if ((gettype ( $selectoption ) == 'array'))
+							$name = isset($selectoption [$bindid]) ? $selectoption [$bindvalue] : null;	
+						else
+							$name = isset($selectoption->$bindid) ? $selectoption->$bindvalue : null;
+						$fieldOptions [$id] = $name;
+					}				
 				//Update field with options
 				$field['options'] = $fieldOptions;
 				$this->fields[$index] = $field;
 			}
 		}
+		
 
 		foreach ( $bind_data as $key => $value ) {
 			// If this is a static bind, then expand the value from the datasource
@@ -1225,10 +1271,12 @@ class Form extends Control {
 
 			$static_bind = isset ( $this->static_bind [( string ) $key] ) ? $this->static_bind [( string ) $key] : '';
 			//kuink_mydebug($key,$value.'::'.$static_bind);
+			//kuink_mydebugobj('Key',$key);
+			//kuink_mydebugobj('Value',$value);
 			
 			if ($static_bind != '') {
 				//kuink_mydebug( $static_bind );
-				$source = explode ( ',', $static_bind );
+				$source = explode ( '|', $static_bind );
 				$datasourcename = ( string ) $source [0];
 				$bindid = isset ( $source [1] ) ? ( string ) $source [1] : 'id';
 				$bindvalue = isset ( $source [2] ) ? ( string ) $source [2] : 'name';
@@ -1242,9 +1290,9 @@ class Form extends Control {
 					$datasource_value = isset ( $datasource [$value] ) ? ( array ) $datasource [$value] : array ();
 					// if (empty($datasource_value))
 					$new_value = $this->datasourceFindValue ( $datasource, $bindid, $bindvalue, $value ); // print_object($datasource_value);
-																																															// else
-																																															// $new_value = (string)$datasource_value[$bindvalue];
-																																															// neon_mydebug( $key, $value.'::'.htmlentities(utf8_decode($new_value)) );
+					// else
+					// $new_value = (string)$datasource_value[$bindvalue];
+					// neon_mydebug( $key, $value.'::'.htmlentities(utf8_decode($new_value)) );
 					//kuink_mydebug($key.'.'.$value.'.', $new_value);
 					if ($new_value != '')
 						$bind_data [$key] = $new_value;
@@ -1275,7 +1323,10 @@ class Form extends Control {
 					}
 					
 					$new_value = ( string ) $this->callFormatter ( $f_name, $value, $attributes, $bind_data );
-					
+					//kuink_mydebugobj('Key',$key);
+					//kuink_mydebugobj('value',$value);
+					//kuink_mydebugobj('Value',$new_value);
+
 					// neon_mydebug($key, $new_value);
 					// $bind_data[$key] = htmlentities(utf8_decode($new_value));
 					$bind_data [$key] = $new_value;
@@ -1317,7 +1368,7 @@ class Form extends Control {
 		$this->build ();
 		$this->bindData ();
 		$this->updateValues ();
-		$this->calculateRows();		
+		$this->calculateRows();	
 		
 		$kuinkUser = new \Kuink\Core\User ();
 		$user = $kuinkUser->getUser ();
@@ -1334,6 +1385,7 @@ class Form extends Control {
 		$params ['form'] = $this->form;
 		$params ['tabs'] = $this->tabs;
 		$params ['buttonsPosition'] = $this->buttonsPosition;
+		$params ['buttonsAlign'] = $this->buttonsAlign;
 		$params ['hasTabs'] = (count($this->tabs) > 1); //If there is only one tab, don't show the headers
 		$params ['tabsPosition'] = $this->getProperty ( $this->name, FormProperty::TABS, false, FormPropertyDefaults::TABS );
 		$params ['fields'] = $this->fields;
@@ -1431,8 +1483,11 @@ class Form extends Control {
 			$dataSourceParams = isset($clientRule ['datasourceparams']) ? $clientRule ['datasourceparams'] : '';
 			$bindId = isset($clientRule ['bindid']) ? $clientRule ['bindid'] : '';
 			$bindValue = isset($clientRule ['bindvalue']) ? $clientRule ['bindvalue'] : '';
+			$ruleCondition = isset($clientRule ['condition']) ? $clientRule ['condition'] : '';
+			$ruleValueTrue = isset($clientRule ['valueTrue']) ? $clientRule ['valueTrue'] : '';
+			$ruleValueFalse = isset($clientRule ['valueFalse']) ? $clientRule ['valueFalse'] : '';
 			
-			$rules [] = '{ "field": "' . $clientRule ['field'] . '", "condition": "' . $clientRule ['condition'] . '", "attr": "' . $clientRule ['attr'] . '", "value_true":"' . $clientRule ['valueTrue'] . '", "value_false": "' . $clientRule ['valueFalse'] . '", "datasource": "' . $dataSource  . '", "bindid": "' . $bindId . '", "bindvalue": "' . $bindValue . '", "datasourceparams":' . json_encode ( $dataSourceParams ) . '}';
+			$rules [] = '{ "field": "' . $clientRule ['field'] . '", "condition": "' . $ruleCondition . '", "attr": "' . $clientRule ['attr'] . '", "value_true":"' . $ruleValueTrue . '", "value_false": "' . $ruleValueFalse . '", "datasource": "' . $dataSource  . '", "bindid": "' . $bindId . '", "bindvalue": "' . $bindValue . '", "datasourceparams":' . json_encode ( $dataSourceParams ) . '}';
 		}
 		$jsonRules = '[' . implode ( ',', $rules ) . ']';
 		return $jsonRules;
@@ -1461,8 +1516,10 @@ class Form extends Control {
 					}
 				if ($numberOfInlineFields > 1)
 					$lastNumberOfInlineFields = $numberOfInlineFields;
-				$fieldId = $fields[$i]['attributes']['id'];
-				$nextFieldId = isset($fields[$i+1]) ? $fields[$i+1]['attributes']['id'] : null;
+				//$fieldId = $fields[$i]['attributes']['id'];
+				$fieldId = $this->getId($fields[$i]['attributes']);
+				//$nextFieldId = isset($fields[$i+1]) ? $fields[$i+1]['attributes']['id'] : null;
+				$nextFieldId = isset($fields[$i+1]) ? $this->getId($fields[$i+1]['attributes']) : null;
 				$this->fields[$fieldId]['attributes']['_rowStart'] = (int)($this->fields[$fieldId]['attributes']['inline'] == 'false');
 				$this->fields[$fieldId]['attributes']['_rowEnd'] = (int) (isset($this->fields[$nextFieldId]) && ($this->fields[$nextFieldId]['attributes']['inline'] == 'false') || ($i == count($fields)-1));
 				$this->fields[$fieldId]['attributes']['_rowLength'] = ($i == count($fields)) ? 1 : $lastNumberOfInlineFields;

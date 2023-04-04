@@ -25,18 +25,21 @@ class Smarty extends \Smarty {
 	private $positionsHtml = array ();
 	private $menuItems = array ();
 	function __construct($themeName = "default") {
-		GLOBAL $KUINK_CFG;
+		global $KUINK_CFG, $KUINK_BRIDGE_CFG;
 		parent::__construct ();
-		$this->setTemplateDir ( dirname ( __FILE__ ) . '/../../../theme/' . $themeName . '/template/' );
-		$this->setCompileDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache_compiled/' );
-		$this->setCacheDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache/' );
+		
+		//$this->setTemplateDir ( dirname ( __FILE__ ) . '/../../../theme/' . $themeName . '/template/' );
+		//$this->setCompileDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache_compiled/' );
+		//$this->setCacheDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache/' );
+
+		$this->setTemplateDir($KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/template/');
+		$this->setCompileDir($KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/theme_cache_compiled/');
+		$this->setCacheDir($KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/theme_cache/');
 		
 		$this->themeName = $themeName;
 		$this->appTemplate = "1col";
 		$this->assign ( 'THEME', $themeName );
-		
 		$context = \Kuink\Core\ProcessOrchestrator::getContext ();
-		
 		$this->assign ( '_idContext', ($context == null) ? null : $context->id );
 		$this->assign ( '_apiUrl', $KUINK_CFG->apiUrl );
 		$this->assign ( '_kuinkRoot', $KUINK_CFG->kuinkRoot );
@@ -59,10 +62,19 @@ class Smarty extends \Smarty {
 	}
 
 	public function setTheme($themeName) {
-		$this->setTemplateDir(dirname(__FILE__).'/../../../theme/'.$themeName.'/template/');
-		$this->setCompileDir(dirname(__FILE__).'/../../../theme/theme_cache_compiled/');
-		$this->setCacheDir(dirname(__FILE__).'/../../../theme/theme_cache/');
+		global $KUINK_BRIDGE_CFG;
+
+		$this->setTemplateDir($KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/template/');
+		$this->setCompileDir($KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/theme_cache_compiled/');
+		$this->setCacheDir($KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/theme_cache/');
+
+		//$this->setTemplateDir(dirname(__FILE__).'/../../../../'.$bridge.'/theme/'.$themeName.'/template/');
+		//$this->setCompileDir(dirname(__FILE__).'/../../../../'.$bridge.'/theme/'.$themeName.'/theme_cache_compiled/');
+		//$this->setCacheDir(dirname(__FILE__).'/../../../../'.$bridge.'/theme/'.$themeName.'/theme_cache/');
 		
+		//var_dump($this->getTemplateDir());
+		//die();
+
 		$this->themeName = $themeName;
 		$this->assign( 'THEME', $themeName );
 		//print_object('Setting theme '. $themeName);
@@ -75,6 +87,7 @@ class Smarty extends \Smarty {
 	public function setAppTemplate($appTemplate) {
 		$this->appTemplate = $appTemplate;
 	}
+
 	public function setRedirectHeader($url) {
 		global $KUINK_CFG;
 		
@@ -134,15 +147,14 @@ class Smarty extends \Smarty {
 			$this->display ( 'Modal_' . $modal . '.tpl' );
 		else
 			$this->display ( "Master.tpl" );
-		
-		// $this->assign("parts",$html);
-		// $this->display('html.tpl');
 	}
+
 	public function getString($params, $content, $smarty, &$repeat, $template) {
 		$appName = $params ['application'];
 		$identifier = $content;
 		return \Kuink\Core\Language::getString ( $identifier );
 	}
+
 	public function addHtml($html, $position) {
 		$this->positionsHtml [$position] [] = $html;
 	}
@@ -158,17 +170,21 @@ class Smarty extends \Smarty {
 		else
 			$this->caching = true;
 	}
+
 	public function addUserMessages($messages) {
 		$this->userMessages = $messages;
 	}
+
 	public function setBaseUrl($baseurl) {
 		$this->assign ( "baseurl", $baseurl );
 	}
+
 	public function setLogOut($userDisplayName, $userId, $sessKey) {
 		$this->assign ( "userDisplayName", $userDisplayName );
 		$this->assign ( "userId", $userId );
 		$this->assign ( "sessKey", $sessKey );
 	}
+
 	public function setAppMenu($appMenuEntries) {
 		if (isset($appMenuEntries) && is_array($appMenuEntries))
 			foreach ( $appMenuEntries as $item ) {
@@ -176,71 +192,88 @@ class Smarty extends \Smarty {
 			}
 		// $this->assign("appMenuEntries", $appMenuEntries);
 	}
+
 	public function setNodeMenu($nodeMenuEntries) {
 		$this->menuItems [] = $nodeMenuEntries;
 		
 		// $this->assign("nodeMenuEntries", $nodeMenuEntries);
 	}
+
 	public function setAppName($appName) {
 		$this->assign ( "appName", $appName );
 	}
+
 	public function setProcessName($processName) {
 		$this->assign ( "processName", $processName );
 	}
+
 	public function setNodeName($nodeName) {
 		$this->assign ( "nodeName", $nodeName );
 	}
+
 	public function setAdminMenu($menuEntries) {
 		$this->assign ( "hasAdminMenu", true );
 		$this->assign ( "adminMenuEntries", $menuEntries );
 	}
+
 	public function setBreadCrumb($breadcrumbEntries) {
 		$this->assign ( "breadcrumbEntries", $breadcrumbEntries );
 	}
+
 	public function setRefresh($actionUrl){
 		$this->assign("_refresh", $actionUrl);
 	}    
+
 	public function setGlobalVariable($name, $value) {
 		$this->assign ( $name, $value );
 	}
+
 	public function setScreenSource($screenSource) {
 		$this->assign ( '_showSource', true );
 		$this->assign ( '_screenSource', $screenSource );
 	}
+
 	public function setActionsSource($actionsSource) {
 		$this->assign ( '_actionsSource', $actionsSource );
 	}
-	static function getTemplate($templateName, $data) {
-		$smarty = new \Smarty ();
-		$smarty->setTemplateDir ( dirname ( __FILE__ ) . '/../../../theme/adminlte/template/' );
-		$smarty->setCompileDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache_compiled/' );
-		$smarty->setCacheDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache/' );
-		$smarty->assign ( $data );
+
+	static function getTemplate($templateName, $data, $themeName='') {
+		global $KUINK_BRIDGE_CFG;
 		
+		$smarty = new \Smarty ();
+		$smarty->setTemplateDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/template/' );
+		$smarty->setCompileDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/theme_cache_compiled/' );
+		$smarty->setCacheDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/theme_cache/' );
+		$smarty->assign ( $data );
+		//var_dump($KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$themeName.'/template/'.$templateName);
 		$result = $smarty->fetch ( $templateName . '.tpl' ); 
 		//print_object(dirname ( __FILE__ ) . '/../../../theme/default/template/'.$templateName );
 		//print_object($result);
 		return $result;
 	}
-	static function getApplicationTemplate($application, $process, $templateName, $data) {
-		global $KUINK_CFG, $KUINK_APPLICATION;
+
+	public function getApplicationTemplate($application, $process, $templateName, $data) {
+		global $KUINK_BRIDGE_CFG, $KUINK_APPLICATION;
 		
 		$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $application ) : '';
 		
 		$smarty = new \Smarty ();
 
-		$templateDir = $KUINK_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/templates/';
+		$templateDir = $KUINK_BRIDGE_CFG->appRoot . '/apps/' . $appBase . '/' . $application . '/process/' . $process . '/templates/';
 		$smarty->setTemplateDir ( $templateDir );
-		// print($templateDir);
-		$smarty->setCompileDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache_compiled/' );
-		$smarty->setCacheDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache/' );
+		$smarty->setCompileDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$this->themeName.'/theme_cache_compiled/' );
+		$smarty->setCacheDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$this->themeName.'/theme_cache/' );
 		$smarty->assign ( $data );
-		return $smarty->fetch ( $templateName . '.tpl' );
+		
+		$result = $smarty->fetch ( $templateName . '.tpl' );
+
+		return $result;
 	}
-	static function expandTemplate($templateCode, $data) {
-		global $KUINK_CFG;
+
+	public function expandTemplate($templateCode, $data) {
+		global $KUINK_BRIDGE_CFG;
 		$smarty = new \Smarty ();
-		$templateDir = $KUINK_CFG->appRoot . 'files/temp/';
+		$templateDir = $KUINK_BRIDGE_CFG->appRoot . 'files/temp/';
 		
 		// Create template file
 		$filename = time () . '-' . rand ( 1000, 10000 ) . '.tpl';
@@ -253,14 +286,53 @@ class Smarty extends \Smarty {
 		
 		$smarty->setTemplateDir ( $templateDir );
 		// print($templateDir);
-		$smarty->setCompileDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache_compiled/' );
-		$smarty->setCacheDir ( dirname ( __FILE__ ) . '/../../../theme/theme_cache/' );
+		$smarty->setCompileDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$this->themeName.'/theme_cache_compiled/' );
+		$smarty->setCacheDir ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$this->themeName.'/theme_cache/' );
 		$smarty->assign ( $data );
 		$returnData = $smarty->fetch ( $file );
 		// delete the file
 		@unlink ( $file );
 		return $returnData;
 	}
+
+	public function addControl($type, $params, $skeleton = null, $skin, $position) {
+		global $KUINK_BRIDGE_CFG;
+		
+		$smarty = \Kuink\Core\Factory::getLayoutAdapter ( "Smarty" );
+		
+		$smarty_params = array ();
+		$smarty_params ['skin'] = $skin;
+		
+		foreach ( $params as $key => $value )
+			$smarty_params [$key] = $value;
+		
+		$smarty->assign ( $smarty_params );
+		//kuink_mydebug( 'Skeleton', $params['_skeleton'] );		
+		$template_name = ($params['_skeleton'] == '') ? $type . '.tpl' : $type . '_' . $params['_skeleton'] . '.tpl';
+		//kuink_mydebug( 'HEY', __DIR__.'/../../theme/'.$this->theme.'/ui/control/'.$template_name );
+		
+		//$output = $smarty->fetch ( __DIR__ . '/../../theme/' . $this->theme . '/ui/control/' . $template_name );
+		//var_dump($KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$this->themeName.'/ui/control/' . $template_name);
+		$output = $smarty->fetch ( $KUINK_BRIDGE_CFG->dirRoot.'/'.$KUINK_BRIDGE_CFG->kuinkRoot.'/theme/'.$this->themeName.'/ui/control/' . $template_name );
+		
+		//var_dump( __DIR__ . '/../../theme/' . $this->theme . '/ui/control/' . $template_name);
+		$this->addHtml ( $output, $position );
+		// $LAYOUT->addHtml($output, $this->position);
+		
+		// print( $output );
+		
+		// print('THEME::'.$this->theme.' HELLO '.$this->type.'Control::skeleton,'.$this->skeleton.'::skin,'.$this->skin.'::position,'.$this->position);
+	}
+
+	public function setExecutionTime($time){
+		$this->assign("_executionTime", $time);
+	}  
+	
+	public function setFocus($control){
+	//kuink_mydebug('Focus', $control);
+		$this->assign('_focus', $control);
+	}  
+	
 }
 
 ?>

@@ -53,6 +53,7 @@ class GridDefaults {
 	const REFRESHABLE = 'false';
 	const REFRESH_ACTION = '';
 	const REFRESH_INTERVAL = '5000';
+	const SHOW_COLUMNS = 'true';
 }
 
 /**
@@ -89,6 +90,7 @@ class GridProperty {
 	const REFRESHABLE = 'refreshable';
 	const REFRESH_ACTION = 'refreshaction';
 	const REFRESH_INTERVAL = 'refreshinterval';
+	const SHOW_COLUMNS = 'showcolumns';
 }
 class GridViewType {
 	const GRID = 'grid';
@@ -126,6 +128,7 @@ class GridColumnProperty {
 	const INPUT_SIZE = 'inputsize';
 	const SIZE = 'size';
 	const COLS = 'cols';
+	const COLSIZE = 'colsize';
 	const ROWS = 'rows';
 	const FREEZE = 'freeze';
 	const DISABLED = 'disabled';
@@ -166,6 +169,7 @@ class GridColumnDefaults {
 	const TYPE = GridColumnType::CSTATIC;
 	const INPUT_SIZE = 'medium';
 	const COLS = 20;
+	const COLSIZE = 0;
 	const ROWS = 4;
 	const SIZE = 'medium';
 	const FREEZE = 'false';
@@ -257,14 +261,16 @@ class Grid extends Control {
 	var $refreshable; // This grid is refreshable?
 	var $refreshAction; // Refresh action
 	var $refreshInterval; // Refresh interval in miliseconds
+	var $showColumns; //Indicates if the template will show the table header
 	function __construct($nodeconfiguration, $xml_definition) {
 		global $SESSION;
 		$this->built = false;
 		// kuink_mydebug('construct...','');
 		parent::__construct ( $nodeconfiguration, $xml_definition );
 		
-		$this->dynamicColumns = array ();
-		
+		$this->dynamicColumns = array();
+		$this->tablecolumns = array();
+		$this->tablecolnotvisible = array();
 		$this->pagesize = $this->getPageSize (null);
 		
 		$this->export = isset ( $_GET ['export'] ) ? true : false;
@@ -280,8 +286,8 @@ class Grid extends Control {
 			$this->page = 0;
 		else
 			$this->page = isset ( $currentStoredPage ) ? $currentStoredPage : 0;
-			
-			// Handle dynamic sorting of the table
+		
+		// Handle dynamic sorting of the table
 		$this->sort = $this->getContextVariable ( GridContextVariables::PAGE_SORT );
 		if (isset ( $_GET [$this->name . '_' . GridContextVariables::PAGE_SORT] )) {
 			
@@ -397,8 +403,9 @@ class Grid extends Control {
 	 * @param unknown_type $field_properties        	
 	 */
 	function addColumn($columnProperties) {
+		//kuink_mydebugObj($columnProperties);
 		$this->dynamicColumns [] = $columnProperties;
-		//print_object($this->dynamicColumns);		
+		
 		return;
 	}
 	
@@ -435,14 +442,15 @@ class Grid extends Control {
 		$attributes [GridColumnProperty::NAME] = $name;
 		$attributes [GridColumnProperty::ID] = $id;
 		
-		$label = $this->getProperty ( $name, GridColumnProperty::LABEL, false, $name, $column );
-		$label = Core\Language::getString ( $label, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+		$labelId = $this->getProperty ( $name, GridColumnProperty::LABEL, false, $name, $column );
+		$label = Core\Language::getString ( $labelId, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		$attributes [GridColumnProperty::LABEL] = $label;
 		
 		$showHelp = $this->getProperty ( $name, GridColumnProperty::HELP, false, GridColumnDefaults::HELP, $column );
 		$help = '';
 		if ($showHelp != 'false')
-			$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $id, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+			$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $labelId, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+			//$help = ($showHelp == 'true' || $showHelp == '') ? \Kuink\Core\Language::getHelpString ( $id, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ) : \Kuink\Core\Language::getHelpString ( $showHelp, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		$attributes [GridColumnProperty::HELP] = $help;
 		
 		$attributes [GridColumnProperty::TYPE] = ($grid_freezed == 'true') ? GridColumnType::CSTATIC : $this->getProperty ( $name, GridColumnProperty::TYPE, false, GridColumnDefaults::TYPE, $column );
@@ -455,6 +463,7 @@ class Grid extends Control {
 		$attributes [GridColumnProperty::SIZE] = $this->getProperty ( $name, GridColumnProperty::SIZE, false, GridColumnDefaults::SIZE, $column );
 		$attributes [GridColumnProperty::ICON] = $this->getProperty ( $name, GridColumnProperty::ICON, false, GridColumnDefaults::ICON, $column );
 		$attributes [GridColumnProperty::COLS] = $this->getProperty ( $name, GridColumnProperty::COLS, false, GridColumnDefaults::COLS, $column );
+		$attributes [GridColumnProperty::COLSIZE] = $this->getProperty ( $name, GridColumnProperty::COLSIZE, false, GridColumnDefaults::COLSIZE, $column );
 		$attributes [GridColumnProperty::ROWS] = $this->getProperty ( $name, GridColumnProperty::ROWS, false, GridColumnDefaults::ROWS, $column );
 		$attributes [GridColumnProperty::DATASOURCE] = $this->getProperty ( $name, GridColumnProperty::DATASOURCE, false, GridColumnDefaults::DATASOURCE, $column );
 		$attributes [GridColumnProperty::BINDID] = $this->getProperty ( $name, GridColumnProperty::BINDID, false, GridColumnDefaults::BINDID, $column );
@@ -613,25 +622,28 @@ class Grid extends Control {
 		$this->baseurl = ( string ) $this->nodeconfiguration [Core\NodeConfKey::BASEURL] . $form;
 		
 		$this->visible = ( string ) $this->getProperty ( $this->name, GridProperty::VISIBLE, false, GridDefaults::VISIBLE, null, true );
-		$this->tree = ( string ) $this->getProperty ( $this->name, GridProperty::TREE, false, GridDefaults::TREE );
+		$this->tree = ( string ) $this->getProperty ( $this->name, GridProperty::TREE, false, GridDefaults::TREE, null, true  );
 		$this->treeid = ( string ) $this->getProperty ( $this->name, GridProperty::TREE_ID, false, GridDefaults::TREE_ID );
 		$this->treeparentid = ( string ) $this->getProperty ( $this->name, GridProperty::TREE_PARENT_ID, false, GridDefaults::TREE_PARENT_ID );
-		$this->exportable = ( string ) $this->getProperty ( $this->name, GridProperty::EXPORTABLE, false, GridDefaults::EXPORTABLE );
+		$this->exportable = ( string ) $this->getProperty ( $this->name, GridProperty::EXPORTABLE, false, GridDefaults::EXPORTABLE, null, true);
+		
 		$this->pageable = ( string ) $this->getProperty ( $this->name, GridProperty::PAGEABLE, false, GridDefaults::PAGEABLE );
-		$this->collapsible = ( string ) $this->getProperty ( $this->name, GridProperty::COLLAPSIBLE, false, GridDefaults::COLLAPSIBLE );
+		$this->collapsible = ( string ) $this->getProperty ( $this->name, GridProperty::COLLAPSIBLE, false, GridDefaults::COLLAPSIBLE, null, true  );
 		// $this->pagesize = (string) $this->getProperty($this->name, GridProperty::PAGE_SIZE, false, GridDefaults::PAGE_SIZE);
 		$this->pagingaction = ( string ) $this->getProperty ( $this->name, GridProperty::PAGING_ACTION, false, GridDefaults::PAGING_ACTION );
 		$this->title = ( string ) $this->getProperty ( $this->name, GridProperty::TITLE, false, GridDefaults::TITLE );
 		$this->subtitle = ( string ) $this->getProperty ( $this->name, GridProperty::SUBTITLE, false, GridDefaults::SUBTITLE );
 		$this->is_form = false;
 		$this->transpose = ( string ) $this->getProperty ( $this->name, GridProperty::TRANSPOSE, false, GridDefaults::TRANSPOSE );
-		$this->infer = ( string ) $this->getProperty ( $this->name, GridProperty::INFER, false, GridDefaults::INFER );
+		$this->infer = ( string ) $this->getProperty ( $this->name, GridProperty::INFER, false, GridDefaults::INFER, null, true  );
 		
 		$this->extendEdit = ( string ) $this->getProperty ( $this->name, GridProperty::EXTEND_EDIT, false, GridDefaults::EXTEND_EDIT );
 		
 		$this->refreshable = ( string ) $this->getProperty ( $this->name, GridProperty::REFRESHABLE, false, GridDefaults::REFRESHABLE );
 		$this->refreshAction = ( string ) $this->getProperty ( $this->name, GridProperty::REFRESH_ACTION, false, GridDefaults::REFRESH_ACTION );
 		$this->refreshInterval = ( string ) $this->getProperty ( $this->name, GridProperty::REFRESH_INTERVAL, false, GridDefaults::REFRESH_INTERVAL );
+
+		$this->showColumns = ( string ) $this->getProperty ( $this->name, GridProperty::SHOW_COLUMNS, false, GridDefaults::SHOW_COLUMNS );
 		
 		$this->pivot = ( string ) $this->getProperty ( $this->name, GridProperty::PIVOT, false, GridDefaults::PIVOT );
 		$this->pivotlines = ( string ) $this->getProperty ( $this->name, GridProperty::PIVOT_LINES, false, GridDefaults::PIVOT_LINES );
@@ -676,7 +688,18 @@ class Grid extends Control {
 			$action_name = ( string ) $global_action ['name'];
 			$this->global_actions [$action_name] ['name'] = $action_name;
 			$this->global_actions [$action_name] ['label'] = isset ( $global_action ['label'] ) ? ( string ) $global_action ['label'] : ( string ) $global_action ['name'];
+			$this->global_actions [$action_name] ['label'] = Core\Language::getString ( $this->global_actions [$action_name] ['label'], $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 			$this->global_actions [$action_name] ['color'] = ( string ) $global_action ['color'];
+			$this->global_actions [$action_name] ['type'] = isset ( $global_action ['type'] ) ? ( string ) $global_action ['type'] : '';
+			$this->global_actions [$action_name] ['decoration'] = isset ( $global_action ['decoration'] ) ? ( string ) $global_action ['decoration'] : '';
+			$this->global_actions [$action_name] ['icon'] = isset ( $global_action ['icon'] ) ? ( string ) $global_action ['icon'] : '';
+			$confirmMessage = '';
+			switch ($global_action ['confirm']) {
+				case 'true': $confirmMessage = \Kuink\Core\Language::getString ( 'ask_proceed', 'framework' ); break;
+				case 'false': $confirmMessage = ''; break;
+				default: $confirmMessage = Core\Language::getString ( $global_action ['confirm'], $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] ); break;
+			}
+			$this->global_actions [$action_name] ['confirm'] = $confirmMessage;
 		}
 		
 		$actions = $tablexml->xpath ( './Template/Actions//Action' );
@@ -880,9 +903,22 @@ class Grid extends Control {
 		// var_dump($this->bind_data[0]);
 		// Check if this GRID is to infer or not
 		if ($this->infer == 'true') {
+			foreach ($this->bind_data as $data) {
+				if (is_array($data)) {
+					$record = (array) reset($data);
+					foreach ($record as $key => $value) {
+							if (!in_array($key, $this->tablecolumns) && !in_array($key, $this->tablecolnotvisible)) { // && (strpos($key, '__infer_') > 0)
+									$this->tableinfercolumns[] = $key;
+									$this->tablecolumns[] = $key;
+									$this->tableheaders[] = Core\Language::getString($key, $this->nodeconfiguration[Core\NodeConfKey::APPLICATION]);
+							}
+					}
+				}
+		}
+			/*
 			// Build the grid columns
 			// var_dump($this->tablecolumns);
-			if (is_array($this->bind_data) || is_object($this->bind_data))
+			if (is_array($this->bind_data) || is_object($this->bind_data)) {
 				foreach ( $this->bind_data as $data ) {
 					$record = ( array ) reset ( $data );
 					foreach ( $record as $key => $value ) {
@@ -893,6 +929,8 @@ class Grid extends Control {
 						}
 					}
 				}
+			}
+			var_dump($this->tablecolumns);*/
 		}
 		$this->total = 0;
 		if (is_array($this->bind_data) || is_object($this->bind_data))
@@ -912,7 +950,7 @@ class Grid extends Control {
 			$new_data = array ();
 			foreach ( $records as $record ) {
 				$record = ( array ) $record;
-				// var_dump($record);
+				//var_dump($record);
 				$inline = false;
 				$datatoinsert = array ();
 				$current_key = null;
@@ -1015,7 +1053,7 @@ class Grid extends Control {
 							$inferIndex = array_search ( $arrayKeys [0], $this->tablecolumns );
 						} else
 							$inferIndex = array_search ( '__infer', $this->tablecolumns );
-						$tableColFormatter = $this->tablecolformatter [$inferIndex];
+						$tableColFormatter = isset($this->tablecolformatter [$inferIndex]) ? $this->tablecolformatter [$inferIndex] : null;
 						// die();//kuink_mydebug($column,$inferIndex);
 					}
 					
@@ -1102,6 +1140,7 @@ class Grid extends Control {
 									'action' => $colActionName,
 									'actionvalue' => $colActionValueBind 
 							) );
+							//kuink_mydebug($colActionName, $colActionUrl);
 							$colActionLabel = $datatoinsert [$current_key] ['value'];
 							$colActionFormatted = '<a href="' . $colActionUrl . '">' . $colActionLabel . '</a>&nbsp;';
 							$colAction_constructor = array ();
@@ -1124,13 +1163,14 @@ class Grid extends Control {
 						// $url = new \moodle_url($this->baseurl);
 						// $baseurl = $url->out(false);
 						$actionType = isset ( $action ['type'] ) ? ( string ) $action ['type'] : '';
-						$actionicon = isset ( $action ['icon'] ) ? ( string ) $action ['icon'] : '';
+						$actionIcon = isset ( $action ['icon'] ) ? ( string ) $action ['icon'] : '';
 						$actionname = ( string ) $action ['name'];
 						$actionlabel_print = isset ( $action ['label'] ) ? ( string ) $action ['label'] : ( string ) $action ['name'];
+						$actionDecoration = isset ( $action ['decoration'] ) ? ( string ) $action ['decoration'] : '';
 						$action_permissions = $this->nodeconfiguration [Core\NodeConfKey::ACTION_PERMISSIONS];
-						
+
 						// Allow actions to have type like buttons
-						$actionTypeData = $this->getActionTypeData ( $actionType );
+						$actionTypeData = $this->getActionTypeData ( $actionType, $actionDecoration, $actionIcon);
 						if (! empty ( $action_permissions [$actionname] )) {
 							// print($has_permission);
 							$actionvaluebind = ( string ) $action ['actionvalue'];
@@ -1165,8 +1205,8 @@ class Grid extends Control {
 							// print($location);
 							// Check if the action is to be displayed due to conditional values
 							$label = Core\Language::getString ( $actionlabel_print, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
-							// $icon = ($actionicon == '') ? '' : '<span class="badge badge-info"><i class="icon-'.$actionicon.' icon-white"></i></span>';
-							$iconName = ($actionicon != '') ? $actionicon : ( string ) $actionTypeData ['icon'];
+							// $icon = ($actionIcon == '') ? '' : '<span class="badge badge-info"><i class="icon-'.$actionIcon.' icon-white"></i></span>';
+							$iconName = ($actionIcon != '') ? $actionIcon : ( string ) $actionTypeData ['icon'];
 							// print($iconName.' ' );
 							
 							$iconStyle = '';
@@ -1181,9 +1221,9 @@ class Grid extends Control {
 							} else
 								$actionlabel = ($iconName == '') ? $label : $icon . ' ' . $label;
 								
-								// $tooltip = ($actionicon == '') ? '' : 'rel="tooltip" data-placement="top" data-original-title="'.$label.'"';
+								// $tooltip = ($actionIcon == '') ? '' : 'rel="tooltip" data-placement="top" data-original-title="'.$label.'"';
 							$tooltip = ($iconName == '') ? '' : 'rel="tooltip" data-placement="top" title="' . $label . '"';
-							// $tooltipdiv = ($actionicon == '') ? '' :'<div class="tooltip fade top in" style="top: 5px; left: 221.5px; display: block; "><div class="tooltip-arrow"></div><div class="tooltip-inner">'.$label.'</div></div>';
+							// $tooltipdiv = ($actionIcon == '') ? '' :'<div class="tooltip fade top in" style="top: 5px; left: 221.5px; display: block; "><div class="tooltip-arrow"></div><div class="tooltip-inner">'.$label.'</div></div>';
 							$tooltipdiv = '';
 							
 							if ($cond_fieldvalue == $action_condvalue || $conditionTrue == 1) {
@@ -1203,8 +1243,8 @@ class Grid extends Control {
 								$confirm_text = '';
 								if ($confirm_label != 'false') {
 									
-									$confirm_text = ($confirm_label == 'true') ? Core\Language::getString ( 'ask_proceed', 'framework' ) : Core\Language::getString ( $confirm_label, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
-									
+									$confirm_text = ($confirm_label == 'true') ? \Kuink\Core\Language::getString ( 'ask_proceed', 'framework' ) : \Kuink\Core\Language::getString ( $confirm_label, $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] );
+									$confirm_label = 'true';
 									$this->tableConfirmActions [] = array (
 											'actionName' => $actionname,
 											'actionValue' => $actionvalue,
@@ -1279,34 +1319,50 @@ class Grid extends Control {
 			}
 		}
 	}
-	private function getActionTypeData($actionType) {
+	private function getActionTypeData($actionType, $actionDecoration, $actionIcon) {
 		$actionTypeData = array ();
+
 		switch ($actionType) {
 			case 'download' :
+				$icon = ($actionIcon == '') ? 'cloud-download' : $actionIcon;
+				$decoration = ($actionDecoration == '') ? 'success' : $actionDecoration;
 				$actionTypeData = array (
-						'icon' => 'cloud-download',
+						'icon' => $icon,
 						'icon-color' => 'icon-white',
 						'icon-only' => false,
-						'class' => 'btn btn-success' 
+						'class' => 'btn btn-'.$decoration 
 				);
 				break;
 			case 'execute' :
+				$icon = ($actionIcon == '') ? 'play' : $actionIcon;
+				$decoration = ($actionDecoration == '') ? 'primary' : $actionDecoration;
 				$actionTypeData = array (
-						'icon' => 'play',
-						'icon-color' => 'icon-white',
-						'icon-only' => false,
-						'class' => 'btn btn-primary' 
-				);
-				break;
+					'icon' => $icon,
+					'icon-color' => 'icon-white',
+					'icon-only' => false,
+					'class' => 'btn btn-'.$decoration 
+			);
+			break;
+			case 'submit' :
+				$icon = $actionIcon;
+				$decoration = ($actionDecoration == '') ? 'primary' : $actionDecoration;
+				$actionTypeData = array (
+					'icon' => $icon,
+					'icon-color' => 'icon-white',
+					'icon-only' => false,
+					'class' => 'btn btn-'.$decoration 
+			);
+			break;
 			default :
 				$actionTypeData = array (
-						'icon' => '',
+						'icon' => $actionIcon,
 						'icon-color' => 'icon-black',
 						'icon-only' => true,
 						'class' => '' 
 				);
 				break;
 		}
+
 		return $actionTypeData;
 	}
 	/**
@@ -1337,34 +1393,39 @@ class Grid extends Control {
 	 * }
 	 */
 	function getHtml() {
-		$this->build ();
-		
-		$visible = ( string ) $this->getProperty ( $this->name, GridProperty::VISIBLE, false, GridDefaults::VISIBLE, null, true );
-		
-		if ($visible != 'true')
-			return;
-		
-		$cols = '';
-		foreach ( $this->tableheaders as $col ) {
-			$cols .= '<th><strong>' . htmlentities ( $col, ENT_QUOTES, 'UTF-8' ) . '</strong></th>';
-		}
-		$rows = '';
-		foreach ( $this->databind as $bind_data )
-			foreach ( $bind_data as $row ) {
-				$rows .= '<tr >';
-				foreach ( ( array ) $row as $row_col )
-					$rows .= '<td style="font-size: 10pt; white-space: nowrap;">' . $row_col ['value'] . '</td>';
-				$rows .= '</tr>';
-			}
-		
-		$html = '
-		&nbsp;
-		<table cellpadding="2" border="1" width="100%" >
+        $this->build();
 
+        $visible = (string) $this->getProperty($this->name, GridProperty::VISIBLE, false, GridDefaults::VISIBLE, null, true);
+
+        if ($visible != 'true')
+            return;
+
+        $cols = '';
+        $colLength = count($this->tableheaders);
+        $currentCol = 0;
+        foreach ($this->tableheaders as $col) {
+            if ($currentCol < $colLength) {
+                $cols .= '<th><strong>' . htmlentities($col, ENT_QUOTES, 'UTF-8') . '</strong></th>';
+                $currentCol++;
+            }
+        }
+        $rows = '';
+        foreach ($this->databind as $bind_data)
+            foreach ($bind_data as $row) {
+                $rows .= '<tr >';
+                foreach ((array) $row as $row_col)
+                    $rows .= '<td style="font-size: 10pt; white-space: nowrap;">' . $row_col['value'] . '</td>';
+                $rows .= '</tr>';
+            }
+
+        $html = '
+		&nbsp;
+		<table style="table-layout: fixed; font-size: 9pt" cellpadding="2" border="1"  >
+				<thead>
 				<tr>
 				' . $cols . '
 				</tr>
-
+				</thead>
 
 				' . $rows . '
 
@@ -1467,13 +1528,12 @@ class Grid extends Control {
 		$params ['type'] = $chart_type;
 		$params ['title'] = $this->title;
 		$params ['exportable'] = $this->exportable;
-		$params ['exportTypes'] = array (
-				'csv' 
-		);
+		$params ['exportTypes'] = array ('CSV', 'PDF-L', 'PDF-P');
 		
 		$params ['refreshable'] = $this->refreshable;
 		$params ['refreshInterval'] = $this->refreshInterval;
 		$params ['refreshUrl'] = $this->baseurl . '&action=' . $this->refreshAction . '&control=' . $this->name . '&modal=Control';
+		$params ['showColumns'] = $this->showColumns;
 		
 		$params ['baseUrl'] = $this->baseurl . '&action=' . $this->pagingaction;
 		$params ['action'] = isset ( $_GET ['action'] ) ? ( string ) $_GET ['action'] : 'init';
@@ -1600,8 +1660,10 @@ class Grid extends Control {
 		$action_permissions = $this->nodeconfiguration ['actionPermissions'];
 		if (isset ( $this->global_actions ))
 			foreach ( $this->global_actions as $global_action ) {
-				if (! empty ( $action_permissions [$global_action ['name']] ))
-					$globalActions [$global_action ['name']] = Core\Language::getString ( $global_action ['label'], $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
+				if (! empty ( $action_permissions [$global_action ['name']] )) {
+					$globalAction = $global_action;
+					$globalActions [$global_action ['name']] = $globalAction;
+				}
 			}
 		
 		$headers = array ();
@@ -1633,14 +1695,12 @@ class Grid extends Control {
 		$params ['isPageable'] = $this->pageable;
 		$params ['pageSize'] = $this->pagesize;
 		$params ['pageCurrent'] = $this->page;
-		$params ['pageTotal'] = ($this->pagesize != 0) ? ( int ) ($this->total / $this->pagesize) + 1 : 1;
+		$params ['pageTotal'] = ($this->pagesize != 0) ? ( int ) ceil($this->total / $this->pagesize) : 1;
 		$params ['recordsTotal'] = ( int ) ($this->total);
 		$params ['globalActions'] = $globalActions;
 		$params ['exportable'] = $this->exportable;
 		$params ['extendEdit'] = $this->extendEdit;
-		$params ['exportTypes'] = array (
-				'csv' 
-		);
+		$params ['exportTypes'] = array ('CSV', 'PDF-L', 'PDF-P');
 		$params ['sort'] = $this->sort;
 		
 		$params ['action'] = isset ( $_GET ['action'] ) ? ( string ) $_GET ['action'] : 'init';
@@ -1649,6 +1709,8 @@ class Grid extends Control {
 		$params ['refreshable'] = $this->refreshable;
 		$params ['refreshInterval'] = $this->refreshInterval;
 		$params ['refreshUrl'] = $this->baseurl . '&action=' . $this->refreshAction . '&control=' . $this->name . '&modal=Control';
+
+		$params ['showColumns'] = $this->showColumns;
 		
 		$params ['freeze'] = $freeze = $this->getProperty ( $this->name, GridProperty::FREEZE, false, GridDefaults::FREEZE, null, true );
 		$this->legend = $this->getProperty ( $this->name, GridProperty::LEGEND, false, GridDefaults::LEGEND );
@@ -1673,103 +1735,118 @@ class Grid extends Control {
 		$this->render ( $params );
 		return;
 	}
+
 	public function export($type) {
-		global $KUINK_CFG;
-		
-		$this->setProperty ( array (
-				$this->name,
-				'freeze',
-				'true' 
-		) );
-		$this->build ();
-		
-		$utils = new \UtilsLib ( $this->nodeconfiguration, null );
-		$file_guid = $utils->GuidClean ( null );
-		
-		$config = $this->nodeconfiguration ['config'];
-		
-		$base_upload = $KUINK_CFG->uploadRoot;
-		$upload_dir = $base_upload . '/tmp/';
-		
-		// Handle dupplication of slashes in configurations
-		$upload_dir = str_replace ( '//', '/', $upload_dir );
-		$filePath = $upload_dir;
-		$fileName = $file_guid . '.' . $type;
-		$myFile = $filePath . $fileName;
-		
-		// kuink_mydebug('Exporting...', $myFile);
-		
-		if (! $handle = fopen ( $myFile, 'x+' )) {
-			throw new \Exception ( "Grid export: Cannot open file ($myFile)" );
-			return;
-		}
-		
-		// write headers
-		$fixed_headers = array ();
-		foreach ( $this->tableheaders as $header ) {
-			$fixed_headers [] = '"' . str_replace ( '"', '""', html_entity_decode ( strip_tags ( $header ) ) ) . '"';
-		}
-		$headers = implode ( "\t", $fixed_headers );
-		$headers .= "\n";
-		if (fwrite ( $handle, $headers ) === FALSE) {
-			throw new \Exception ( "Cannot write to file ($myFile)" );
-			exit ();
-		}
-		
-		// Write data
-		foreach ( $this->databind as $data ) {
-			foreach ( $data as $row_key => $row_value ) {
-				$fixed_data = array ();
-				foreach ( $row_value as $key => $value ) {
-					$fixed_data [] = '"' . str_replace ( '"', '""', html_entity_decode ( strip_tags ( $value ['value'] ) ) ) . '"';
-				}
-				$write_data = implode ( "\t", $fixed_data );
-				$write_data .= "\n";
-				if (fwrite ( $handle, $write_data ) === FALSE) {
-					throw new \Exception ( "Cannot write to file ($myFile)" );
-					exit ();
-				}
-			}
-		}
-		
-		fclose ( $handle );
-		
-		if (file_exists ( $myFile ) and ! is_dir ( $myFile )) {
-			ob_clean ();
-			header ( 'Content-Type: text/csv;charset=utf-8' );
-			send_file ( $myFile, $fileName );
-		} else {
-			header ( 'HTTP/1.0 404 not found' );
-			print_error ( 'filenotfound', 'error' ); // this is not displayed on IIS??
-		}
-		
-		return;
-	}
+        global $CFG;
+
+        $this->setProperty(array($this->name,'freeze','true'));
+        $this->build();
+
+
+        $utils = new \UtilsLib($this->nodeconfiguration, null);
+        $file_guid = $utils->GuidClean(null);
+
+        $config = $this->nodeconfiguration['config'];
+
+        $base_upload = $config['neonUploadFolderBase'];
+        $upload_dir = $base_upload . '/tmp/';
+
+        //Handle dupplication of slashes in configurations
+        $upload_dir = str_replace('//', '/', $upload_dir);
+        $filePath = $CFG->dataroot.'/'.$upload_dir;
+
+        //neon_mydebug('Exporting...', $myFile);
+
+        if ($type == 'CSV') {
+            $fileName = $file_guid.'.csv';
+            $myFile = $filePath.$fileName;
+    
+            if (!$handle = fopen($myFile, 'x+')) {
+                throw new \Exception("Grid export: Cannot open file ($myFile)");
+                return;
+            }
+
+            //write headers
+            $fixed_headers = array();
+            foreach ($this->tableheaders as $header) {
+                $fixed_headers[] = '"' . str_replace('"', '""', html_entity_decode(strip_tags($header))) . '"';
+            }
+            $headers = implode("\t", $fixed_headers);
+            $headers .= "\n";
+            if (fwrite($handle, $headers) === FALSE) {
+                throw new \Exception("Cannot write to file ($myFile)");
+                exit;
+            }
+
+            //Write data
+            foreach ($this->databind as $data) {
+                foreach ($data as $row_key => $row_value) {
+                    $fixed_data = array();
+                    foreach ($row_value as $key => $value) {
+                        $fixed_data[] = '"' . str_replace('"', '""', html_entity_decode(strip_tags($value['value']))) . '"';
+                    }
+                    $write_data = implode("\t", $fixed_data);
+                    $write_data .= "\n";
+                    if (fwrite($handle, $write_data) === FALSE) {
+                        throw new \Exception("Cannot write to file ($myFile)");
+                        exit;
+                    }
+                }
+            }
+			fclose($handle);
+			$header = 'Content-Type: text/csv;charset=utf-8';
+        } else if (($type=='PDF-L') || ($type=='PDF-P')) {
+            $orientation = 'portrait';
+            if ($type=='PDF-L') {
+                $orientation = 'landscape';
+            }
+            $fileName = $file_guid.'.pdf';
+            $myFile = $filePath.$fileName;            
+            //pdf
+            $html = '<body style="font-family: sans-serif; font-size:10px">' . $this->getHtml() . '</body>';
+            $pdf = new \KuinkPDF($orientation, 'mm', 'a4', true, 'UTF-8', false, false);
+            $pdf->AddPage();
+            $pdf->writeHTML($html,true,false,true,false,'');
+            $fh = fopen($myFile, 'x+') or die("can't open file. The file is not marked to be overriden.");
+            $stringData = $pdf->Output('example_001.pdf', 'S');
+            fwrite($fh, $stringData);
+			fclose($fh);
+			$header = 'Content-Type: application/pdf';
+        }
+
+        if (file_exists($myFile) and !is_dir($myFile)) {
+            ob_clean();
+            header($header);
+            send_file($myFile, $fileName);
+        } else {
+            header('HTTP/1.0 404 not found');
+            print_error('filenotfound', 'error'); //this is not displayed on IIS??
+        }
+
+        return;
+    }
+
 	private function displayCalendar($view) {
-		$params ['refreshable'] = $this->refreshable;
-		$params ['refreshInterval'] = $this->refreshInterval;
-		$params ['refreshUrl'] = $this->baseurl . '&action=' . $this->refreshAction . '&control=' . $this->name . '&modal=Control';
-		
-		$params ['titleField'] = (isset ( $this->view_params ['title'] )) ? $this->view_params ['title'] : 'title';
-		$params ['startDateField'] = (isset ( $this->view_params ['startDate'] )) ? $this->view_params ['startDate'] : 'start_date';
-		$params ['endDateField'] = (isset ( $this->view_params ['endDate'] )) ? $this->view_params ['endDate'] : 'end_date';
-		
-		$params ['calendarOptions'] = $this->view_params;
-		$params ['data'] = $this->databind;
-		$this->skeleton = '_calendar';
-		$this->render ( $params );
-		
-		/*
-		 * $dateItem = (isset($this->view_params['dateItem'])) ? $this->view_params['dateItem'] : '';
-		 *
-		 * $html = $this->getHTMLCalendar(time(), $this->databind, $dateItem);
-		 * //$html = $this->getHTMLCalendar(mktime(0,0,0,10,1,2012), $this->databind, $dateItem);
-		 * $params['html'] = $html;
-		 *
-		 * $this->skeleton = '_calendar';
-		 * $this->render( $params );
-		 */
+        //Check if there is an api or if the events are sent along
+        if (isset($this->view_params['api'])) {
+            \Kuink\Core\ProcessOrchestrator::registerAPI((string) $this->view_params['api']); 
+        }
+
+        $params['refreshable'] = $this->refreshable;
+        $params['refreshInterval'] = $this->refreshInterval;
+    	$params['refreshUrl'] = $this->baseurl . '&action=' . $this->refreshAction .'&control='.$this->name.'&modal=Control';
+        $params['baseUrl'] = $this->baseurl . '&action=' . $this->pagingaction;
+
+        $params['titleField'] = (isset($this->view_params['title'])) ? $this->view_params['title'] : 'title';
+        $params['startDateField'] = (isset($this->view_params['startDate'])) ? $this->view_params['startDate'] : 'start_date';
+        $params['endDateField'] = (isset($this->view_params['endDate'])) ? $this->view_params['endDate'] : 'end_date';
+
+        $params['calendarOptions'] = $this->view_params;
+        $params['data'] = $this->databind;
+        $this->skeleton = '_calendar';
+        $this->render($params);
 	}
+
 	private function getDaysInMonth($thisYear, $thisMonth) {
 		$date = getdate ( mktime ( 0, 0, 0, $thisMonth + 1, 0, $thisYear ) );
 		

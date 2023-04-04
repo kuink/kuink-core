@@ -91,39 +91,65 @@ class ValidationLib {
 	 * @return Boolean True is is a valid pt tax number, False otherwise
 	 */
 	function pt_tax_number($params) {
-		if (count ( $params ) != 1)
-			throw new Exception ( "PT Tax Number validation: must have one parameter that specifies the tax number" );
-		
-		$tax_number = ( string ) $params [0];
-		$is_valid = false;
-		$regex = '/^[125689]\d{8}$/';
-		
-		if (! preg_match ( $regex, $tax_number )) {
-			$is_valid = false;
-		} else {
-			$checkDigit = $tax_number [0] * 9;
-			
-			for($i = 1; $i < 8; $i ++) {
-				$checkDigit += $tax_number [$i] * (9 - $i);
-			}
-			
-			$checkDigit = 11 - ($checkDigit % 11);
-			
-			// Se o digito de controle é maior que dez, coloca-o a zero
-			if ($checkDigit >= 10)
-				$checkDigit = 0;
-				
-				// Compara o digito de controle com o último numero do NIF
-				// Se igual, o NIF é válido.
-			if ($checkDigit == $tax_number [8])
-				$is_valid = true;
-		}
-		if (! $is_valid) {
-			$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, kuink_get_string ( "invalid_pt_tax_number" ) );
-		}
-		return ( int ) $is_valid;
+		return $this->pt_9digit_number( $params, 'pt_tax_number' );
 	}
+
+    function pt_health_number( $params ) {
+
+        $number = (string)$params[0];
+        $is_valid=false;
+
+        $is_valid = true;
+        if ((!is_numeric($number) || strlen($number) != 9)) {
+            $is_valid = false;
+            $this->msg_manager->add(\Kuink\Core\MessageType::ERROR, kuink_get_string('invalid_health_number').' : '.$number);
+        }
+
+        return $is_valid;
+    }
+
+
+    /**
+     * Validates a generic portuguese 9 digit document
+     * @param  Array $params Parameters Array. The tnumber to validate is in this array
+     * @return Boolean True is is a valid number, False otherwise
+     */
+    function pt_9digit_number( $params, $type ){
+        if (count($params)!=1)
+            throw new Exception('validation: must have one parameter that specifies the '.$type);
+
+        $number = (string)$params[0];
+        $is_valid=false;
+        $regex = '/^[1235689]\d{8}$/';
+
+        if (!preg_match($regex, $number)) {
+            $is_valid = false;
+        }
+        else{
+            $checkDigit = $number[0] * 9;
+
+            for ($i = 1; $i < 8; $i++){
+                $checkDigit += $number[$i] * (9 - $i);
+            }
+
+            $checkDigit = 11 - ($checkDigit % 11);
+
+            //Se o digito de controle é maior que dez, coloca-o a zero
+            if($checkDigit >= 10)
+                $checkDigit = 0;
+
+            //Compara o digito de controle com o último numero do NIF
+            //Se igual, o NIF é válido.
+            if($checkDigit == $number[8])
+                $is_valid=true;
+        }
+        if (!$is_valid){
+            $this->msg_manager->add(\Kuink\Core\MessageType::ERROR, kuink_get_string('invalid_'.$type).' : '.$number.' checkDigit:'.$checkDigit);
+        }
+        return (int)$is_valid;
+    }
 	
+
 	/**
 	 * Validates portuguese identity number
 	 * 
@@ -228,7 +254,47 @@ class ValidationLib {
 		}
 		return ( int ) $is_valid;
 	}
-	
+
+    /**
+     * Validates a portuguese SS number
+     * @param  Array $params Parameters Array. The tax number to validate is in this array
+     * @return Boolean True is is a valid pt ss number, False otherwise
+     */
+    function pt_ss_number( $params ){
+        if (count($params)!=1)
+            throw new Exception("PT Niss Number validation: must have one parameter that specifies the niss number");
+        $weigth = array(29, 23, 19, 17, 13, 11, 7, 5, 3, 2); //prime numbers
+
+        $ss_number = (string)$params[0];
+        $is_valid=false;
+        //11 digits starting with 1 or 2
+        $regex = '/^[12]\d{10}$/';
+
+        if (!preg_match($regex, $ss_number)) {
+            $is_valid = false;
+        }
+        else{
+            $checkDigit = 0;
+
+            for ($i = 0; $i < 11; $i++){
+                $checkDigit += $ss_number[$i] * $weigth[$i];
+                //var_dump($checkDigit);
+            }
+
+            $checkDigit = 9 - ($checkDigit % 10);
+            //var_dump($checkDigit);
+
+            //Compara o digito de controle com o último numero do NISS
+            //Se igual, o NISS é válido.
+            if($checkDigit == $ss_number[10])
+                $is_valid=true;
+        }
+        if (!$is_valid){
+            $this->msg_manager->add(\Kuink\Core\MessageType::ERROR, kuink_get_string("invalid_pt_ss_number"));
+        }
+        return (int)$is_valid;
+    }    	
+
 	/**
 	 * This is an auxiliar function to validate pt civil card number
 	 * 

@@ -107,6 +107,11 @@ class EvalExpr {
 		return;
 	}
 	
+	//Checks if a number is octal
+	function is_octal($x) {
+		//If is a number and starts by 0 and it's not a float/double/real, then is octal
+    return is_numeric($x) && (strlen($x) > 1) && $x[0] == '0' && (strpos($x, '.')=== FALSE);
+	}	
 	/**
 	 * Gets a variable value
 	 * 
@@ -114,7 +119,7 @@ class EvalExpr {
 	 * @param unknown_type $key        	
 	 * @param unknown_type $session        	
 	 */
-	function getVariableValueExt($name, $key, $varType, $variables, $stringIsolation = true) {
+	function getVariableValueExt($name, $key, $varType, $variables, $stringIsolation = true, $ignoreOctal = false) {
 		global $SESSION;
 		
 		$isFunction = strpos ( $key, '__' );
@@ -146,12 +151,11 @@ class EvalExpr {
 		if (is_string ( $return ))
 			$return = addslashes ( $return );
 		
-		if (! is_numeric ( $return ) && $stringIsolation && ($return !== null))
+		if ((! is_numeric ( $return ) && $stringIsolation && ($return !== null)) || (!is_array($return) && $this->is_octal("$return") && !$ignoreOctal))
 			$return = "'" . (is_array($return) ? '__array' : (string)$return) . "'";
 		else if ($return === null)
 			$return = 'null';
-			
-			// kuink_mydebug($name.'->'.$key.'('.$varType.')', $return);
+		//kuink_mydebug($name.'->'.$key.'('.$varType.')', $return);
 		return $return;
 	}
 	
@@ -165,11 +169,12 @@ class EvalExpr {
 	 * @param type $string
 	 *        	- return directly the value after variables substitution
 	 *        	* @param type $stringIsolation - Strings will be ''
+	 * @param type $ignoreOctal - If a number starts with 0 but it will procesed as a string ignore, don't return the '0xx' with ''
 	 * @return type
 	 */
-	function e($expr, $variables, $boolean = false, $string = false, $stringIsolation = true) {
+	function e($expr, $variables, $boolean = false, $string = false, $stringIsolation = true, $ignoreOctal = false) {
 		global $KUINK_TRACE;
-		
+
 		$KUINK_TRACE [] = 'EvalExpr: ' . $expr;
 		$expr2 = $expr;
 		// while (preg_match('/[\$@#][a-zA-Z0-9_]+([->]*+[a-zA-Z0-9_]+)/',$expr2, $matches)) {
@@ -198,7 +203,7 @@ class EvalExpr {
 			
 			// print($type.'»'.$varType.'::'.$matches[0].'::'.$varKey);
 			
-			$varValue = $this->getVariableValueExt ( $varName, $varKey, $varType, $variables, $stringIsolation );
+			$varValue = $this->getVariableValueExt ( $varName, $varKey, $varType, $variables, $stringIsolation, $ignoreOctal );
 			$KUINK_TRACE [] = "VarType:$varType  name:$varName  key:$varKey   value:".(is_array($varValue) ? '' : (string)$varValue);
 			$expr = str_replace ( $matches [0], (is_array($varValue) ? '' : (string)$varValue), $expr );
 			$expr2 = str_replace ( $matches [0], '', $expr2 );
@@ -209,15 +214,12 @@ class EvalExpr {
 		$result = FALSE;
 		if ($boolean) {
 			// TODO: Handle quotes in expr
-			$functionRef = create_function ( '', "return (" . $expr . ") ? 1 : 0;" );
-			$result = $functionRef ();
+			//$functionRef = create_function ( '', "return (" . $expr . ") ? 1 : 0;" );
+			//$result = $functionRef ();
+			$result = eval(sprintf("return (%s) ? 1 : 0;", $expr));
 		} else if ($string) {
 			$result = $expr;
 		} else {
-			// Math Expression
-			// $functionRef = create_function('', "return (".$expr.");");
-			// safely evaluate expressions. To avoid php injection
-			
 			$parser = new \Kuink\Core\EvalMath ();
 			$parser->evaluate ( 'y(x) = ' . $expr );
 			$result = $parser->e ( 'y(0)' );

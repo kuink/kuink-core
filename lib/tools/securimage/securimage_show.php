@@ -39,17 +39,13 @@
  * @link http://www.phpcaptcha.org/Securimage_Docs/ Online Documentation
  * @copyright 2013 Drew Phillips
  * @author Drew Phillips <drew@drew-phillips.com>
- * @version 3.5.2 (Feb 15, 2014)
+ * @version 3.6.6 (Nov 20 2017)
  * @package Securimage
  *
  */
 
 // Remove the "//" from the following line for debugging problems
 // error_reporting(E_ALL); ini_set('display_errors', 1);
-
-//Kuink.begin - For session initialization
-require_once(dirname(dirname(dirname(dirname(dirname(dirname($_SERVER['SCRIPT_FILENAME'])))))).'/config.php');
-//Kuink.end
 
 require_once dirname(__FILE__) . '/securimage.php';
 

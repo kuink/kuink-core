@@ -2,16 +2,6 @@
 
 namespace Kuink\Core\Instruction;
 
-/**
- * Call a native object method
- *
- * @author paulo.tavares
- */
-class NativeCallAttributes {
-	const OBJECT = 'object';
-	const METHOD = 'method';
-	const PROPERTY = 'property';
-}
 class NativeCallInstruction extends \Kuink\Core\Instruction {
 	
 	/**

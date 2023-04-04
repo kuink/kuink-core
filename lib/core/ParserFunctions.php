@@ -31,8 +31,7 @@ class ParserFunctions {
 	}
 	// used only for captchas right now
 	static function __isValid($value) {
-		$securimage = new \Securimage ();
-		$check = $securimage->check ( strtolower ( $value ) );
+		$check = \Kuink\Core\Captcha::isValid($value);
 		return ($check) ? 1 : 0;
 	}
 	static function __toStr($value) {
@@ -41,7 +40,7 @@ class ParserFunctions {
 			$result = json_encode ( $value );
 		return $result;
 	}
-  static function __isSet( $value ) {
+  static function __hasValue( $value ) {
   	return (($value !== '') && ($value !== null));
   }
 }

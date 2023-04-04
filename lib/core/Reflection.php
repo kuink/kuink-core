@@ -563,7 +563,8 @@ class Reflection {
 			$paramsSign = implode ( ', ', $fxParamsSignature );
 			$call ['call'] .= '</Call>';
 			
-			$call ['kuink'] = '<Textarea readonly="true" style="width:90%; height:100%; border:none "><Call library="' . $application . ',' . $process . ',api" function="' . ( string ) $fx ['name'] . '">' . "\n";
+			//$call ['kuink'] = '<Textarea readonly="true" style="width:90%; height:100%; border:none "><Call library="' . $application . ',' . $process . ',api" function="' . ( string ) $fx ['name'] . '">' . "\n";
+			$call ['fw'] = '<Call library="' . $application . ',' . $process . ',api" function="' . ( string ) $fx ['name'] . '">' . "\n";
 			foreach ( $functionParams as $fxParam ) {
 				/*
 				 * $required = $fxParam['required'];
@@ -576,12 +577,12 @@ class Reflection {
 				 * $fxParamDoc = isset($fxParam['doc']) ? (string)$fxParam['doc'] : 'undefined';
 				 * $fxParamsSignatureCompressed .= $paramSign .' - '.$fxParamDoc.($required=='true'?' <em>(required)</em>':'').'<br/>';
 				 */
-				$call ['kuink'] .= '<Param name="' . ( string ) $fxParam ['name'] . '"></Param>' . "\n";
+				$call ['fw'] .= '	<Param name="' . ( string ) $fxParam ['name'] . '"></Param>' . "\n";
 			}
 			$paramsSign = implode ( ', ', $fxParamsSignature );
-			$call ['kuink'] .= '</Call></Textarea>';
+			$call ['fw'] .= '</Call>';
 			
-			$call ['kuink'] = $call ['kuink']; // htmlentities( $call['kuink'] );////
+			$call ['fw'] = '<pre>'.htmlentities( $call['fw'] ).'</pre>';////
 			$library = $application . ',' . $process . ',' . $node;
 			$fullQualifiedName = $library . ',' . ( string ) $fx ['name'];
 			
@@ -663,7 +664,235 @@ class Reflection {
 				'external' => $ret 
 		));
 	}
+
+	/** UML Diagram of an application structure  **/
 	
+	static public function getUml($application, $process=null, $node=null, $executionPath=null) {
+		$uml = '';
+		if ($process == null)
+			$uml = self::getApplicationUml( $application, $executionPath );
+		else if ($node == null)
+			$uml = self::getProcessUml( $application, $process, $executionPath );
+		else
+			$uml = self::getNodeUml( $application, $process, $node, $executionPath );
+
+		return $uml;
+	}
+
+	static public function getApplicationUml( $application, $executionPath=null ) {
+		global $KUINK_CFG, $KUINK_APPLICATION;
+		$baseUrl = \Kuink\Core\Tools::getBaseUrl ();
+		$urlParams = array();
+		$urlParams['application'] = $application; 
+
+		$processes = self::getApplicationProcesses($application);		
+
+		$diagram = new \Kuink\Core\Diagram();
+		$diagram->addTitle('Application: '.$application);
+		foreach ($processes as $process) {
+			$urlParams['process'] = $process['name']; 
+			$actionUrl = \Kuink\Core\Tools::setUrlParams ( $baseUrl, $urlParams );
+
+			$transl = (string)\Kuink\Core\Language::getString ( $process['name'], $application );
+	
+			$diagram->addState($process['name'], $diagram->getHyperlink($actionUrl, $transl) );
+		}
+
+		return $diagram->getUml();
+	}
+
+	static public function getProcessUml( $application, $process, $executionPath=null ) {
+		global $KUINK_CFG, $KUINK_APPLICATION;
+
+		//Build the base url
+		$baseUrl = \Kuink\Core\Tools::getBaseUrl ();
+		$actionUrl = '';
+		if (isset($actionToProceed)) {
+		}
+	
+		$appBase = isset($KUINK_APPLICATION) ?$KUINK_APPLICATION->appManager->getApplicationBase($application) : '';
+		$nodePath = $KUINK_CFG->appRoot.'/apps/'.$appBase.'/'.$application.'/process/'.$process.'/process.xml';
+		//libxml_use_internal_errors( true );
+		$nodeXml = simplexml_load_file($nodePath, 'SimpleXmlElement', LIBXML_COMPACT | LIBXML_NOCDATA);
+		//$errors = libxml_get_errors();
+		if ($nodeXml == null)
+			throw new \Exception('Cannot load node: '.$nodePath);
+		
+		//get all nodes
+		$diagram = new \Kuink\Core\Diagram();
+		$diagram->addTitle('Process: '.$application.','.$process);
+
+		//Add the application node
+		$baseUrl = \Kuink\Core\Tools::getBaseUrl ();
+		$urlParams = array();
+		$urlParams['application'] = $application; 
+		$actionUrl = \Kuink\Core\Tools::setUrlParams ( $baseUrl, $urlParams );
+		$transl = (string)\Kuink\Core\Language::getString ( $application, $application );
+		$diagram->addState('Application_'.$process, $diagram->getHyperlink($actionUrl, $transl));
+
+
+		$endStates = array();
+		$flowXml = $nodeXml->xpath('//Flow');
+
+		$urlParams = array();
+		$urlParams['application'] = $application; 
+		$urlParams['process'] = $process; 
+
+		//Get nodes first
+		$states = array();
+		foreach ($flowXml as $flow) {
+			$attrs = $flow->attributes();
+			if (!empty($attrs['startnode'])) {
+				$urlParams['node'] = (string)$attrs['startnode']; 
+				$actionUrl = \Kuink\Core\Tools::setUrlParams ( $baseUrl, $urlParams );
+	
+				$transl = (string)\Kuink\Core\Language::getString ( (string)$attrs['startnode'], $application );
+				$states[(string)$attrs['startnode']] = array();
+				$states[(string)$attrs['startnode']][] = $diagram->getHyperlink($actionUrl, $transl);
+			}
+			if (!empty($attrs['endnode'])) {
+				$urlParams['node'] = (string)$attrs['endnode']; 
+				$actionUrl = \Kuink\Core\Tools::setUrlParams ( $baseUrl, $urlParams );
+
+				$transl = (string)\Kuink\Core\Language::getString ( (string)$attrs['endnode'], $application );
+				$states[(string)$attrs['endnode']] = array();
+				$states[(string)$attrs['endnode']][] = $diagram->getHyperlink($actionUrl, $transl);
+			}
+		}
+		//Add all the nodes before the flow
+		foreach ($states as $stateName=>$state)
+			foreach ($state as $stateDesc)
+				$diagram->addState($stateName, $stateDesc);
+		
+		foreach ($flowXml as $flow) {
+			$attrs = $flow->attributes();			
+			if (empty($attrs['startnode']))
+				$diagram->addStartFlow((string)$attrs['endnode'], $attrs['event']);
+			else
+				if (empty($attrs['endnode']))
+					$diagram->addEndFlow((string)$attrs['startnode'], $attrs['event']);
+				else
+					$diagram->addFlow((string)$attrs['startnode'], (string)$attrs['endnode'], $attrs['event']);
+			//Check if this is an end state
+			$endState = $nodeXml->xpath('//Flow[@startnode="'.$attrs['endnode'].'"]');
+			//print_object($endState);
+			if (count($endState) == 0) {
+				$endStates[(string)$attrs['endnode']] = (string)$attrs['endnode'];
+			}
+		}
+		foreach ($endStates as $state)
+			$uml .= $diagram->addEndFlow($state, null);
+
+		return $diagram->getUml();
+	}
+
+	static public function getNodeUml( $application, $process, $node, $executionPath=null ) {
+		global $KUINK_CFG, $KUINK_APPLICATION;
+		
+		$appBase = isset($KUINK_APPLICATION) ?$KUINK_APPLICATION->appManager->getApplicationBase($application) : '';
+		$nodePath = $KUINK_CFG->appRoot.'/apps/'.$appBase.'/'.$application.'/process/'.$process.'/nodes/'.$process.'_'.$node.'.xml';
+		//libxml_use_internal_errors( true );
+
+		$diagram = new \Kuink\Core\Diagram();
+		$diagram->addTitle('Node: '.$application.','.$process.','.$node);
+
+		$nodeXml = simplexml_load_file($nodePath, 'SimpleXmlElement', LIBXML_COMPACT | LIBXML_NOCDATA);
+		//$errors = libxml_get_errors();
+		if ($nodeXml == null) {
+			//throw new \Exception('Cannot load node: '.$nodePath);
+			return $diagram->getUml();
+		}
+
+		$diagram = new \Kuink\Core\Diagram();
+		$diagram->addTitle('Node: '.$application.','.$process.','.$node);
+				
+		//Add the process node
+		$baseUrl = \Kuink\Core\Tools::getBaseUrl ();
+		$urlParams = array();
+		$urlParams['application'] = $application; 
+		$urlParams['process'] = $process; 		
+		$actionUrl = \Kuink\Core\Tools::setUrlParams ( $baseUrl, $urlParams );
+		$transl = (string)\Kuink\Core\Language::getString ( $process, $application );
+		$diagram->addState('Process_'.$process, $diagram->getHyperlink($actionUrl, $transl));
+		
+
+		//get all screens
+		$screenFlowXml = $nodeXml->xpath('//Screen');
+		foreach ($screenFlowXml as $flow) {
+			$attrs = $flow->attributes();
+			$name = $attrs['id'].$attrs['name']; //One of the attributes is empty
+			$diagram->addState('Screen_'.$name, 'screen');
+			//Check if the screen is in the execution path and highlight it
+			if (isset($executionPath[$name]))
+				$diagram->addHighlightNode('Screen_'.$name);
+		}
+
+
+		//get all actions
+		$flowXml = $nodeXml->xpath('/Node/Actions/Action');
+		foreach ($flowXml as $flow) {
+			$attrs = $flow->attributes();
+			$name = (string)$attrs['name']; //One of the attributes is empty
+			$diagram->addState('Action_'.$name, 'action');
+			//Check if the action is in the execution path and highlight it
+			if (isset($executionPath[$name]))
+				$diagram->addHighlightNode('Action_'.$name);
+
+
+			if (isset($attrs['screen']))
+				$diagram->addFlow('Action_'.$name, 'Screen_'.$attrs['screen'], '-');
+			
+			//Check if this action will trigger another action
+			$innerFlowXml = $flow->xpath('/Node/Actions/Action[@name="'.$name.'"]//Action');
+			foreach($innerFlowXml as $innerFlow) {
+				$innerAttrs = $innerFlow->attributes();
+				$diagram->addFlow('Action_'.$name, 'Action_'.$innerAttrs['name'], $innerAttrs['name']);
+			}
+			//Check for raise events
+			$innerFlowXml = $flow->xpath('/Node/Actions/Action[@name="'.$name.'"]//RaiseEvent');
+			foreach($innerFlowXml as $innerFlow) {
+				$innerAttrs = $innerFlow->attributes();
+				$innerName = $innerAttrs['name'];
+				$diagram->addEndFlow('Action_'.$name, $innerName);
+			}
+
+		}
+
+		//Add the flow from the screen to the action
+		foreach ($screenFlowXml as $flow) {
+			$attrs = $flow->attributes();
+			$name = $attrs['id'].$attrs['name']; //One of the attributes is empty
+			//Check if there are actions here referenced as an attribute action
+			$innerFlowXml = $flow->xpath('/Node/Screens/Screen[@id="'.$name.'" or @name="'.$name.'"]//*[@action != ""]');
+			foreach($innerFlowXml as $innerFlow) {
+				$innerAttrs = $innerFlow->attributes();
+				$innerName = $innerAttrs['id'].$innerAttrs['name']; //One of the attributes is empty
+				$innerName = ($innerName != '') ? $innerName : '-';
+				$diagram->addFlow('Screen_'.$name, 'Action_'.$innerAttrs['action'], $innerName);
+			}
+			//Check if there are actions here referenced as an <Action
+			$innerFlowXml = $flow->xpath('/Node/Screens/Screen[@id="'.$name.'"]//Action');
+			foreach($innerFlowXml as $innerFlow) {
+				$innerAttrs = $innerFlow->attributes();
+				$innerName = $innerAttrs['id'].$innerAttrs['name']; //One of the attributes is empty
+				$innerName = ($innerName != '') ? $innerName : '-';
+				$diagram->addFlow('Screen_'.$name, 'Action_'.$innerName, $innerName);
+			}
+
+		}
+
+
+		$diagram->addStartFlow('Action_init', 'init');
+
+		return $diagram->getUml();
+	}
+
+	static public function getActionUml( $application, $process, $node, $action ) {
+		//Get the node
+
+
+	}
+
 	/**
 	 * Lists a directory content
 	 * 

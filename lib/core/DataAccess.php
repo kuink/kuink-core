@@ -25,6 +25,9 @@ class DataAccess {
 	var $directMethod; // call directly this method from the connector
 	var $daApplication; // The app name of the dataaccess nid
 	var $user; //The current user executing this dataaccess	
+	var $cacheType;
+	var $cacheKey;
+	
 	function __construct($dataAccessNid, $appName, $processName, $dataSourceName = '') {
 		global $KUINK_CFG, $KUINK_TRACE, $KUINK_APPLICATION;
 		$this->application = $appName;
@@ -61,17 +64,24 @@ class DataAccess {
 			$daProcessName = ($daProcessName == 'this') ? $processName : $daProcessName;
 			
 			$this->daApplication = $daAppName;
-			$KUINK_TRACE [] = 'DataAccess: ' . $daAppName . ',' . $daProcessName . ',' . $daName;
-			
-			// kuink_mydebug('METHOD PATH','apps/'.$daAppName.'/process/'.$daProcessName.'/dataaccess/'.$daName.'.xml');
-			
-			$appBase = isset ( $KUINK_APPLICATION ) ? $KUINK_APPLICATION->appManager->getApplicationBase ( $daAppName ) : '';
-			// var_dump($appBase.' - '.$daAppName.' - '.$daProcessName.' - '.$daName.' - '.$dataSourceName);
-			libxml_use_internal_errors ( true );
-			$this->dataAccessXml_domobject = simplexml_load_file ( $KUINK_CFG->appRoot . 'apps/' . $appBase . '/' . $daAppName . '/process/' . $daProcessName . '/dataaccess/' . $daName . '.xml', 'SimpleXMLElement', LIBXML_NOCDATA );
+
+			$appBase = isset($KUINK_APPLICATION) ? $KUINK_APPLICATION->appManager->getApplicationBase($daAppName):'';
+
+			//print_object($appBase.' - '.$daAppName.' - '.$daProcessName.' - '.$daName.' - '.$dataSourceName);
+			$nodeFullPath = $KUINK_CFG->appRoot.'apps/'.$appBase.'/'.$daAppName.'/process/'.$daProcessName.'/dataaccess/'.$daName.'.xml';
+			//kuink_mydebugobj('AppName', $daAppName);
+			$KUINK_TRACE[] = 'DataAccess: '.$daAppName.','.$daProcessName.','.$daName.'  <a href="vscode://file'.$nodeFullPath.'">Open in VSCode</a>'; 			
+			//libxml_use_internal_errors(true);
+			//$this->dataAccessXml_domobject = simplexml_load_file($nodeFullPath, 'SimpleXMLElement', LIBXML_NOCDATA);
+
+			$nodeManager = new NodeManager($daAppName, $daProcessName, 'dataaccess', $daName);
+			$nodeManager->load(false, false); //Don't validate the xml neither the schema
+			$this->dataAccessXml_domobject = $nodeManager->nodeXml;
+
 			if ($this->dataAccessXml_domobject == null) {
 				// Register the error
 				echo "Failed loading XML\n";
+				echo $nodeFullPath;
 				foreach ( libxml_get_errors () as $error ) {
 					echo "\t", $error->message;
 				}
@@ -79,19 +89,41 @@ class DataAccess {
 			}
 		}
 	}
+
+	function setCache($cacheType, $cacheKey) {
+		$this->cacheType = $cacheType;
+		$this->cacheKey = $cacheKey;
+	}
+
 	function setUser($user) {
 		$this->user = $user;
 	}
-	function execute($params = null) {
+
+	function execute($params = null, $operators = null) {
 		global $KUINK_DATASOURCES;
 		global $KUINK_TRACE;
 		global $KUINK_CFG;
 		$records = null;
 		// kuink_mydebug('Application', $this->application);
 		
+		$cacheManager = \Kuink\Core\CacheManager::getInstance();
+		
+		//Get from Cache
+		if (($this->cacheType != \Kuink\Core\CacheType::NONE) && ($KUINK_CFG->useCache)) {
+			$exists = $cacheManager->exists($this->cacheKey, $this->cacheType);
+			if ($exists) {
+				$KUINK_TRACE[] = 'Getting from cache...';
+				return $cacheManager->get($this->cacheKey, $this->cacheType);
+			}
+		}
+		
 		$dataSourceName = $this->dataSourceName;
 		
+		if (!isset($KUINK_DATASOURCES [$dataSourceName]))
+			throw new \Exception('Datasource: '.$dataSourceName.' not found. Check datasource definition sources: framework.xml, table fw_datasource, application.xml or node.xml');
+
 		$dataSource = $KUINK_DATASOURCES [$dataSourceName];
+		
 		$dataSource->setUser($this->user);
 		// var_dump($dataSource);
 		
@@ -114,14 +146,25 @@ class DataAccess {
 					else {
 						// implode to use with IN
 						$arrayValues = array ();
+						$KUINK_TRACE[] = 'Expand Parameter '.$key.' to use in IN';
+						$KUINK_TRACE[] =  var_export($value, true);
 						foreach ( $value as $arrayValue ) {
-							if (is_string($arrayValue))
+							//$KUINK_TRACE[] =  'Numeric: '.$arrayValue.' - '.is_numeric($arrayValue);
+							if (is_numeric($arrayValue))
+								$arrayValues [] = (int)$arrayValue;
+							else if (is_string($arrayValue))
 								$arrayValues [] = '\'' . $arrayValue . '\'';
 							else
 								$arrayValues [] = '\'' . (count(array_filter(array_keys($arrayValue), 'is_string')) > 0) ? '__array' : $arrayValue . '\'';
 						}
-						
+						$KUINK_TRACE[] =  var_export($arrayValues, true);
 						$newParams [$key] = implode ( ',', $arrayValues );
+						//$newParams [$key] = $arrayValues;
+						//kuink_mydebugObj($key, $arrayValues);
+
+						//Remove the first and last ' chars to avoid erros in bind params
+						//$newParams [$key] = substr($newParams [$key],1,strlen($newParams [$key])-2);
+						//print_object($newParams [$key]);
 					}
 				} else {
 					if ((!is_array($value)) && (in_array($key, $ignoreArrays))) {
@@ -159,7 +202,7 @@ class DataAccess {
 		} else {
 			$newParams = $params;
 		}
-		
+
 		if ($this->dataAccessXml_domobject != null) {
 			// Execute the DataAcess from the XML definition file
 			try {
@@ -211,6 +254,14 @@ class DataAccess {
 							// var_dump($newParams['_sql']);
 						
 						$connector = $dataSource->connector;
+
+						//kuink_mydebugObj('instruction', $connectorInstruction);
+						/*
+						if ($connectorInstruction == 'Insert') {
+							print_object($newParams);
+							die();
+						}*/
+
 						$records = $connector->$connectorInstruction ( $newParams );
 						// $records = array();
 					}
@@ -221,13 +272,23 @@ class DataAccess {
 			}
 		} else {
 			// Execute the method directly
-			
+
 			$connectorInstruction = $this->directMethod;
 			$dataSource = $KUINK_DATASOURCES [$dataSourceName];
 			if (! (isset ( $dataSource )))
 				throw new \Exception ( 'DataSource ' . $dataSourceName . ' not found. Check for definition in framework.xml, application.xml, or the node it self.' );
 			$connector = $dataSource->connector;
-			$records = $connector->$connectorInstruction ( $newParams );
+
+			//kuink_mydebug($connectorInstruction);
+
+			$records = $connector->$connectorInstruction ( $newParams, $operators );
+		}
+		//Set in cache
+		if (($this->cacheType != \Kuink\Core\CacheType::NONE) && ($KUINK_CFG->useCache)) {
+			if (!$cacheManager->exists($this->cacheKey, $this->cacheType)) {
+				$KUINK_TRACE[] = 'Setting in cache...';
+				$cacheManager->add($this->cacheKey, $records, $this->cacheType);
+			}
 		}
 		
 		// var_dump( $records );

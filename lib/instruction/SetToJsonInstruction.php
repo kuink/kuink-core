@@ -15,8 +15,12 @@ class SetToJsonInstruction extends \Kuink\Core\Instruction {
 	 * @see \Kuink\Core\DataSourceConnector::connect()
 	 */
 	static public function execute($instManager, $instructionXmlNode) {
+		$escape = self::getAttribute ( $instructionXmlNode, 'escape', $instManager->variables, false, 'false' );
 		$content = $instManager->executeInnerInstruction ( $instructionXmlNode );
-		$list = json_encode ( $content );
+		if ($escape == 'true')
+			$list = json_encode ( $content, JSON_HEX_APOS|JSON_HEX_QUOT );
+		else
+			$list = json_encode ( $content, JSON_UNESCAPED_UNICODE );
 		
 		return $list;
 	}

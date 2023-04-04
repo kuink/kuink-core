@@ -41,12 +41,17 @@ class InstructionManager {
 		$this->variables = $variables;
 		$this->nodeManager = $nodeManager;
 		$this->nodeConfiguration = $nodeConfiguration;
+
+		//kuink_mydebugObj('NodeXml', $this->nodeXml);
+		//print_object($this->nodeXml);
+		//kuink_mydebugObj('ActionXml', $this->actionXml);
 	}
 	public function execute($instructionXmlNode) {
+		global $KUINK_TRACE;
 		// var_dump($instructionXmlNode);
 		// Call this instruction
 		$instructionName = ( string ) $instructionXmlNode->getName ();
-		
+		$instructionDebug = $instructionName;
 		// Check if this is a composed instruction
 		if (strpos ( $instructionName, '.' ) === False)
 			$methodName = 'execute';
@@ -54,32 +59,83 @@ class InstructionManager {
 			$splitInstructionName = explode ( '.', $instructionName );
 			$instructionName = $splitInstructionName [0];
 			$methodName = $splitInstructionName [1];
+			$instructionDebug = $instructionName.'.'.$methodName.' ';
 		}
 		$fn = array (
 				'\\Kuink\\Core\\Instruction\\' . $instructionName . 'Instruction',
 				$methodName 
 		);
+		if (!is_callable($fn)) {
+			//Try to load a legacy library
+			$fn = array (
+				'\\Kuink\\Core\\Instruction\\LegacyLibraryInstruction',
+				$methodName 
+			);			
+		}
+		//Debug params
+		foreach($instructionXmlNode->attributes() as $a => $b) {
+			$instructionDebug .= ' '.$a.'="'.$b.'" ';
+		}		
+
+		$performanceStart = microtime(true);
+  
 		$value = call_user_func ( $fn, $this, $instructionXmlNode );
-		
+
+		$performanceEnd = microtime(true);
+		$performanceTime = $performanceEnd - $performanceStart;		
+		$KUINK_TRACE [] = 'Instruction: ' . $instructionDebug . '(Time: '. number_format($performanceTime, 5).')';
+
 		return $value;
 	}
 	
 	/*
 	 * Executes the first instruction inside
 	 */
-	public function executeInnerInstruction($instructionXmlNode) {
+	public function executeInnerInstruction($instructionXmlNode, $innerValueHasString=false) {
 		// var_dump( $instructionXmlNode->count() );
+		if (is_array($instructionXmlNode))
+			$instructionXmlNode = $instructionXmlNode[0];
+			
 		$result = null;
 		if ($instructionXmlNode->count () > 0) {
 			$newInstructionXmlNode = $instructionXmlNode->children ();
 			$result = $this->execute ( $newInstructionXmlNode [0] );
 		} else
-			$result = $instructionXmlNode [0];
+			$result = ($innerValueHasString) ? (string) $instructionXmlNode [0] : $instructionXmlNode [0];
 		
 		return $result;
 	}
-	public function getParams($instructionXmlNode) {
-		$paramsXml = $instructionXmlNode->xpath ( './Param' );
+
+	/*
+	 * Executes all instruction inside
+	 */
+	public function executeInnerInstructions($instructionXmlNode) {
+		// var_dump( $instructionXmlNode->count() );
+		$result = null;
+		$instructions = $instructionXmlNode[0];
+
+		if ($instructions->count() > 0) {
+			foreach ($instructions as $newInstructionXmlNode) {
+				$result = $this->executeInstruction( $newInstructionXmlNode[0] );
+			}
+		} else
+			$result = (string)$instructions [0];
+		
+		return $result;
+	}
+
+
+	/*
+	 * Executes an insruction directly the instruction
+	 */
+	public function executeInstruction($instructionXmlNode) {		
+		$result = $this->execute ( $instructionXmlNode );
+		
+		return $result;
+	}
+
+	public function getCustomParams($instructionXmlNode, $customName) {
+		$paramsXml = $instructionXmlNode->xpath ( './'.$customName );
 		$params = array ();
 		
 		foreach ( $paramsXml as $param ) {
@@ -97,28 +153,97 @@ class InstructionManager {
 			else
 				$params [$paramName] = $value;
 		}
-		
+
 		return ($params);
 	}
+
+
+
+	public function getParams($instructionXmlNode, $includeParamsAttribute=false) {
+		$paramsXml = $instructionXmlNode->xpath ( './Param' );
+		$params = array ();
+
+		//kuink_mydebugObj('ParamsUntilNow', $params);
+		//Join the params defined in params atribute if define
+		if ($includeParamsAttribute) {
+			//Join the params defined in params atribute if defined				
+			$paramsVar = $this->getAttribute($instructionXmlNode, 'params', false, null); //isset ( $instructionXmlNode ['params'] ) ? ( string ) $instructionXmlNode ['params'] : '';
+			//kuink_mydebugObj('ParamsAttr', $paramsVar);
+			if ($paramsVar != null) {
+				$var = isset($this->variables [$paramsVar]) ? $this->variables [$paramsVar] : array();
+				//kuink_mydebugObj('ParamsAttrValue', $var);
+				foreach ( $var as $paramKey => $paramValue )
+					$params ["$paramKey"] = $paramValue;
+			}
+			//kuink_mydebugObj('Params', $params);
+		}
+
+		foreach ( $paramsXml as $param ) {
+			$paramName = isset ( $param ['name'] ) ? ( string ) $param ['name'] : '';
+			if ($param->count () > 0) {
+				$value = $this->executeInnerInstruction ( $param );
+			} else {
+				$value = $param [0];
+				if (is_a ( $value, '\SimpleXMLElement' ))
+					$value = ( string ) $value;
+			}
+			// var_dump($value);
+			if ($paramName == '')
+				$params [] = $value;
+			else
+				$params [$paramName] = $value;
+		}
+
+		return ($params);
+	}
+
+	//** Get the params output vars
+	public function getParamsOutputVars($instructionXmlNode) {
+		$paramsXml = $instructionXmlNode->xpath ( './Param' );
+		$params = array ();
+		
+		foreach ( $paramsXml as $param ) {
+			$paramName = isset ( $param ['var'] ) ? ( string ) $param ['name'] : '';
+			if (isset($param ['var']))
+			$params [$paramName] = (string)$param['var'];
+		}
+
+		return $params;
+	}
+
 	public function getAttribute($instruction, $attrName, $mandatory = 'false', $default = '') {
 		if (! $mandatory && ! isset ( $instruction [$attrName] ))
 			return $default;
 		
 		if ($mandatory && ! isset ( $instruction [$attrName] )) {
-			$inst_name = $instruction->getname ();
-			throw new \Exception ( 'Instruction "' . $inst_name . '" needs attribute "' . $attrName . '" which was not supplied.' );
+			$instName = $instruction->getname ();
+			throw new \Exception ( 'Instruction "' . $instName . '" needs attribute "' . $attrName . '" which was not supplied.' );
 		}
-		$attr_value = ( string ) $instruction [$attrName];
-		$type = $attr_value [0];
-		$var_name = substr ( $attr_value, 1, strlen ( $attr_value ) - 1 );
+		$attrValue = ( string ) $instruction [$attrName];
+		$type = $attrValue [0];
+		//$var_name = substr ( $attrValue, 1, strlen ( $attrValue ) - 1 );
 		
 		if ($type == '$' || $type == '#' || $type == '@') {
 			$eval = new \Kuink\Core\EvalExpr ();
-			$value = $eval->e ( $attr_value, $this->variables, FALSE, TRUE, FALSE ); // Eval and return a value without ''
+			$value = $eval->e ( $attrValue, $this->variables, FALSE, TRUE, FALSE ); // Eval and return a value without ''
 		} else
-			$value = $attr_value;
-		return ($value == '') ? $default : $value;
+			$value = $attrValue;
+		return ($value == '') ? $default : trim($value);
 	}
+
+	public function getAttributeRaw($instruction, $attrName, $mandatory = 'false', $default = '') {
+		if (! $mandatory && ! isset ( $instruction [$attrName] ))
+			return $default;
+		
+		if ($mandatory && ! isset ( $instruction [$attrName] )) {
+			$instName = $instruction->getname ();
+			throw new \Exception ( 'Instruction "' . $instName . '" needs attribute "' . $attrName . '" which was not supplied.' );
+		}
+		$attrValue = ( string ) $instruction [$attrName];
+		return trim($attrValue);
+	}
+
+
 	public function getVariable($name, $key=null) {
 		if ($key == null || $key == '')
 			return $this->variables [$name];

@@ -28,6 +28,13 @@ class DateTimeLib {
 	function Execute($functionname, $params) {
 		$this->$functionname ( $params );
 	}
+	function PreviousWeekStart($params) {
+		return strtotime ( "last sunday -7 days" );
+	}
+	function PreviousWeekEnd($params) {
+		$date = getdate ( strtotime ( "last sunday" ) );
+		return mktime ( 23, 59, 59, $date ['mon'], $date ['mday'], $date ['year'] );
+	}
 	function ThisWeekStart($params) {
 		return strtotime ( "last sunday" );
 	}
@@ -189,6 +196,7 @@ class DateTimeLib {
 	 * Get timestamp
 	 */
 	function toTimestamp($params) {
+		global $KUINK_BRIDGE_CFG;
 		$year = ( string ) $params ['year'];
 		$month = ( string ) $params ['month'];
 		$day = ( string ) $params ['day'];
@@ -196,19 +204,46 @@ class DateTimeLib {
 		$minute = ( string ) $params ['minute'];
 		$second = ( string ) $params ['second'];
 		$applyOffset = (isset ( $params ['applyOffset'] ) && $params ['applyOffset'] == 1) ? 1 : 0;
-		date_default_timezone_set ( 'UTC' );
-		$returnValue = mktime ( $hour, $minute, $second, $month, $day, $year );
-		if ($applyOffset == 1)
-			return $returnValue - $this->getTzOffset ();
-		else
-			return $returnValue;
+		$useLocalTimezone = (isset($params['useLocalTimezone']) && $params['useLocalTimezone'] == 1) ? 1 : 0;
+        $timezone = (string)$params['timezone'];
+
+        if ($timezone != '') {
+            //The user supplies a timezone
+            $datetime = $year.'-'.$month.'-'.$day.' '.$hour.':'.$minute.':'.$second;
+            $given = new \DateTime($datetime, new \DateTimeZone($timezone));
+            //Convert it to UTC
+            $given->setTimezone(new \DateTimeZone('UTC'));
+            $returnValue = $given->getTimestamp();
+        }
+        else if ($useLocalTimezone) {
+            //date_default_timezone_set($NEON_CFG->serverTimezone);
+            $datetime = $year.'-'.$month.'-'.$day.' '.$hour.':'.$minute.':'.$second;
+            //Get hierarchy timezones: USER | TODO: COMPANY | SERVER
+            $kuinkUser = new \Kuink\Core\User();
+            $kuink_user = $kuinkUser->getUser();
+			$localTimeZone = (($kuink_user['timezone'] != null) && ($kuink_user['timezone'] != '')) ? $kuink_user['timezone'] : $KUINK_BRIDGE_CFG->serverTimezone;
+            $given = new \DateTime($datetime, new \DateTimeZone($localTimeZone));
+            $given->setTimezone(new \DateTimeZone('UTC'));
+            $returnValue = $given->getTimestamp();
+        }
+        else {
+            //Compatibility
+            date_default_timezone_set('UTC');
+            $returnValue = mktime ($hour, $minute, $second, $month, $day, $year);
+        }
+
+        if ($applyOffset == 1)
+            //Compatibility
+           	return $returnValue - $this->getTzOffset();
+        else
+			return $returnValue;	
 	}
 	
 	/**
 	 * Given a timestamp, get the day
 	 */
 	function getDay($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		$dateTime->setTimestamp ( $timestamp );
 		if (isset ( $params [0] )) {
@@ -221,7 +256,7 @@ class DateTimeLib {
 	 * Given a timestamp, get the month
 	 */
 	function getMonth($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		$dateTime->setTimestamp ( $timestamp );
 		if (isset ( $params [0] )) {
@@ -234,20 +269,21 @@ class DateTimeLib {
 	 * Given a timestamp, get the year
 	 */
 	function getYear($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
+		$format = isset($params [1]) ? $params [1] : 'Y';
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		$dateTime->setTimestamp ( $timestamp );
 		if (isset ( $params [0] )) {
 			$dateTime->setTimestamp ( $params [0] );
 		}
-		return $dateTime->format ( "Y" );
+		return $dateTime->format ( $format );
 	}
 	
 	/**
 	 * Given a timestamp, get the hour
 	 */
 	function getHour($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		$dateTime->setTimestamp ( $timestamp );
 		if (isset ( $params [0] )) {
@@ -263,7 +299,7 @@ class DateTimeLib {
 	 * Given a timestamp, get the minutes
 	 */
 	function getMinutes($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		$dateTime->setTimestamp ( $timestamp );
 		if (isset ( $params [0] )) {
@@ -276,7 +312,7 @@ class DateTimeLib {
 	 * Given a timestamp, get the seconds
 	 */
 	function getSeconds($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		$dateTime = new \DateTime ( 'NOW', new \DateTimeZone ( 'UTC' ) );
 		$dateTime->setTimestamp ( $timestamp );
 		if (isset ( $params [0] )) {
@@ -289,7 +325,7 @@ class DateTimeLib {
 	 * Given a timestamp, get the date components in an array (day, month, year, hour, minutes, seconds)
 	 */
 	function getComponents($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		if (isset ( $params [1] )) {
 			$format = $params [1];
 			$hourArray = array (
@@ -320,7 +356,7 @@ class DateTimeLib {
 		return $out;
 	}
 	function addDays($params) {
-		$timestamp = $params [0];
+		$timestamp = isset($params [0]) ? $params [0] : null;
 		$numberOfDays = (isset ( $params [1] )) ? $params [1] : 0;
 		return (( int ) $timestamp + (86400 * $numberOfDays));
 	}
@@ -401,6 +437,12 @@ class DateTimeLib {
 		else
 			return $src;
 	}
+    
+	function convertFromString($params = null){
+        $src = (string)$params[0];
+        
+        return strtotime($src);
+    }	
 }
 
 ?>

@@ -130,6 +130,29 @@ class FileDownload extends Formatter {
 		
 		return $url;
 	}
+
+	public function preview($value, $params = null) {
+		global $KUINK_CFG;
+
+		$url = $this->url($value, $params);
+		
+		if ($url != '-') {
+			$width = $this->getParam ( $params, 'width', false, 50 );
+			$center = $this->getParam ( $params, 'center', false, 1 );
+
+			$url = $KUINK_CFG->wwwRoot.'/'.$url;
+	
+			$html = '<img src="' . $url . '" style="padding: 2px;background-color: #fff;border: 1px solid #ccc;border: 1px solid rgba(0, 0, 0, 0.2);-webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);-moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);height:auto; width:' . $width . 'px; max-width:200px; max-height:275px;"/>';		
+			if ($center)
+				$html = '<center>'.$html.'</center>';
+		} 
+		else 
+			$html = '-';
+		
+		return $html;
+	}
+
+
 	private function FormatBytes($size) {
 		$type = ($size > 1024 * 1024) ? 'MB' : 'KB';
 		switch ($type) {

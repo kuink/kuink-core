@@ -99,15 +99,16 @@ class FileLib {
 		$mandatory = (isset($params [6])) ? $params [6] : null;
 		$showErrors = (isset($params ['showErrors'])) ? $params ['showErrors'] : 1; //default shows all errors
 
-		// print('FILENAME:'.$param_filename );
-		// print('MAXUPLOAD SIZE:'.$maxUploadSize );
-		// print('UPLOAD FOLDER:'.$upload_folder );
+		//kuink_mydebug('FILENAME:'.$param_filename );
+		//kuink_mydebug('MAXUPLOAD SIZE:'.$maxUploadSize );
+		//kuink_mydebug('UPLOAD FOLDER:'.$upload_folder );
 		$config = $this->nodeconfiguration ['config'];
 		
 		$base_upload = $KUINK_CFG->uploadRoot;
 		$upload_dir = $base_upload . $upload_folder;
 		//kuink_mydebug('uploaddir', $upload_dir);
-		
+		//kuink_mydebugObj('FILES', $_FILES);
+
 		// normalizar os ficheiros
 		foreach ( $_FILES as $tipo => $file ) {
 			//ignore if filename and filetype are empty
@@ -129,8 +130,7 @@ class FileLib {
 						$this->msg_manager->add ( \Kuink\Core\MessageType::ERROR, 'O ficheiro é obrigatório.' );
 					return null;
 				}
-				//var_dump($filename);
-				//
+				
 				if ($filename != '') {
 					// Extract file extension
 					$file_ext = explode ( '.', $filename );
@@ -173,7 +173,7 @@ class FileLib {
 					//var_dump($db_filename);
 
 					//kuink_mydebug('filename', $filename);			
-					//kuink_mydebug('no Error', '');			
+					//kuink_mydebug('Error', $error);
 					if (! $error) {
 						//kuink_mydebug('dest filename', $upload_dir);
 
@@ -183,12 +183,15 @@ class FileLib {
 						
 						//move the file
 						move_uploaded_file($file['tmp_name'], $full_path_normalizado);
+						$KUINK_TRACE[] = 'Uploading file to: '.$full_path_normalizado;
 						
 						// Altera o nome para o nome normalizado GUID
 						$full_path_original = str_replace ( " ", "\ ", $full_path_original );
-							
+
+						//kuink_mydebug('$full_path_normalizado',$full_path_normalizado);
 						//kuink_mydebug('$full_path_original',$full_path_original);
-						rename ( $full_path_original, $full_path_normalizado );
+						//This rename is unecessary, because the file was uploaded with the $full_path_normalizado
+						//rename ( $full_path_original, $full_path_normalizado );
 						
 						//var_dump($full_path_normalizado);
 						// Grava o ficheiro na base de dados na tabela ficheiro
@@ -264,8 +267,9 @@ class FileLib {
 		) );
 		// var_dump($file);
 		// print($CFG->dataRoot.'/'.$file->path.'/'.$file->name);
-		$filename = $KUINK_CFG->uploadRoot . '/' . $file ['path'] . '/' . $file ['name'];
-		// kuink_mydebug('file',$filename);
+		$path = $file['path'];
+		$path = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $path);		
+		$filename = $KUINK_CFG->uploadRoot . '/' . $path . '/' . $file ['name'];
 		if (file_exists($filename))
 			unlink ( $filename );
 		
@@ -331,21 +335,35 @@ class FileLib {
 		// ========================================
 		// send the file
 		// ========================================
-		$pathname = $KUINK_CFG->tmpRoot.'/'.$file;
+		$pathName = $KUINK_CFG->tmpRoot.'/'.$file;
+		//var_dump($pathName);
+		//die();
 
-		if (file_exists($pathname) and !is_dir($pathname)) {
+		if (file_exists($pathName) and !is_dir($pathName)) {
 			ob_clean();
 			header('Accept-Ranges: bytes');
 			header('Content-Disposition: attachment; filename=' . $file);
 			header('Content-Type: application/octet-stream');
-			//send_file($pathname, $file);
-			readfile($pathname);
+			//send_file($pathName, $file);
+			readfile($pathName);
 			die();
-			//print_object($pathname.'::'.$file);
+			//print_object($pathName.'::'.$file);
 		} else {
 			header('HTTP/1.0 404 not found');
 			print_error('filenotfound', 'error'); //this is not displayed on IIS??
 		}
+	}
+
+	function downloadContent($params) {
+		$content = ($params[0]) ? (string)$params[0] : '';
+		$contentType = ($params[1]) ? (string)$params[1] : 'application/pdf';
+		$fileName = ($params[2]) ? (string)$params[2] : uniqid();
+		ob_clean();
+		$data = base64_decode($content);
+		header('Content-Type: '.$contentType);
+		header('Content-Disposition: attachment; filename='.$fileName);		
+		echo $data;		
+		die();
 	}
 
 	/**
@@ -395,6 +413,15 @@ class FileLib {
 			return $result;
 	}
 
+
+	function copyFileRaw($params) {
+		$origin = (string) $params ['origin'];
+		$destination = (string) $params ['destination'];
+
+		copy( $origin, $destination );
+	}
+
+
 	/**
 	 * Copy a file record to another destination
 	 * 
@@ -430,15 +457,29 @@ class FileLib {
 		$newName = (isset ( $params ['newName'] )) ? ( string ) $params ['newName'] : false;
 		
 		// load file
-		$datasource = new Kuink\Core\DataSource ( null, 'framework,generic,load', 'framework', 'generic' );
-		$file = $datasource->execute ( array (
-				'table' => 'fw_file',
-				'id' => $id 
-		) );
+		//$datasource = new Kuink\Core\DataSource ( null, 'framework,generic,load', 'framework', 'generic' );
+		//$file = $datasource->execute ( array (
+		//		'table' => 'fw_file',
+		//		'id' => $id 
+		//) );
+
+		$fileDa = new Kuink\Core\DataAccess ( 'framework,generic,load', 'framework', 'generic' );
+		$file = $fileDa->execute( array (
+			'table' => 'fw_file',
+			'id' => $id 
+		));
+
+		//var_dump($params);
+		//var_dump($id);
+		//var_dump($file);
 		
 		// full origin path
-		$originalFile = $KUINK_CFG->uploadRoot . '/' . $file ['path'] . '/' . $file ['name'];
+		$originalFilePath = $file ['path'];
+		/* corect the file path based on $KUINK_CFG->uploadVirtualPrefix temporary key*/
+		$originalFilePath = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $originalFilePath);		
+		$originalFile = $KUINK_CFG->uploadRoot . '/' . $originalFilePath . '/' . $file ['name'];
 		$originalFile = str_replace ( '//', '/', $originalFile );
+		
 		
 		// full destination path
 		$newName = (! $newName) ? $file ['name'] : $newName . '.' . $file ['ext'];
@@ -459,6 +500,8 @@ class FileLib {
 
 		mkdir ( dirname ( $destinationFile ), 0777, true );
 		copy ( $originalFile, $destinationFile );
+		//var_dump($originalFile);
+		//var_dump($destinationFile);
 		
 		// register new file into fw_file
 		$newFile = $this->register ( $file ['name'], $registerPath, $newName, $file ['size'], $file ['ext'], $file ['mimetype'], $KUINK_CFG->auth->user->id, '' );
@@ -540,8 +583,18 @@ class FileLib {
 		if ($pos === FALSE)
 			throw new \Exception ( 'No permission to access ' . $originalFullPath );
 
-			// move folder to final destination
-		return rename ( $originalFullPath, $destinationFullPath );
+		//Create the destination directory if does not exists
+		if (!is_dir(dirname ( $destinationFullPath )))
+			mkdir ( dirname ( $destinationFullPath ), 0755, true );
+
+		
+		// move folder to final destination
+		//kuink_mydebug('', $originalFullPath);
+		//kuink_mydebug('', $destinationFullPath);
+		if(rename( $originalFullPath, $destinationFullPath ))
+			return 1;
+		else
+			return 0;			
 	}
 	
 	/**
@@ -622,6 +675,7 @@ class FileLib {
 		
 		return $record;
 	}
+	
 	function getFileChecksum($params) {
 		global $KUINK_CFG;
 		
@@ -634,7 +688,11 @@ class FileLib {
 		) );
 		
 		// full origin path
-		$originalFile = $KUINK_CFG->uploadRoot . '/' . $file ['path'] . '/' . $file ['name'];
+		/* corect the file path based on $KUINK_CFG->uploadVirtualPrefix temporary key*/
+		$path = $file ['path'];
+		$path = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $path);
+
+		$originalFile = $KUINK_CFG->uploadRoot . '/' . $path . '/' . $file ['name'];
 		$originalFile = str_replace ( '//', '/', $originalFile );
 		
 		return md5_file ( $originalFile );
@@ -676,6 +734,7 @@ class FileLib {
 		$contents = $this->directoryFiles ( $pathName );
 		return $contents;
 	}
+
 	function createFileOrDirectory($params) {
 		GLOBAL $KUINK_CFG;
 		
@@ -703,6 +762,7 @@ class FileLib {
 		
 		return true;
 	}
+
 	function renameFileOrDirectory($params) {
 		GLOBAL $KUINK_CFG;
 		
@@ -718,6 +778,7 @@ class FileLib {
 		
 		return $result;
 	}
+
 	function deleteFileOrDirectory($params) {
 		GLOBAL $KUINK_CFG;
 		
@@ -735,6 +796,7 @@ class FileLib {
 		unlink ( $pathName );
 		return true;
 	}
+
 	function getFileType($params) {
 		GLOBAL $KUINK_CFG;
 		
@@ -768,6 +830,7 @@ class FileLib {
 			return ('template');
 		return 'error';
 	}
+
 	function getLevel($params) {
 		GLOBAL $KUINK_CFG;
 		

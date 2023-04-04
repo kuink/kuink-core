@@ -69,8 +69,8 @@ class Language {
 			{
 				$langstring = str_replace ('{'.$index++.'}', (string)$param, $langstring);
 			}
-		
-		$paramsList = (count($params) > 0) ? ' ('.implode(',', $params).')' : '';
+		$countParams = (is_array($params) ? count($params) : 0);
+		$paramsList = ($countParams > 0) ? ' ('.implode(',', $params).')' : '';
 		
 		if ($app_name == 'framework')
 			$result = ($langstring == null) ? $identifier.$paramsList : (string)$langstring;
@@ -131,7 +131,7 @@ class Language {
 			$KUINK_TRACE [] = var_export( $errors, true );
 			return '';
 		}
-		$KUINK_TRACE [] = "Language File lodaded: " . $langfilename;
+		$KUINK_TRACE[]="Language File lodaded: ".$langfilename.' <a href="vscode://file'.$langfilename.'">Open in VSCode</a>'; 		
 		
 		return $neon_lang_file;
 	}

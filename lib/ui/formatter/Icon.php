@@ -21,9 +21,10 @@ class Icon extends Formatter {
 		return $this->small ( $value, $params );
 	}
 	function simpleIcon($value, $params = null) {
-		$icon = ( string ) $this->getParam ( $params, $value, false, 'default' );
-		$size = ( string ) $this->getParam ( $params, 'size', true, '' );
-		return '<i class="fa fa-' . $icon . '" style="font-size: ' . $size . 'px"></i>';
+		$default = (string) $value;
+		$icon = (string) $this->getParam($params, $value, false, $default);
+		$size = (string) $this->getParam($params, 'size', true,'');
+		return '<i class="fa fa-'.$icon.'" style="font-size: '.$size.'px"></i>';
 	}
 	function small($value, $params = null) {
 		global $KUINK_CFG;
@@ -33,12 +34,11 @@ class Icon extends Formatter {
 		// kuink_mydebug($value, $icon);
 		
 		$file = $KUINK_CFG->themeRoot . 'theme/' . $KUINK_CFG->theme . '/img/' . $icon;
-		
 		// Check if the icon exists...
-		if (file_exists ( $file ))
+		//if (file_exists ( $file ))
 			$icon = $file;
-		else
-			$icon = $KUINK_CFG->themeRoot . 'theme/' . $KUINK_CFG->theme . '/img/default.png';
+		//else
+		//	$icon = $KUINK_CFG->themeRoot . 'theme/' . $KUINK_CFG->theme . '/img/default.png';
 			
 			/*
 		 * //Check if the icon exists...

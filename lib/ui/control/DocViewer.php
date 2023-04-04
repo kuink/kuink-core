@@ -21,7 +21,7 @@ class DocViewer extends Control {
 		$titleRaw = ( string ) $this->getProperty ( '', 'title', false, '', $this->xml_definition );
 		$title = \Kuink\Core\Language::getString ( $titleRaw, $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] );
 		
-		$data = ( string ) $this->bind_data [0];
+		$data = isset($this->bind_data [0]) ? (string) $this->bind_data [0] : null;
 		$this->render ( array (
 				'fileGuid' => $data,
 				'title' => $title 

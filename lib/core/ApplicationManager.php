@@ -34,10 +34,11 @@ class ApplicationManager {
 	 */
 	public function load() {
 		$da = new DataAccess ( 'getAll', '', '' );
+		$da->setCache(\Kuink\Core\CacheType::SESSION, 'core/application::getAll');		
 		$params = array ();
 		$params ['_entity'] = 'fw_application';
 		$apps = $da->execute ( $params );
-		
+	
 		foreach ( $apps as $app )
 			$this->applications [$app ['code']] = $app;
 	}
@@ -50,7 +51,7 @@ class ApplicationManager {
 	public function getApplicationAttribute($application, $attribute) {
 		// if (!isset($this->applications[$application]))
 		// throw new \Exception('Application '.$application.' not registered in fw_application');
-		return $this->applications [$application] [$attribute];
+		return isset($this->applications [$application] [$attribute]) ? $this->applications [$application] [$attribute] : null;
 	}
 }
 

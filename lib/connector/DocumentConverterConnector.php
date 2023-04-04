@@ -43,6 +43,9 @@ class DocumentConverterConnector extends \Kuink\Core\DataSourceConnector {
 		$newName = ($newName == '') ? str_replace($file['ext'], $format, $file['name']) : $newName.'.'.$format;
 		
 		$path = ($path == '') ? $file['path'] : $path;
+		//Compatibility
+		$path = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $path);
+
 		$target = $KUINK_CFG->dataRoot . '/' . $path . '/' . $newName;
 		$target = str_replace ( '//', '/', $target );
 				
@@ -52,10 +55,14 @@ class DocumentConverterConnector extends \Kuink\Core\DataSourceConnector {
 		$KUINK_TRACE[]=$command;
 		
 		$result = shell_exec($command);
+		$KUINK_TRACE[]=$command;
 		$KUINK_TRACE[]=$result;
+//		kuink_mydebug('newName', $newName);
+//		kuink_mydebug('Command', $command);
+//		kuink_mydebug('Result', $result);
 		
 		if (! file_exists($target)) {
-			throw new \Exception('Cannot convert file to '.$format.'. Check if the convertion service "unoconv -l" is up and running');
+			throw new \Exception('Cannot convert file to '.$format.'. Check if the convertion service "unoconv -l" is up and running with the user www-data "sudo -u www-data unoconv -l"');
 		} else {
 			//Registering the new file
 			$fileSize = filesize($target);

@@ -19,6 +19,12 @@ class UuidInstruction extends \Kuink\Core\Instruction {
 		$uuid = $utils->Uuid ();
 		return ( string ) $uuid;
 	}
+
+	static public function short($instManager, $instructionXmlNode) {
+		$utils = new \UtilsLib ( $instManager->nodeConfiguration, null );
+		$uuid = $utils->Uuid ();
+		return ( string ) substr($uuid,0,5); //Returns a 5 char
+	}	
 }
 
 ?>

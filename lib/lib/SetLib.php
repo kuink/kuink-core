@@ -163,6 +163,7 @@ class SetLib {
 		
 		$array = $params [0];
 		$keys = array_slice ( $params, 1 );
+		//print_r($array);
 		
 		usort ( $array, function ($a, $b) use ($keys) {
 			$encode_chars_array = array (
@@ -211,14 +212,14 @@ class SetLib {
 					".ª" => "a",
 					".º" => "o" 
 			);
-			foreach ( $keys as $field ) {
-				$arrayA = isset($a[$field]) ? strtr($a[$field], $encode_chars_array) : '';
-				$arrayB = isset($b[$field]) ? strtr($b[$field], $encode_chars_array) : '';
+			foreach ($keys as $field) {
+				$arrayA = strtr($a[$field], $encode_chars_array);
+				$arrayB = strtr($b[$field], $encode_chars_array);
 				$arrayA = is_string($arrayA) ? strtolower($arrayA) : $arrayA;
 				$arrayB = is_string($arrayB) ? strtolower($arrayB) : $arrayB;
 				$diff = strnatcmp($arrayA, $arrayB); //strnatcasecmp($a[$field], $b[$field]);
-				if ($diff != 0) {
-					return $diff;
+				if($diff != 0) {
+						return $diff;
 				}
 			}
 			
@@ -227,6 +228,75 @@ class SetLib {
 		
 		return $array;
 	}
+
+	/**
+	 * 
+	 */
+	function sortByExtended($params) {
+		if (count ( $params ) < 2)
+			throw new Exception ( 'sortByExtended must have two or more parameters that specifies the array and the key(s) of the value(s) to sort by. ' );
+
+		$array = $params [0];
+		$keys = array_slice ( $params, 1 );
+		
+		$sortParams = Array();
+		foreach($keys as $key) {
+			$column = array_column($array, $key['key']);
+			$sortParams[] = $column;
+			
+			if ($key['sort'] == 'asc') 
+				$sort = SORT_ASC;
+			else
+				$sort = SORT_DESC;
+
+			if ($key['type'] == 'string') 
+				$type = SORT_LOCALE_STRING | SORT_FLAG_CASE;
+			else
+				$type = SORT_NUMERIC;
+
+			$sortParams[] = $sort;				
+			$sortParams[] = $type;				
+			//kuink_mydebug('Sort:', $key['key'].' | '.$key['type'].' | '.$key['sort'].' | '. $sort);
+		}	
+		$sortParams[] = &$array;
+		call_user_func_array('array_multisort', $sortParams);
+
+		return $array;
+	}
+
+	function orderColumns($params) {
+		
+		if (count ( $params ) != 3)
+			throw new Exception ( 'orderColumns must have three parameters that specifies the array and ordered keys array and the column name toretrieve the value from the ordered keys arrays. ' );
+		$array = $params [0];
+		$order = $params [1];
+		$orderColumn = (string)$params [2];
+
+		$orderParsed = array();
+		foreach ($order as $orderField)
+			$orderParsed[]=$orderField[$orderColumn];
+
+		$orderedArray = array();
+		foreach ($array as $row) {
+			//First place the fields without specific order
+			$orderedField = array();	
+			foreach ($row as $fieldKey=>$fieldValue) {
+				if (!in_array(trim($fieldKey), $orderParsed)) {
+					//kuink_mydebug($fieldKey);
+					$orderedField[$fieldKey] = $fieldValue;		
+				}
+			}
+			//Now place the ordered keys
+			foreach ($orderParsed as $orderField)
+				if (isset($row[$orderField])) {
+					//kuink_mydebug('Setting: '.$orderField);
+					$orderedField[$orderField] = $row[$orderField];		
+				}
+			$orderedArray[] = $orderedField;
+		}
+
+		return $orderedArray;
+	}	
 	
 	/**
 	 * insert key and/or value(s) into array

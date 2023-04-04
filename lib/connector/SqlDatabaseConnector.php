@@ -7,13 +7,13 @@
 
 namespace Kuink\Core\DataSourceConnector;
 
-
+use \Kuink\Core\TraceManager;
+use \Kuink\Core\TraceCategory;
 use Kuink\Core\NodeManager;
 use Kuink\Core\NodeType;
 use Kuink\Core\Exception\ParameterNotFound;
 use Kuink\Core\Exception\DomainNotFound;
 use Kuink\Core\Exception\PhysicalTypeNotFound;
-use Kuink\Core\DataSourceConnector\DDChanges;
 
 class DDChanges {
 	const ADD = 'Add';
@@ -31,27 +31,82 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	
 	var $db; // The PDO object containing the connection
 	var $lastAffectedRows; // The affected rows of last statement
+	var $type; //The driver type, is very used
 	
 	function connect() {
 		// kuink_mydebug(__CLASS__, __METHOD__);
 		if (! $this->db) {
-			$type = $this->dataSource->getParam ( 'type', true );
-			$server = $this->dataSource->getParam ( 'server', true );
-			$database = $this->dataSource->getParam ( 'database', true );
-			$user = $this->dataSource->getParam ( 'user', true );
-			$passwd = $this->dataSource->getParam ( 'passwd', true );
-			$options = $this->dataSource->getParam ( 'options', false );
+			$type = $this->dataSource->getParam ('type', true );
+			$server = $this->dataSource->getParam ('server', true );
+			$database = $this->dataSource->getParam ('database', true );
+			$user = $this->dataSource->getParam ('user', true );
+			$passwd = $this->dataSource->getParam ('passwd', true );
+			$options = $this->dataSource->getParam ('options', false );
+
+			//kuink_mydebug('Connect', $type.'::'.$server__);
+
+			$this->type = $type;
 			
-			$dsn = "$type:host=$server;dbname=$database;$options";
-			// print_object($dsn);
-			
-			// Get the connection to the database
-			$this->db = new \PDO ( $dsn, $user, $passwd );
-			$this->db->exec ( "set names utf8" ); //TODO: Handle the utf8 problem
-			$this->db->exec("SET SESSION group_concat_max_len = 1000000"); //TODO: Move this to datasource configuration			
+			//Connect with specific drivers
+			switch ($type) {
+				case 'sqlsrv':
+					$dsn = $type.':Server='.stripslashes($server).';Database='.$database;
+					$options = array();//;array('Authentication'=>'SqlPassword');
+					//$this->db = new \PDO ("sqlsrv:server=$server;database=$database;", $user, $passwd, $options);
+					$this->db = new \PDO("$dsn", $user, $passwd, $options);
+					$this->db->setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION ); 
+					$this->db->exec ( "SET NOCOUNT ON;" );
+					break;
+				default:
+					//This is the default dsn
+					$dsn = "$type:host=$server;dbname=$database;$options";
+					// Get the connection to the database
+					$this->db = new \PDO ( $dsn, $user, $passwd );
+					$this->db->exec ( "set names utf8" ); //TODO: Handle the utf8 problem
+					$this->db->exec("SET SESSION group_concat_max_len = 1000000"); //TODO: Move this to datasource configuration			
+					break;
+			}
+	
 		}
 	}
-	
+
+/***
+ * Get the operator to filter the data
+ */
+private function getOperator($operator) {
+	$result = '=';
+	switch($operator) {
+		case 'eq': $result = '='; break;
+		case 'neq': $result = '!='; break;
+		case 'gt': $result = '>'; break;
+		case 'gte': $result = '>='; break;
+		case 'lt': $result = '<'; break;
+		case 'lte': $result = '<='; break;
+	}
+	return $result;
+}
+
+/***
+ * Depending on the database type, identifiers must be enclosed in different ways 
+ */
+private function encloseIdentifier($identifier) {
+	$enclose = '';
+	if (!isset($this->type))
+		$this->type = $this->dataSource->getParam ('type', true );		
+	switch ($this->type) {
+		case 'mysql':
+			$enclose = "`$identifier`";
+			break;
+		case 'sqlsrv':
+			$enclose = "[$identifier]";
+			break;
+		default:
+			$enclose = $identifier;
+			break;
+	}
+	return $enclose;
+}
+
 	/**
 	 * This will receive the params of the statement and will transform
 	 * the preparedStatementXml into a PDO ready string
@@ -80,10 +135,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	 * @see \Kuink\Core\DataSourceConnector::insert()
 	 */
 	function insert($params) {
-		global $KUINK_TRACE;
-		
 		$this->connect ();
-		
+
 		$originalParams = $params;
 		
 		if (isset ( $params ['_multilang_fields'] )) {
@@ -100,9 +153,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		} else {
 			$sql = $this->getPreparedStatementInsert ( $params );
 		}
-		
-		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
+
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
 		$this->executeSql ( $sql, $params );
 		
@@ -112,8 +164,10 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		// Handle the multilang
 		$originalParams ['id'] = $insertId;
 		$this->handleMultilang ( $originalParams, 1 ); // 1: Insert
-		
-		return (isset ( $params ['id'] )) ? $params ['id'] : $insertId;
+		$paramsId = isset($params ['id']) ? $params ['id'] : '';
+
+		$idToReturn = ($paramsId != '') ? $params ['id'] : $insertId;
+		return $idToReturn;
 	}
 	
 	/**
@@ -126,6 +180,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	 */
 	function handleMultilang($params, $type) {
 		// Handle MULTILANG
+		//kuink_mydebug('Multilang');
 		$multilangFieldsArray = array ();
 		if (isset ( $params ['_multilang_fields'] )) {
 			// Create the sql statement to update the lang keys
@@ -167,6 +222,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 					// print_object(count($testRecord) );
 					if (count ( $testRecord ) > 0) {
 						$insertLangFields ['id'] = $testRecord ['id'];
+						$insertLangFields ['_pk'] = 'id,lang'; //These are the primary keys
 						$this->update ( $insertLangFields );
 					} else {
 						$returnId = $this->insert ( $insertLangFields );
@@ -180,8 +236,6 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		return $multilangFieldsArray;
 	}
 	function update($params) {
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		
 		$multilangFieldsArray = $this->handleMultilang ( $params, 2 ); // 2: Update
@@ -196,17 +250,13 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			$sql = $this->getPreparedStatementUpdate ( $params );
 		}
 		
-		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
-		//$KUINK_TRACE [] = $params;
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
-		$this->executeSql ( $sql, $params );
+		$this->executeSql ( $sql, $params, false, true, true );
 		
 		return $this->lastAffectedRows;
 	}
 	function save($params) {
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		
 		$pk = $this->getParam ( $params, '_pk', false, 'id' );
@@ -219,8 +269,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		foreach ( $pks as $pk )
 			$allPksPresent = $allPksPresent && isset ( $params [$pk] );
 		
-		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = ($allPksPresent) ? 'Save::Update' : 'Save::Insert';
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
+		TraceManager::add ( ($allPksPresent) ? 'Save::Update' : 'Save::Insert', TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
 		if ($allPksPresent)
 			$result = $this->update ( $params );
@@ -230,10 +280,10 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		return $result;
 	}
 	function delete($params) {
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
+		$multilang = (string)$this->getParam($params, '_multilang', false, 'false');
+		unset($params['_multilang']);
 		$acl = ($aclPermissions == 'false') ? 'false' : 'true';
 		$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::delete.all' : $aclPermissions;
 		if (isset ( $params ['_sql'] )) {
@@ -242,8 +292,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			$sql = $this->getPreparedStatementDelete ( $params );
 		}
 		
-		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
 		$canDelete = true;
 		if ($acl == 'true') {
@@ -251,18 +300,27 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			$aclPermissions = str_replace(',', "','", $aclPermissions);
 			$aclPermissions = str_replace(' ', "", $aclPermissions);
 			$aclPermissions = "'".$aclPermissions."'";
-			
+			//kuink_mydebug('ACL:', $aclPermissions);
 			//Try to load the record with the permissions
 			$record = $this->load($params);
 			$canDelete = (count($record) > 0);
+			//kuink_mydebugObj('Obj:',$record);
 			//var_dump($canDelete);
 			//var_dump($params);
 		}
-  	 
 		if ($canDelete)
 			$this->executeSql($sql, $params);
+		
+			$lastAffectedRows = $this->lastAffectedRows;
+		
+		//If multilang, then delete the language records also
+		if ($multilang == 'true') {
+			$entity = (string)$this->getParam($params, '_entity', true);
+			$params['_entity'] = $entity.'_lang';
+			$this->delete($params);
+		}
 
-		return $this->lastAffectedRows;
+		return $lastAffectedRows;
 	}
 	
 	/**
@@ -270,12 +328,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	 * For compatibility
 	 */
 	function execute($params) {
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		$sql = $this->prepareStatementToExecute ( $params );
-		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $sql;
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
 		$records = $this->executeSql ( $sql, $params );
 		return $records;
@@ -286,14 +341,11 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	 * For compatibility
 	 */
 	function sql($params) {
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		
 		$sql = $this->prepareStatementToExecute ( $params );
 		
-		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $sql;
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
 		$records = $this->executeSql ( $sql, $params );
 		return $records;
@@ -304,8 +356,6 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	 * For compatibility
 	 */
 	function sqlPaginated($params) {
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		
 		$pageSize = 10;
@@ -341,7 +391,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		// print_object($pageNum);print_object($pageSize);
 		// kuink_mydebug($pagenum, $pagesize);
 		
-		$KUINK_TRACE [] = "COUNT SQL: " . $countSql;
+		TraceManager::add ( "COUNT SQL: " . $countSql, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );
 		
 		// get the total number of records
 		$total = $this->executeSql ( $countSql, $params ); // $DB->count_records_sql($count_sql);
@@ -350,8 +400,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			$totalRecords = (int)$totalItem['_total'];
 		}
 		
-		
-		$KUINK_TRACE [] = "TOTAL RECORDS: " . $totalRecords;
+		TraceManager::add ( "TOTAL RECORDS: " . $totalRecords, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );
 		
 		$limitFrom = ($pageNum) * $pageSize;
 		$limitNum = $pageSize;
@@ -360,11 +409,11 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		
 		// get the page records
 		
-		$params = array ();
+		//$params = array ();
 		if ($limitFrom != 0 || $limitNum != 0)
 			$querySql .= ' LIMIT ' . $limitFrom . ',' . $limitNum;
 		
-		$KUINK_TRACE [] = "SQL: " . $querySql;
+		TraceManager::add ( 'SQL: ' . $querySql, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );		
 		$records = $this->executeSql ( $querySql, $params );
 		
 		// Preparing the output
@@ -373,6 +422,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		
 		return $output;
 	}
+
 	private function transformMultilangData($data, $lang, $langInline) {
 		$ignoreKeys = array ('id');
 		$langKey = 'lang';
@@ -410,57 +460,72 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		
 		return $resultdData;
 	}
-	function load($params) {
+
+	/*
+	function load($params, $operators=null) {
+		$records = $this->getAll($params, $operators);
+		$record = (count ( $records ) > 0) ? $records [0] : null;
+		return ($record);
+	}*/	
+
+	
+	function load($params, $operators=null) {
 		// kuink_mydebug(__CLASS__, __METHOD__);
-		global $KUINK_TRACE;
-		
 		$this->connect ();
 		
 		$lang = ( string ) $this->getParam ( $params, '_lang', false, '' );
 		$langInline = ( string ) $this->getParam ( $params, '_lang_inline', false, 'true' );
+		
+		if (isset ( $params ['_sql'] )) {
+			$sql = $this->prepareStatementToExecute ( $params );
+		} else {
+			$sql = $this->getPreparedStatementSelect ( $params, true, $operators );
+		}
+		
+		if ($this->db->inTransaction ())
+			$sql .= ' FOR UPDATE';
+		
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );	
+		
+		$records = $this->executeSql ( $sql, $params, true, false );
+		$record = (count ( $records ) > 0) ? $records [0] : null;
+
+		// add the multilang data if it is set
 		$multilangTransformedRecords = array ();
 		if ($lang != '') {
 			$entity = ( string ) $this->getParam ( $params, '_entity', false, 'false' );
 			// Get the multilang data
 			$paramsMultilang = array ();
 			$paramsMultilang ['_entity'] = $entity . '_lang';
-			$paramsMultilang ['id'] = $params ['id'];
+			$paramsMultilang ['id'] = $record ['_multilang_id'];
+			//kuink_mydebugObj('record', $record);
 			if ($lang != '*') {
 				$paramsMultilang ['lang'] = $lang;
 			}
-			$multilangRecords = $this->getAll ( $paramsMultilang );
 			
+			$multilangRecords = $this->getAll ( $paramsMultilang );
+			//kuink_mydebugObj('entity', $entity);
+			//kuink_mydebugObj('paramsMultilang', $paramsMultilang);
+			//kuink_mydebugObj('multilangRecords', $multilangRecords);
 			$multilangTransformedRecords = $this->transformMultilangData ( $multilangRecords, $lang, $langInline );
-			// print_object($multilangTransformedRecords);
+			//kuink_mydebugObj('multilangTransformedRecords', $multilangTransformedRecords);
 			unset ( $params ['_lang'] );
 			unset ( $params ['_lang_inline'] );
+			unset ( $record ['_multilang_id'] );
 		}
-		
-		if (isset ( $params ['_sql'] )) {
-			$sql = $this->prepareStatementToExecute ( $params );
-		} else {
-			$sql = $this->getPreparedStatementSelect ( $params, true );
-		}
-		
-		if ($this->db->inTransaction ())
-			$sql .= ' FOR UPDATE';
-		
-		$KUINK_TRACE [] = __METHOD__;
-		$KUINK_TRACE [] = $this->interpolateQuery($sql, $params);
-		
-		$records = $this->executeSql ( $sql, $params, true, false );
-		
-		$record = (count ( $records ) > 0) ? $records [0] : null;
-		// add the multilang data if it is set
-		if (count ( $multilangTransformedRecords > 0 )) {
-			foreach ( $multilangTransformedRecords as $key => $multilangData )
-			if ($key != 'id')
-				$record[$key] = $multilangData;
 
+		if (!empty($multilangTransformedRecords)) {
+			if (count ( $multilangTransformedRecords > 0 )) {
+				foreach ( $multilangTransformedRecords as $key => $multilangData )
+				if ($key != 'id')
+					$record[$key] = $multilangData;
+
+			}
 		}
 		
 		return $record;
 	}
+	
 	
 	/**
 	 * *
@@ -488,9 +553,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		// print_object( $records );
 		return $records;
 	}
-	function getAll($params) {
-		global $KUINK_TRACE;
-		
+	function getAll($params, $operators=null) {
 		$this->connect ();
 		
 		$pageNum = $this->getParam ( $params, '_pageNum', false, 0 );
@@ -510,8 +573,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			}
 		} else {
 			if ($pageNum != 0 || $pageSize != 0)
-				$countSql = $this->getPreparedStatementSelectCount ( $params );
-			$sql = $this->getPreparedStatementSelect ( $params );
+				$countSql = $this->getPreparedStatementSelectCount ( $params, $operators );
+			$sql = $this->getPreparedStatementSelect ( $params, false, $operators );
 		}
 		
 		$totalRecords = 0;
@@ -521,14 +584,11 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 				$totalRecords = ( int ) $total;
 		}
 		
-		$KUINK_TRACE [] = __METHOD__;
+		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );	
 		if ($pageNum != 0 || $pageSize != 0) {
-			$KUINK_TRACE [] = 'CountSql';
-			$KUINK_TRACE [] = $countSql;
-			$KUINK_TRACE [] = 'Total: ' . $totalRecords;
+			TraceManager::add ( 'CountSQL: '.$countSql, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );	
+			TraceManager::add ( 'Total: '.$totalRecords, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );	
 		}
-		
-		$KUINK_TRACE [] = $sql;
 		
 		$records = $this->executeSql ( $sql, $params );
 		if ($pageNum != 0 || $pageSize != 0) {
@@ -542,59 +602,136 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		
 		return $output;
 	}
-	private function executeSql($sql, $params, $ignoreNulls = false, $allowEmptyParams = true) {
-		global $KUINK_TRACE;
-		
-		// print_object($sql);
-		unset ( $params ['_entity'] );
-		unset ( $params ['_attributes'] );
-		unset ( $params ['_sort'] );
-		unset ( $params ['_pageNum'] );
-		unset ( $params ['_pageSize'] );
-		unset ( $params ['_pk'] );
-		unset ( $params ['_sql'] );
-		unset ( $params ['_debug_'] );
-		unset ( $params ['_multilang_fields'] );
-  	unset ( $params ['_acl']);
-  	unset ( $params ['_aclPermissions']);
-		
-		
-		foreach ( $params as $key => $value )
-			if (($ignoreNulls && ($value == '')) || is_array($value))
-				unset ( $params [$key] ); //ignore empty values and arrays
-			// print_object($params);
-		
 
+	/***
+	 * $notSelect - For Sql Server error on update without $query->nextRowset();
+	 */
+	private function executeSql($sql, $params, $ignoreNulls = false, $allowEmptyParams = true, $notSelect=false) {
+		// print_object($sql);
+		$entity = $params ['_entity'];
+		if (isset($params)) {
+			unset ( $params ['_entity'] );
+			unset ( $params ['_attributes'] );
+			unset ( $params ['_sort'] );
+			unset ( $params ['_pageNum'] );
+			unset ( $params ['_pageSize'] );
+			unset ( $params ['_pk'] );
+			unset ( $params ['_sql'] );
+			unset ( $params ['_debug_'] );
+			unset ( $params ['_multilang_fields'] );
+			//unset ( $params ['_lang'] );
+			unset ( $params ['_acl']);
+			unset ( $params ['_aclPermissions']);
+		}
+
+		if (isset($params) && is_array($params))
+			foreach ( $params as $key => $value )
+				if (($ignoreNulls && ($value == '')) || is_array($value))
+					unset ( $params [$key] ); //ignore empty values and arrays
+				// print_object($params);
+		
+		$params = (isset($params)) ? $params : array();
 		if (count ( $params ) == 0 && ! $allowEmptyParams) {
 			return null;
 		}
 		// Here we have some parameters
 		$query = $this->db->prepare ( $sql );
+
+		if (!$query) {
+			TraceManager::add ( 'Database error', TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );	
+			TraceManager::add ( $sql, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );	
+			throw new \Exception ( 'Error preparing query ');
+		}
+		//if ($query === FALSE)
+		//var_dump($query);
 		//print($sql.'<br/>');
 
-		$query->execute ( $params );
+		//print_object($sql);
+		//print_object($params);
+
+
+		//Remove unused params from the query to use bind params
+		$bindParams = array();
+		$sqlTmp = $sql;
+		while ( preg_match ( "/[\:][a-zA-Z0-9_]+/", $sqlTmp, $matches ) ) {
+			$bindParamRaw = $matches [0];
+			$bindParam = substr($bindParamRaw, -(strlen($bindParamRaw)-1));
+			$bindParams[$bindParam] = ($params[$bindParam] === null) ? $params[$bindParam] : stripslashes($params[$bindParam]);
+			$query->bindValue($bindParam, $bindParams[$bindParam]);				
+
+			//Hack to prevent that params with ':' character create an infinite loop here
+			$bindParams[$bindParam] = str_replace(':', '§§§§§§§§', $bindParams[$bindParam]);
+
+			$errorInfo = $query->errorInfo ();
+			if ($errorInfo[0] != '') {
+				TraceManager::add ( 'Query bind param error', TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
+				TraceManager::add ( $errorInfo [0] . '|' . $errorInfo [1], TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
+			}
+	
+			$keys=array();
+			if (is_string($bindParam))
+				$keys[] = '/:'.$bindParam.'/';
+			else
+				$keys[] = '/[?]/';
+			$sqlTmpReplaced = preg_replace($keys, $bindParams, $sqlTmp, 1, $count);//str_replace($matches[0],"'".$params[$bindParam]."'",$sqlTmp);			
+
+			/*
+			if ($sqlTmpReplaced == $sqlTmp) {
+				//The replace was not executed... something wrong happened
+				kuink_mydebug('Error', $sqlTmpReplaced);
+				break;
+			}
+			*/
+			
+			$sqlTmp = $sqlTmpReplaced;
+		}
+		$performanceStart = microtime(true);
+
+		$query->execute ();
+
+		$performanceEnd = microtime(true);
+		$performanceTime = $performanceEnd - $performanceStart;		
 		
+		TraceManager::add ( $this->pdoDebugStrParams($query), TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );
+		TraceManager::add ( 'SQL Execution - (Time: '. number_format($performanceTime, 5).')', TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );		
+
 		//var_dump($sql);
 		//var_dump(count($params));
-		
+
+		// print_object($sql);
+		//print_object($records);
 		
 		// Handle the errors
 		$errorInfo = $query->errorInfo ();
-		if ($errorInfo [0] != 0) {
-			$KUINK_TRACE [] = 'Database error';
-			$KUINK_TRACE [] = $sql;
-			$KUINK_TRACE [] = $errorInfo [0];
-			$KUINK_TRACE [] = $errorInfo [1];
-			$KUINK_TRACE [] = $errorInfo [2];
-			throw new \Exception ( 'Internal database error' );
+		//kuink_mydebugObj('ErrorInfo', $errorInfo);
+		//if ($this->type == 'sqlsrv')
+		//	kuink_mydebugObj('ErrorInfo', $errorInfo);
+
+		if ($errorInfo [0] !== '00000' || $errorInfo [1] != 0) {
+			TraceManager::add ( 'Database Error: '.$errorInfo [0] . '|' . $errorInfo [1] . ' | '. $errorInfo [2] , TraceCategory::ERROR, __CLASS__.'::'.__METHOD__ );
+			throw new \Exception ( 'Internal database error ('.$errorInfo [0].') - '.$errorInfo [1] );
 		}
-		// print_object($sql);
+
+		if (($this->type == 'sqlsrv') && $notSelect) {
+			$query->nextRowset();
+		}
+
 		$records = $query->fetchAll ( \PDO::FETCH_ASSOC );
+
 		// print_object($records);
 		$this->lastAffectedRows = $query->rowCount ();
 		return $records;
 	}
-	private function getPreparedStatementSelectCount($params) {
+
+	function pdoDebugStrParams($stmt) {
+		ob_start();
+		$stmt->debugDumpParams();
+		$r = ob_get_contents();
+		ob_end_clean();
+		return $r;
+	}
+
+	private function getPreparedStatementSelectCount($params, $operators=null) {
 		$entity = $this->getParam ( $params, '_entity', true );
 		$attributes = $this->getParam ( $params, '_attributes', false, '*' );
 		$sort = isset ( $params ['_sort'] ) ? ' ORDER BY ' . $params ['_sort'] : '';
@@ -610,8 +747,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		unset ( $params ['_pageNum'] );
 		unset ( $params ['_pageSize'] );
 		unset ( $params ['_pk'] );
-  	unset ( $params ['_acl'] );
-  	unset ( $params ['_aclPermissions'] );
+  		unset ( $params ['_acl'] );
+  		unset ( $params ['_aclPermissions'] );
 		
 		
 		$where = (count ( $params ) > 0) ? ' WHERE ' : '';
@@ -619,14 +756,16 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		foreach ( $params as $key => $value ) {
 			if ($count > 0)
 				$where .= ' AND ';
-			$where .= '`' . $key . '` = ' . ':' . $key . ' ';
+			$operator = isset($operators[$key]) ? $this->getOperator($operators[$key])  : '=';				
+			$where .= $this->encloseIdentifier($key) . ' '.$operator.' ' . ':' . $key . ' ';
 			$count ++;
 		}
 		
+		$entity = $this->encloseIdentifier($entity);
 		if ($acl == 'true')  	
-			$sql = "SELECT id_acl FROM `$entity` $where";
+			$sql = "SELECT id_acl FROM $entity $where";
 		else 
-			$sql = "SELECT count(*) FROM `$entity` $where";
+			$sql = "SELECT count(*) FROM $entity $where";
 		
 		if ($acl == 'true') {
 			$aclPermissions = str_replace(',', "','", $aclPermissions);
@@ -641,7 +780,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	
 		return $sql;
 	}
-	private function getPreparedStatementSelect($params, $ignoreNulls = false) {
+
+	private function getPreparedStatementSelect($params, $ignoreNulls = false, $operators=null) {
 		$entity = $this->getParam ( $params, '_entity', true );
 		$attributes = $this->getParam ( $params, '_attributes', false, '*' );
 		$sort = isset ( $params ['_sort'] ) ? ' ORDER BY ' . $params ['_sort'] : '';
@@ -663,8 +803,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		unset ( $params ['_debug_'] );
 		unset ( $params ['_lang'] );
 		unset ( $params ['_lang_inline'] );
-  	unset ( $params ['_acl'] );
-  	unset ( $params ['_aclPermissions'] );
+	  	unset ( $params ['_acl'] );
+  		unset ( $params ['_aclPermissions'] );
 		
 		$count = 0;
 		$whereClauses = '';
@@ -672,7 +812,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			if (! $ignoreNulls || ($value != '')) {
 				if ($count > 0)
 					$whereClauses .= ' AND ';
-				$whereClauses .= '`' . $key . '` = ' . ':' . $key . ' ';
+				$operator = isset($operators[$key]) ? $this->getOperator($operators[$key]) : '=';
+				$whereClauses .= 'e.'.$this->encloseIdentifier($key). ' '.$operator.' ' . ':' . $key . ' ';
 				$count ++;
 			}
 		}
@@ -691,7 +832,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		// Handle Multilang
 		$multilang = '';
 		if ($lang != '') {
-			$multilang = ' LEFT OUTER JOIN '.$entity.'_lang l ON (l.id = e.id AND l.lang =\''.$lang.'\')';
+			$multilang = ' LEFT OUTER JOIN '.$this->encloseIdentifier($entity.'_lang').' l ON (l.id = e.id AND l.lang =\''.$lang.'\')';
 		}
 		
 		// concatenate e. to all attributes
@@ -704,11 +845,15 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 				// print_object($newAttrs);
 			$attributes = implode ( ',', $newAttrs );
 		}
+
+		if ($attributes == '*' && $lang != '') {
+			$attributes = 'e.id as _multilang_id, e.*, l.*';
+		}
 		
   	if ($acl == 'true')
-  		$sql = "SELECT $attributes FROM `$entity` e $multilang $where $sort"; //put the limit in the outer query not in inner query
+  		$sql = 'SELECT '.$attributes.' FROM '.$this->encloseIdentifier($entity).' e '.$multilang.' '.$where.' '. $sort; //put the limit in the outer query not in inner query
   	else
-  		$sql = "SELECT $attributes FROM `$entity` e $multilang $where $sort $limit";
+  		$sql = 'SELECT '.$attributes.' FROM '.$this->encloseIdentifier($entity).' e '.$multilang.' '.$where.' '.$sort.' '.$limit;
   	
   	if ($acl == 'true') {
   		$aclPermissions = str_replace(',', "','", $aclPermissions);
@@ -718,17 +863,21 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   		$sql = "SELECT _aclBase.* FROM (".$sql.") _aclBase 
   				WHERE _aclBase.id_acl IN 
   					(SELECT _aclc.id_acl FROM _fw_access_control_list_capability _aclc
-  					 WHERE _aclc.id_acl = _aclBase.id_acl AND _aclc.code IN (".$aclPermissions.") AND _aclc.id_person='".$this->user['id']."') ".$limit;
+						 WHERE _aclc.id_acl = _aclBase.id_acl AND _aclc.code IN (".$aclPermissions.") AND _aclc.id_person='".$this->user['id']."') ".$limit;
   	}
 
   	return $sql;
 	}
+
 	private function getPreparedStatementInsert($params) {
 		$entity = $this->getParam ( $params, '_entity', true );
   	$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
   	$acl = ($aclPermissions == 'false') ? 'false' : 'true';
 		$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::view.all' : $aclPermissions;
 				
+		//kuink_mydebugObj('Params', $params);
+		//die();
+
 		unset ( $params ['_entity'] );
 		unset ( $params ['_attributes'] );
 		unset ( $params ['_sort'] );
@@ -746,15 +895,16 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 				$fields .= ', ';
 				$values .= ', ';
 			}
-			$fields .= '`' . $key . '`';
+			$fields .= $this->encloseIdentifier($key);
 			$values .= ':' . $key;
 			$count ++;
 		}
-		
-		$sql = "INSERT INTO $entity ($fields) VALUES ($values)";
+	
+		$sql = 'INSERT INTO '.$this->encloseIdentifier($entity).' ('.$fields.') VALUES ('.$values.')';
 		
 		return $sql;
 	}
+
 	private function getPreparedStatementDelete($params) {
 		$entity = $this->getParam ( $params, '_entity', true );
   	$aclPermissions = (string)$this->getParam($params, '_aclPermissions', false, 'false');
@@ -775,15 +925,17 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		foreach ( $params as $key => $value ) {
 			if ($count > 0)
 				$where .= ' AND ';
-			$where .= '`' . $key . '` = ' . ':' . $key . ' ';
+			$where .=  $this->encloseIdentifier($key) . ' = ' . ':' . $key . ' ';
 			// $where .= $key.' = ? ';
 			$count ++;
 		}
 		
-		$sql = "DELETE FROM `$entity` WHERE $where";
+		$entity = $this->encloseIdentifier($entity);
+		$sql = "DELETE FROM $entity WHERE $where";
 		
 		return $sql;
 	}
+
 	private function getPreparedStatementUpdate($params) {
 		$entity = $this->getParam ( $params, '_entity', true );
 		$pk = $this->getParam ( $params, '_pk', false, 'id' );
@@ -812,7 +964,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 				$where .= ' AND ';
 			$onlyPks[$field] = isset($params[$field]) ? $params[$field] : null; 
 			unset ( $params [$field] );
-			$where .= '`' . $field . '` = ' . ':' . $field . ' ';
+			$where .= $this->encloseIdentifier($field) . ' = ' . ':' . $field . ' ';
 			$count ++;
 		}
 		
@@ -824,7 +976,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			
 			if ($count > 0)
 				$set .= ', ';
-			$set .= '`' . $key . '` = ' . ':' . $key . ' ';
+			$set .= $this->encloseIdentifier($key) . ' = ' . ':' . $key . ' ';
 			$count ++;
 		}
 		
@@ -837,12 +989,13 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   		$record = $this->load($onlyPks);
   		//print_object($record);
   		$canUpdate = (count($record) > 0);
-  	}
-  	
+		}
+		
+  	$entity = $this->encloseIdentifier($entity);
   	if ($canUpdate)
-  		$sql = "UPDATE `$entity` SET $set WHERE $where";
+  		$sql = "UPDATE $entity SET $set WHERE $where";
   	else
-  		$sql = "UPDATE `$entity` SET $set WHERE 1=0"; //Do nothing
+  		$sql = "UPDATE $entity SET $set WHERE 1=0"; //Do nothing
 
 		
 		return $sql;
@@ -855,9 +1008,6 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   	$acl = ($aclPermissions == 'false') ? 'false' : 'true';
 		$aclPermissions = ($aclPermissions == 'true') ? 'framework/generic::view.all' : $aclPermissions;
 		$tablePrefix = $this->dataSource->getParam ( 'prefix', false, '' );
-		// global $CFG;
-		// global $KUINK_TRACE;
-		// global $DB;
   	$hasGroupBy = false;
   	//Check if this has a xsql query
   	$xsql = $instruction->xpath('./XSql');
@@ -904,8 +1054,13 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   					$sql .= $this->xparse($xinst, 'HAVING', 'HAVING 1=1', 'XCondition', $params);
   					break;
   				case 'XOrderBy':
-  					$sql .= ($count) ? '' : $this->xparse($xinst, 'ORDER BY', '', 'XOrder', $params);
-  					break;
+						//For compatibility mode try to find XORDER, if not then go and find XCondition
+						$orderBy = $this->xparse($xinst, 'ORDER BY', '', 'XOrder', $params);
+						if (trim($orderBy) == '')
+							//Try to get it from a XCondition instead of a XOrder (Refactor will remove all XOrder and replace by XCondition)
+							$orderBy = $this->xparse($xinst, 'ORDER BY', '', 'XCondition', $params);
+  					$sql .= ($count) ? '' : $orderBy;
+   					break;
   				default:
   					throw new \Exception('Invalid xsql instruction: '.$xinst_name);
   					break;
@@ -917,10 +1072,17 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
   	foreach ($params as $key => $value) {
   		//$param_value = mysql_escape_string($value);
 			$param_value = $value;
-			if (!is_array($param_value))
-				$sql = str_replace('{param->'.$key.'}', $param_value , $sql);
+			if (!is_array($param_value)) {
+				//$sql = str_replace('{param->'.$key.'}', $param_value , $sql);
+				//Prepare the statement for bind params
+				$sql = str_replace('{@param->'.$key.'}', stripslashes($param_value) , $sql);
+				$sql = str_replace('{param->'.$key.'}', ':'.$key , $sql);
+				$sql = str_replace("':".$key."'", ':'.$key , $sql);
+			}
 		}
-			$sql = str_replace('{table_prefix}', $tablePrefix , $sql);
+		$sql = str_replace('{table_prefix}', $tablePrefix , $sql);
+		//TraceManager::add ( $sql, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );
+		
 
   	if ($hasGroupBy && $count)
   		$sql = 'SELECT COUNT(*) as _total FROM ('.$sql.') __total';
@@ -965,7 +1127,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 				try {
 					$result = $eval->e ( $condition, $params, TRUE );
 				} catch ( \Exception $e ) {
-					print_object ( 'Exception: eval' );
+					var_dump( 'Exception: eval' );
 					die ();
 				}
 				if ($result)
@@ -991,27 +1153,30 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		if ($sql == $sql_prefix . ' ')
 			$sql = $default . ' ';
 			
-			// print('<br/>SQL::'.$sql.'<br/>');
 		return $sql;
 	}
+
 	public function getEntity($params) {
 		$this->connect ();
 		$database = $this->dataSource->getParam ( 'database', true );
 		
 		$entName = ( string ) $params ['_entity'];
-		
+		$this->db->exec ('SET GLOBAL innodb_stats_on_metadata=0;');
 		$sql = "
-  			SELECT
+		SELECT
  					c.ordinal_position as 'id',
  					c.column_name as 'name',
  					c.column_default as 'default',
  					IF(c.is_nullable = 'NO', 'true', 'false') as 'required',
  					c.data_type as 'type',
- 					IF(c.character_maximum_length IS NULL, replace(replace(c.column_type, concat(c.data_type,'('),''),')', ''), c.character_maximum_length) as length,
- 					c.column_key as 'key',
+ 					IF(c.character_maximum_length IS NULL, replace(replace(c.column_type, concat(c.data_type,'('),''),')', ''), c.character_maximum_length) as 'attributes',
+					IF(c.character_maximum_length IS NULL, SUBSTRING_INDEX(REPLACE(SUBSTRING_INDEX(c.column_type, '(', -1), ')', ''), ' ', 1), c.character_maximum_length) as 'length',
+					(REGEXP_SUBSTR(c.column_type, '(?<=\\\\)).*')) as 'modifiers',
+					c.column_key as 'key',
  					k.referenced_table_name as 'datasource',
  					k.referenced_column_name as 'bindid',
- 					c.extra
+					c.extra,
+					c.column_comment as comment
  				FROM
  					INFORMATION_SCHEMA.COLUMNS c
  					LEFT JOIN information_schema.KEY_COLUMN_USAGE k ON (c.column_name = k.column_name AND c.table_name = k.table_name)
@@ -1033,6 +1198,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	 */
 	public function getEntityChanges($params) {
 		$application = ( string ) $params ['application'];
+		$process = isset($params ['process']) ? ( string ) $params ['process'] : null;
 		$node = ( string ) $params ['node'];
 		$dropTablesBeforeCreate = (isset ( $params ['dropTablesBeforeCreate'] )) ? ( string ) $params ['dropTablesBeforeCreate'] : 'false';
 		$drop = ($dropTablesBeforeCreate == 'true') ? true : false;
@@ -1069,11 +1235,14 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		$parent = current ( $entity->xpath ( 'parent::*' ) );
 		$name = $this->getAttribute ( $parent, 'name', false, 'entity' );
 		$multilang = $this->getAttribute ( $parent, 'multilang', false, 'multilang', 'false' );
+		$doc = $this->getAttribute ( $parent, 'doc', false, 'doc', '' );
+		$doc = wordwrap($doc, 50, '<br/>');
 		
 		$entArray = Array ();
 		$entArray ['__attributes'] = array (
 				'name' => $name,
-				'multilang' => $multilang 
+				'multilang' => $multilang,
+				'doc' => $doc,
 		);
 		
 		foreach ( $entity->children () as $attrParent => $attr ) {
@@ -1101,6 +1270,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		// print_object($entAttr);
 		return $entArray;
 	}
+
 	private function getEntitiesWithChanges($nodeManager, $entities, $drop = false) {
 		$types = $this->getTypeConversion ();
 		$changes = array ();
@@ -1111,15 +1281,16 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			// $entTemplates = $entity->xpath('Attributes/Template');
 			// print_object($entity->Attributes->Attribute);
 			$entityArray = $this->entityToArray ( $entity->Attributes, $nodeManager );
-			// print_object($entity);
+			//print_object($entity);
 			
 			// Check to see if this entity is multilang, in this case we need to create two tables
-			$multiLang = $this->getAttribute ( $entity, 'multilang', false, 'multilang', 'false' );
+			$multilang = $this->getAttribute ( $entity, 'multilang', false, 'multilang', 'false' );
 			$name = $this->getAttribute ( $entity, 'name', true, 'multilang' );
 			
-			if ($multiLang == 'true') {
+			if ($multilang == 'true') {
 				// Add this entity with no multilang attributes
 				$entityArrayNoLang = Array ();
+				$entityArrayNoLang ['__attributes'] = Array ();
 				$entityArrayNoLang ['__attributes'] ['name'] = $name;
 				$entityArrayNoLang ['__attributes'] ['multilang'] = $multilang;
 				foreach ( $entityArray as $key => $field ) {
@@ -1127,9 +1298,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 					if ($fieldMultilang != 'true' && $key != '__attributes')
 						$entityArrayNoLang [$field ['name']] = $field;
 				}
-				
 				$entData = $this->getEntityWithChanges ( $nodeManager, $entityArrayNoLang, false, $drop );
 				$changes [$entData ['name']] = $entData;
+
 				// print_object($entityArray);
 				
 				// Add the corresponding multilang entity
@@ -1139,8 +1310,8 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 				$entityArrayLang ['__attributes'] ['name'] = $name . '_lang';
 				// $entityArrayLang['__attributes']['multilang'] = 'true';
 				//$entityArrayLang['id'] = array('name'=>'id', 'domain'=>'id');
-				$entityArrayLang['id'] = array('name'=>'id', 'domain'=>'foreign', 'refentity'=>$entData['name'], 'refattr'=>'id', 'pk'=>'true');
-				$entityArrayLang['lang'] = array('name'=>lang, 'domain'=>'lang', 'pk'=>'true');
+				$entityArrayLang['id'] = array('name'=>'id', 'domain'=>'foreignPk', 'refentity'=>$entData['name'], 'refattr'=>'id', 'pk'=>'true');
+				$entityArrayLang['lang'] = array('name'=>'lang', 'domain'=>'langPk', 'pk'=>'true');
 
 				foreach ( $entityArray as $key => $field ) {
 					$fieldMultilang = (isset ( $field ['multilang'] )) ? $field ['multilang'] : 'false';
@@ -1266,6 +1437,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		
 		return $changes;
 	}
+
 	private function getTypeConversion() {
 		$KUINKSql = array ();
 		
@@ -1335,9 +1507,10 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		foreach ( $entAttr->attributes () as $key => $value )
 			$attr [$key] = ( string ) $value;
 		
-		return $this->getExpandedAttribute ( $attr, $nodeManager );
+		return $this->getExpandedAttribute ( $attr, $nodeManager, $entityName );
 	}
-	private function getExpandedAttribute($attr, $nodeManager) {
+
+	private function getExpandedAttribute($attr, $nodeManager, $entityName) {
 		$types = $this->getTypeConversion ();
 		
 		// The domain of entity attribute
@@ -1361,12 +1534,13 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		$this->checkRequiredAttribute ( $attr, 'type', $entityName );
 		
 		$refEntity = $this->getAttribute ( $attr, 'refentity', false, null, '' );
+
 		if ($refEntity != '') {
 			$refEntityObj = $nodeManager->getEntity ( $refEntity );
 			// print_object($refEntity);
 			// print_object($refEntityObj);
 			if (! isset ( $refEntityObj )) {
-				print_object ( 'Entity ' . $refEntity . ' not found' );
+				var_dump( 'Entity ' . $refEntity . ' not found' );
 			}
 		}
 		
@@ -1392,9 +1566,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 	 */
 	private function getEntityWithChanges($nodeManager, $entity, $onlyMultilangAttributes = false, $drop = false) {
 		$data = array ();
-		
+		//print_object($entity);
 		$name = $entity ['__attributes'] ['name']; // $this->getAttribute($entity, 'name', true, 'entity');
-		$multiLang = isset ( $entity ['__attributes'] ['multilang'] ) ? $entity ['__attributes'] ['multilang'] : 'false'; // $this->getAttribute($entity, 'multilang', false, 'multilang', 'false');
+		$multilang = isset ( $entity ['__attributes'] ['multilang'] ) ? $entity ['__attributes'] ['multilang'] : 'false'; // $this->getAttribute($entity, 'multilang', false, 'multilang', 'false');
 		$types = $this->getTypeConversion ();
 		
 		$change = DDChanges::ADD;
@@ -1423,25 +1597,29 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 				$phRequired = $this->getAttribute ( $physicalAttr, 'required', false, 'physical', 'false' );
 				$phType = $this->getAttribute ( $physicalAttr, 'type', false, 'physical' );
 				$phLength = $this->getAttribute ( $physicalAttr, 'length', false, 'physical' );
+				$phModifiers = $this->getAttribute ( $physicalAttr, 'modifiers', false, 'physical' );
 				$phKey = $this->getAttribute ( $physicalAttr, 'key', false, 'physical' );
 				$phDatasource = $this->getAttribute ( $physicalAttr, 'datasource', false, 'physical' );
 				$phBindId = $this->getAttribute ( $physicalAttr, 'bindid', false, 'physical' );
-				$phDefault = $this->getAttribute ( $physicalAttr, 'default', false, 'physical' );
+				$phDefault = str_replace("'","",$this->getAttribute ( $physicalAttr, 'default', false, 'physical' ));
+				$phComment = $this->getAttribute ( $physicalAttr, 'comment', false, '' );
 				
 				$phDebug = 'Name: ' . $phName . '; ';
 				$phDebug = $phDebug . 'Required: ' . $phRequired . '; ';
 				$phDebug = $phDebug . 'Type: ' . $phType . '; ';
 				$phDebug = $phDebug . 'Length: ' . $phLength . '; ';
+				$phDebug = $phDebug . 'Modifiers: ' . $phModifiers . '; ';
 				$phDebug = $phDebug . 'Key: ' . $phKey . '; ';
 				$phDebug = $phDebug . 'Datasource: ' . $phDatasource . '; ';
 				$phDebug = $phDebug . 'BindId: ' . $phBindId . '; ';
 				$phDebug = $phDebug . 'Default: ' . $phDefault . '; ';
+				$phDebug = $phDebug . 'Comment: ' . $phComment . '; ';
 				// print_object('PHYSYCAL- '.$phDebug);
-				
+
 				// The corresponding entity model
-				$entAttr = $entity [$phName]; // $entity->xpath('Attributes/Attribute[@name="'.$phName.'"]');
-				                             // $entAttr = @$entAttr[0];
-				                             // print_object($entAttr);
+				$entAttr = isset($entity [$phName]) ? $entity [$phName] : null; // $entity->xpath('Attributes/Attribute[@name="'.$phName.'"]');
+				// $entAttr = @$entAttr[0];
+				// print_object($entAttr);
 				
 				$attrChanges = DDChanges::NOTHING;
 				if (isset ( $entAttr )) {
@@ -1457,21 +1635,26 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 						$domain ['name'] = ( string ) $attr ['domain'];
 						$domain ['type'] = ( string ) $this->getAttribute ( $entAttr, 'type', true, 'entity' );
 						$domain ['size'] = ( string ) $this->getAttribute ( $entAttr, 'size', false, 'entity' );
+						$domain ['unsigned'] = ( string ) $this->getAttribute ( $entAttr, 'unsigned', false, 'entity' );
+						$domain ['zerofill'] = ( string ) $this->getAttribute ( $entAttr, 'zerofill', false, 'entity' );
 						$domain ['autonumber'] = ( string ) $this->getAttribute ( $entAttr, 'autonumber', false, 'entity' );
 						$domain ['pk'] = ( string ) $this->getAttribute ( $entAttr, 'pk', false, 'entity' );
 						$domain ['required'] = ( string ) $this->getAttribute ( $entAttr, 'required', false, 'entity', 'false' );
 					}
 					
-					$attr ['pk'] = (isset ( $entAttr ['pk'] )) ? ( string ) $entAttr ['pk'] : ( string ) $domain ['pk'];
-					$attr ['autonumber'] = (isset ( $entAttr ['autonumber'] )) ? ( string ) $entAttr ['autonumber'] : ( string ) $domain ['autonumber'];
-					$attr ['required'] = (isset ( $entAttr ['required'] )) ? ( string ) $entAttr ['required'] : ( string ) $domain ['required'];
-					$attr ['foreign'] = (isset ( $entAttr ['foreign'] )) ? ( string ) $entAttr ['foreign'] : ( string ) $domain ['foreign'];
-					$attr ['multilang'] = (isset ( $entAttr ['multilang'] )) ? ( string ) $entAttr ['multilang'] : ( string ) $domain ['multilang'];
-					$attr ['refentity'] = (isset ( $entAttr ['refentity'] )) ? ( string ) $entAttr ['refentity'] : ( string ) $domain ['refentity'];
-					$attr ['refattr'] = (isset ( $entAttr ['refattr'] )) ? ( string ) $entAttr ['refattr'] : ( string ) $domain ['refattr'];
-					$attr ['type'] = (isset ( $entAttr ['type'] )) ? ( string ) $entAttr ['type'] : ( string ) $domain ['type'];
-					$attr ['size'] = (isset ( $entAttr ['size'] )) ? ( string ) $entAttr ['size'] : ( string ) $domain ['size'];
-					$attr ['default'] = (isset ( $entAttr ['default'] )) ? ( string ) $entAttr ['default'] : ( string ) $domain ['default'];
+					$attr ['pk'] = isset($domain ['pk']) ? $domain ['pk'] : ''; $attr ['pk'] = isset($entAttr ['pk']) ? $entAttr ['pk'] : $attr['pk'];
+					$attr ['unsigned'] = isset($domain ['unsigned']) ? $domain ['unsigned'] : ''; $attr ['unsigned'] = isset($entAttr ['unsigned']) ? $entAttr ['unsigned'] : $attr['unsigned'];
+					$attr ['zerofill'] = isset($domain ['zerofill']) ? $domain ['zerofill'] : ''; $attr ['zerofill'] = isset($entAttr ['zerofill']) ? $entAttr ['zerofill'] : $attr['zerofill'];
+					$attr ['autonumber'] = isset($domain ['autonumber']) ? $domain ['autonumber'] : ''; $attr ['autonumber'] = isset($entAttr ['autonumber']) ? $entAttr ['autonumber'] : $attr['autonumber'];
+					$attr ['required'] = isset($domain ['required']) ? $domain ['required'] : ''; $attr ['required'] = isset($entAttr ['required']) ? $entAttr ['required'] : $attr['required'];
+					$attr ['foreign'] = isset($domain ['foreign']) ? $domain ['foreign'] : ''; $attr ['foreign'] = isset($entAttr ['foreign']) ? $entAttr ['foreign'] : $attr['foreign'];
+					$attr ['multilang'] = isset($domain ['multilang']) ? $domain ['multilang'] : ''; $attr ['multilang'] = isset($entAttr ['multilang']) ? $entAttr ['multilang'] : $attr['multilang'];
+					$attr ['refentity'] = isset($domain ['refentity']) ? $domain ['refentity'] : ''; $attr ['refentity'] = isset($entAttr ['refentity']) ? $entAttr ['refentity'] : $attr['refentity'];
+					$attr ['refattr'] = isset($domain ['refattr']) ? $domain ['refattr'] : ''; $attr ['refattr'] = isset($entAttr ['refattr']) ? $entAttr ['refattr'] : $attr['refattr'];
+					$attr ['type'] = isset($domain ['type']) ? $domain ['type'] : ''; $attr ['type'] = isset($entAttr ['type']) ? $entAttr ['type'] : $attr['type'];
+					$attr ['size'] = isset($domain ['size']) ? $domain ['size'] : ''; $attr ['size'] = isset($entAttr ['size']) ? $entAttr ['size'] : $attr['size'];
+					$attr ['default'] = isset($domain ['default']) ? $domain ['default'] : ''; $attr ['default'] = isset($entAttr ['default']) ? $entAttr ['default'] : $attr['default'];
+					$attr ['comment'] = isset($domain ['comment']) ? $domain ['comment'] : ''; $attr ['comment'] = isset($entAttr ['doc']) ? $entAttr ['doc'] : $attr['doc'];
 					
 					// Compare the domain to see if there is any changes
 					$domType = ( string ) $domain ['type'];
@@ -1491,9 +1674,20 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 					$check ['length'] = ($domain ['convLength'] != '') ? ( string ) $domain ['convLength'] : ( string ) $phLength; // If there's no length in domain or attribute, then use the physical
 					$check ['required'] = ($attr ['required'] != '') ? ( string ) $attr ['required'] : ( string ) $domain ['required'];
 					$check ['required'] = ($check ['required'] != '') ? ( string ) $check ['required'] : 'false';
+					$check ['unsigned'] = ($attr ['unsigned'] != '') ? ( string ) $attr ['unsigned'] : ( string ) $domain ['unsigned'];
+					$check ['unsigned'] = ($check ['unsigned'] != '') ? ( string ) $check ['unsigned'] : 'false';
+					$check ['zerofill'] = ($attr ['zerofill'] != '') ? ( string ) $attr ['zerofill'] : ( string ) $domain ['zerofill'];
+					$check ['zerofill'] = ($check ['zerofill'] != '') ? ( string ) $check ['zerofill'] : 'false';
 					$check ['default'] = ($attr ['default'] != '') ? ( string ) $attr ['default'] : ( string ) $domain ['default'];
-					
-					if ($check ['type'] != $phType || $check ['length'] != $phLength || $check ['required'] != $phRequired || $check ['default'] != $phDefault) {
+					$check ['comment'] = ($attr ['comment'] != '') ? ( string ) $attr ['comment'] : ( string ) $domain ['comment'];
+
+					if ($check ['type'] != $phType || 
+						$check ['length'] != $phLength || 
+						$check ['required'] != $phRequired || 
+						(($check ['default'] != $phDefault) && ($phDefault != 'NULL')) || 
+						$check ['comment'] != $phComment  ||
+						(($check ['unsigned'] == 'true' && $check ['zerofill'] != 'true') xor ( strpos($phModifiers, 'unsigned') !== false && strpos($phModifiers, 'zerofill') === false )) ||
+						($check ['zerofill'] == 'true' xor  strpos($phModifiers, 'zerofill') !== false) ) {
 						$change = DDChanges::CHANGE;
 						$attrChanges = DDChanges::CHANGE;
 					} else
@@ -1505,6 +1699,10 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 						$attr ['debug'] .= ' <i class="fa fa-arrow-circle-right" style="color:#0044cc">&nbsp;Change&nbsp;</i>';
 					
 					$attr ['debug'] .= '<strong>' . $attr ['name'] . '</strong> ' . $check ['type'] . '(' . $check ['length'] . ')';
+					if ($check ['zerofill'] == 'true')
+						$attr ['debug'] .= ' unsigned zerofill';
+					elseif ($check ['unsigned'] == 'true')
+						$attr ['debug'] .= ' unsigned';
 					if ($check ['required'] == 'true')
 						$attr ['debug'] .= ' required';
 					if ($domain ['pk'] == 'true')
@@ -1513,16 +1711,19 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 						$attr ['debug'] .= ' autonumber';
 					if ($attr ['default'] != '')
 						$attr ['debug'] .= ' default(' . $attr ['default'] . ')';
+					$attr ['debug'] .= ' comment(' . $attr ['comment'] . ')';
 					
 					if ($attrChanges == DDChanges::CHANGE) {
 						$phRequiredStr = ($phRequired == 'true') ? 'required' : '';
-						$attr ['debug'] .= ' <i>from&nbsp;</i>' . $phName . ' ' . $phType . '(' . $phLength . ') ' . $phRequiredStr;
+						$attr ['debug'] .= ' <i>from&nbsp;</i>' . $phName . ' ' . $phType . '(' . $phLength . ') ' . $phModifiers . ' ' . $phRequiredStr;
 						if ($phDefault != '')
 							$attr ['debug'] .= ' default(' . $phDefault . ')';
+						$attr ['debug'] .= ' comment(' . $phComment . ')';
 					}
 					// print_object($attr['debug']);
 				} else {
 					// The attribute is in physycal but not in entity definition, so remove it
+					$attr ['debug'] = '';
 					$attr ['name'] = ( string ) $phName;
 					$attr ['type'] = ( string ) $phType;
 					$attr ['_physType'] = ( string ) $phType;
@@ -1556,8 +1757,10 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		// Check for new fields logical --> physical
 		$entAttrs = $entity; // $entity->xpath('Attributes/Attribute');
 		unset ( $entAttrs ['__attributes'] );
-		// print_object($entAttrs);
+		//print_object($name);
+		//print_object($entAttrs);
 		
+		$previousAttr = null;
 		foreach ( $entAttrs as $entAttr ) {
 			$attrName = $entAttr ['name'];
 			// Check if the attr is in physical definition, if not add it to the entity
@@ -1569,8 +1772,9 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			}
 			
 			if (! $phFound) {
-				// print_object($attrName);
+				//print_object($attrName);
 				$attr = Array ();
+				$attr ['debug'] = '';
 				$attr ['name'] = $this->getAttribute ( $entAttr, 'name', true, 'entity' );
 				$attr ['domain'] = $this->getAttribute ( $entAttr, 'domain', false, 'entity' );
 				$attr ['foreign'] = $this->getAttribute ( $entAttr, 'foreign', false, 'entity' );
@@ -1579,34 +1783,43 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 					$domain = $this->domainToArray ( $domain, $nodeManager );
 					if (! isset ( $domain ))
 						throw new DomainNotFound ( __CLASS__, $attr ['domain'] );
+					
 				} else {
 					$domain ['name'] = $attr ['domain'];
 					$domain ['type'] = $this->getAttribute ( $attr, 'type', true, 'entity' );
 					$domain ['size'] = $this->getAttribute ( $attr, 'size', false, 'entity' );
 					$domain ['pk'] = $this->getAttribute ( $attr, 'pk', false, 'entity', 'false' );
+					$domain ['unsigned'] = $this->getAttribute ( $attr, 'unsigned', false, 'entity' );
+					$domain ['zerofill'] = $this->getAttribute ( $attr, 'zerofill', false, 'entity' );
 					$domain ['autonumber'] = $this->getAttribute ( $attr, 'autonumber', false, 'entity' );
 					$domain ['required'] = ($attr ['required'] == '') ? $this->getAttribute ( $attr, 'required', false, 'entity', 'false' ) : $attr ['required'];
 				}
 				
-				$attr ['pk'] = (isset ( $entAttr ['pk'] )) ? $entAttr ['pk'] : $domain ['pk'];
-				$attr ['autonumber'] = (isset ( $entAttr ['autonumber'] )) ? $entAttr ['autonumber'] : $domain ['autonumber'];
-				$attr ['required'] = (isset ( $entAttr ['required'] )) ? $entAttr ['required'] : $domain ['required'];
-				$attr ['foreign'] = (isset ( $entAttr ['foreign'] )) ? $entAttr ['foreign'] : $domain ['foreign'];
-				$attr ['multilang'] = (isset ( $entAttr ['multilang'] )) ? $entAttr ['multilang'] : $domain ['multilang'];
-				$attr ['refentity'] = (isset ( $entAttr ['refentity'] )) ? $entAttr ['refentity'] : $domain ['refentity'];
-				$attr ['refattr'] = (isset ( $entAttr ['refattr'] )) ? $entAttr ['refattr'] : $domain ['refattr'];
-				$attr ['type'] = (isset ( $entAttr ['type'] )) ? $entAttr ['type'] : $domain ['type'];
-				$attr ['size'] = (isset ( $entAttr ['size'] )) ? $entAttr ['size'] : $domain ['size'];
-				$attr ['default'] = (isset ( $entAttr ['default'] )) ? $entAttr ['default'] : $domain ['default'];
-				
+				$attr ['pk'] = isset($domain ['pk']) ? $domain ['pk'] : ''; $attr ['pk'] = isset($entAttr ['pk']) ? $entAttr ['pk'] : $attr['pk'];
+				$attr ['unsigned'] = isset($domain ['unsigned']) ? $domain ['unsigned'] : ''; $attr ['unsigned'] = isset($entAttr ['unsigned']) ? $entAttr ['unsigned'] : $attr['unsigned'];
+				$attr ['zerofill'] = isset($domain ['zerofill']) ? $domain ['zerofill'] : ''; $attr ['zerofill'] = isset($entAttr ['zerofill']) ? $entAttr ['zerofill'] : $attr['zerofill'];
+				$attr ['autonumber'] = isset($domain ['autonumber']) ? $domain ['autonumber'] : ''; $attr ['autonumber'] = isset($entAttr ['autonumber']) ? $entAttr ['autonumber'] : $attr['autonumber'];
+				$attr ['required'] = isset($domain ['required']) ? $domain ['required'] : 'false'; $attr ['required'] = isset($entAttr ['required']) ? $entAttr ['required'] : $attr['required'];
+				$attr ['foreign'] = isset($domain ['foreign']) ? $domain ['foreign'] : ''; $attr ['foreign'] = isset($entAttr ['foreign']) ? $entAttr ['foreign'] : $attr['foreign'];
+				$attr ['multilang'] = isset($domain ['multilang']) ? $domain ['multilang'] : ''; $attr ['multilang'] = isset($entAttr ['multilang']) ? $entAttr ['multilang'] : $attr['multilang'];
+				$attr ['refentity'] = isset($domain ['refentity']) ? $domain ['refentity'] : ''; $attr ['refentity'] = isset($entAttr ['refentity']) ? $entAttr ['refentity'] : $attr['refentity'];
+				$attr ['refattr'] = isset($domain ['refattr']) ? $domain ['refattr'] : ''; $attr ['refattr'] = isset($entAttr ['refattr']) ? $entAttr ['refattr'] : $attr['refattr'];
+				$attr ['type'] = isset($domain ['type']) ? $domain ['type'] : ''; $attr ['type'] = isset($entAttr ['type']) ? $entAttr ['type'] : $attr['type'];
+				$attr ['size'] = isset($domain ['size']) ? $domain ['size'] : ''; $attr ['size'] = isset($entAttr ['size']) ? $entAttr ['size'] : $attr['size'];
+				$attr ['default'] = isset($domain ['default']) ? $domain ['default'] : ''; $attr ['default'] = isset($entAttr ['default']) ? $entAttr ['default'] : $attr['default'];
+				$attr ['comment'] = isset($domain ['comment']) ? $domain ['comment'] : ''; $attr ['comment'] = isset($entAttr ['doc']) ? $entAttr ['doc'] : $attr['doc'];
+
 				$domType = ( string ) $domain ['type'];
 				$typeConverted = isset ( $types [$domType] ) ? $types [$domType] : Array ();
 				$domain ['convType'] = $typeConverted ['type'];
-				$domain ['convLength'] = ($domain ['size'] != '') ? $domain ['size'] : $typeConverted ['size'];
+				$domain ['convLength'] = isset($typeConverted ['size']) ? $typeConverted ['size'] : '';
+				$domain ['convLength'] = (isset($domain ['size']) && $domain ['size'] != '') ? $domain ['size'] : $domain ['convLength'];
 				$check ['type'] = $domain ['convType'];
 				$check ['length'] = $domain ['convLength'];
-				$check ['required'] = ($attr ['required'] != '') ? $attr ['required'] : $domain ['required'];
-				$check ['required'] = ($check ['required']) ? $check ['required'] : 'false';
+				$check ['unsigned'] = $attr ['unsigned'];
+				$check ['zerofill'] = $attr ['zerofill'];
+				$check ['required'] = $attr ['required'];
+				//$check ['required'] = ($check ['required']) ? $check ['required'] : 'false';
 				
 				$attr ['_physType'] = $domain ['convType'];
 				$attr ['_physSize'] = $domain ['convLength'];
@@ -1624,8 +1837,13 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 				if ($attr ['changes'] == DDChanges::ADD) {
 					// $phRequiredStr = ($phRequired == 'true') ? 'required' : '';
 					$attr ['debug'] .= ' <i class="fa fa-plus-circle" style="color:#5bb75b">&nbsp;Add&nbsp;</i>';
+					$attr['after'] = isset($previousAttr) ? $previousAttr['name'] : '';
 				}
 				$attr ['debug'] .= '<strong>' . $entAttr ['name'] . '</strong> ' . $domain ['convType'] . '(' . $domain ['convLength'] . ')';
+				if ($check ['zerofill'] == 'true')
+					$attr ['debug'] .= ' unsigned zerofill';
+				elseif ($check ['unsigned'] == 'true')
+						$attr ['debug'] .= ' unsigned';
 				if ($check ['required'] == 'true')
 					$attr ['debug'] .= ' required';
 				if ($attr ['pk'] == 'true')
@@ -1634,10 +1852,14 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 					$attr ['debug'] .= ' autonumber';
 				if ($attr ['default'] != '')
 					$attr ['debug'] .= ' default(' . $attr ['default'] . ')';
-				
+				$attr ['debug'] .= ' comment(' . $attr ['comment'] . ')';
+
 				$attrMultiLang = $this->getAttribute ( $attr, 'multilang', false, 'multilang', 'false' );
+				$attrMultiLang = ($attrMultiLang == '') ? 'false' : $attrMultiLang;
 				// print_object($attrMultiLang);
-				if (($multiLang == 'true')) {
+				if (($multilang == 'true')) {
+					//var_dump($onlyMultilangAttributes);
+					//var_dump($attrMultiLang);
 					if ($onlyMultilangAttributes && ($attrMultiLang == 'true'))
 						$attrs [$attrName] = $attr;
 					else if (! $onlyMultilangAttributes && ($attrMultiLang == 'false'))
@@ -1647,6 +1869,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 					$attrs [$attrName] = $attr;
 				}
 			}
+			$previousAttr = $entAttr;
 		}
 		
 		$data ['entity'] = $name;
@@ -1656,16 +1879,18 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		
 		return $data;
 	}
+
 	public function applyEntityChanges($params) {
-		global $KUINK_TRACE;
 		$entityChanges = $this->getEntityChanges ( $params );
 		// print_object($entityChanges);
 		
 		// CreateForeignKeyIndexes?
 		$createForeignKeyIndexes = (isset ( $params ['createForeignIndexes'] )) ? ( string ) $params ['createForeignIndexes'] : 'false';
+		$removeExistingIndexes = (isset ( $params ['removeExistingIndexes'] )) ? ( string ) $params ['removeExistingIndexes'] : 'false';
 		$createForeignKeys = (isset ( $params ['createForeignKeys'] )) ? ( string ) $params ['createForeignKeys'] : 'false';
+		$removeExistingForeignKeys = (isset ( $params ['removeExistingForeignKeys'] )) ? ( string ) $params ['removeExistingForeignKeys'] : 'false';
 		$dropTablesBeforeCreate = (isset ( $params ['dropTablesBeforeCreate'] )) ? ( string ) $params ['dropTablesBeforeCreate'] : 'false';
-		
+
 		// build the SQL Statement
 		$log = array ();
 		$sqlStatementsArray = array ();
@@ -1677,31 +1902,34 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			$sqlStatement = '';
 			// print_object($entity);
 			if ($dropTablesBeforeCreate == 'true') {
-				$sqlStatement .= 'SET FOREIGN_KEY_CHECKS = 0; DROP TABLE IF EXISTS `' . $entity ['name'] . '`; ';
+				$sqlStatement .= 'SET FOREIGN_KEY_CHECKS = 0; DROP TABLE IF EXISTS ' . $this->encloseIdentifier($entity ['name']) . '; ';
 			}
 			if ($entity ['change'] == DDChanges::ADD) {
-				$sqlStatement .= 'CREATE TABLE IF NOT EXISTS `' . $entity ['name'] . '` (';
+				$sqlStatement .= 'CREATE TABLE IF NOT EXISTS ' . $this->encloseIdentifier($entity ['name']) . ' (';
 			} else if ($entity ['change'] == DDChanges::CHANGE) {
-				$sqlStatement .= 'ALTER TABLE `' . $entity ['name'] . '` ';
+				$sqlStatement .= 'ALTER TABLE ' . $this->encloseIdentifier($entity ['name']) . ' ';
 			}
 			$sqlAttributesArray = array ();
 			$sqlPrimaryKeysArray = array ();
 			$sqlUniquesArray = array ();
-			
+			$previousAttribute = null;
 			foreach ( $entity ['attributes'] as $attribute ) {
+				//kuink_mydebugObj($entity['name'], $attribute);
 				$sqlAttribute = '';
-				$sqlAttribute .= '`' . $attribute ['name'] . '`';
-				if ($attribute ['newName'] != '')
-					$sqlAttribute .= ' `' . $attribute ['newName'] . '`'; // If this is set then this attribute is to be renamed to this newName
+				$sqlAttribute .= $this->encloseIdentifier($attribute ['name']);
+				if (isset($attribute ['newName']) && $attribute ['newName'] != '')
+					$sqlAttribute .= ' ' . $this->encloseIdentifier($attribute ['newName']); // If this is set then this attribute is to be renamed to this newName
 				$sqlAttribute .= ' ' . $attribute ['_physType'] . ' ';
 				if (($attribute ['_physSize'] != ''))
 					$sqlAttribute .= ' (' . $attribute ['_physSize'] . ')';
 				else if (($attribute ['size'] != ''))
 					$sqlAttribute .= ' (' . $attribute ['size'] . ')';
 					// print_object($attribute);
+				$sqlAttribute .= ($attribute ['zerofill'] == 'true') ? ' UNSIGNED ZEROFILL' : (($attribute ['unsigned'] == 'true') ? ' UNSIGNED' : '');
 				$sqlAttribute .= ($attribute ['required'] == 'true') ? ' NOT NULL' : '';
 				$sqlAttribute .= ($attribute ['autonumber'] == 'true') ? ' AUTO_INCREMENT' : '';
 				$sqlAttribute .= ($attribute ['default'] != '') ? ' DEFAULT \'' . ( string ) $attribute ['default'] . '\'' : '';
+				$sqlAttribute .= ' COMMENT \'' . ( string ) $attribute ['comment'] . '\'';
 				$pk = $this->getAttribute ( $attribute, 'pk', false, null, 'false' );
 				if ($pk == 'true') {
 					$sqlPrimaryKeysArray [] = $attribute ['name'];
@@ -1715,7 +1943,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 						// This is an entity that is in another data definition node
 						$splitedName = explode ( ',', $refEntity );
 						if (count ( $splitedName ) != 3)
-							throw new InvalidName ( __CLASS__, $name );
+							throw new \Kuink\Core\Exception\InvalidName ( __CLASS__, $refEntity );
 						$application = $splitedName [0];
 						$node = $splitedName [1];
 						$refEntityName = $splitedName [2];
@@ -1743,21 +1971,26 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 				// print_object($attribute);
 				if ($attribute ['changes'] == DDChanges::ADD && $entity ['change'] == DDChanges::ADD)
 					$sqlAttributesArray [] = $sqlAttribute;
-				else if ($attribute ['changes'] == DDChanges::ADD && $entity ['change'] == DDChanges::CHANGE)
-					$sqlAttributesArray [] = 'ADD ' . $sqlAttribute;
+				else if ($attribute ['changes'] == DDChanges::ADD && $entity ['change'] == DDChanges::CHANGE) {
+					$sqlAttributePlain = 'ADD ' . $sqlAttribute . ' ';
+					if ($attribute ['after'] != '') 
+						$sqlAttributePlain .= ' AFTER '.$this->encloseIdentifier($attribute['after']);
+					$sqlAttributesArray [] = $sqlAttributePlain;
+				}
 				else if ($attribute ['changes'] == DDChanges::CHANGE)
 					$sqlAttributesArray [] = 'MODIFY ' . $sqlAttribute;
 				else if ($attribute ['changes'] == DDChanges::REMOVE) {
 					// print_object($sqlAttribute);
 					$sqlAttributesArray [] = 'CHANGE ' . $sqlAttribute;
 				}
+				$previousAttribute = $attribute;
 			}
 			// print_object($sqlAttributesArray);
 			
-			$sqlAttributes = implode ( $sqlAttributesArray, ',' );
+			$sqlAttributes = implode ( ',', $sqlAttributesArray );
 			if ($entity ['change'] == DDChanges::ADD) {
 				if (count ( $sqlPrimaryKeysArray ) > 0) {
-					$sqlPrimarykeys = implode ( $sqlPrimaryKeysArray, ',' );
+					$sqlPrimarykeys = implode ( ',', $sqlPrimaryKeysArray);
 					$sqlPrimarykeys = ' ,PRIMARY KEY (' . $sqlPrimarykeys . ')';
 				} else {
 					throw new \Kuink\Core\Exception\PrimaryKeyNotFound ( __CLASS__, $entity ['name'] );
@@ -1775,28 +2008,55 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 			
 			// Add unique indexes
 			foreach ( $sqlUniquesArray as $uk ) {
-				$sqlStatement = 'CREATE UNIQUE INDEX `ix_' . $uk . '` ON `' . $entity ['name'] . '` ( `' . $uk . '`);';
+				$sqlStatement = 'CREATE UNIQUE INDEX '.$this->encloseIdentifier('ix_' . $uk) . ' ON ' . $this->encloseIdentifier($entity ['name']) . ' ( ' . $this->encloseIdentifier($uk) . ');';
 				$sqlStatementsArray [$entity ['name'] . ':ix_' . $uk] = $sqlStatement;
 			}
 			
 			// print_object($entity);
 			// print_object($sqlStatement);
-			$KUINK_TRACE [] = $sqlStatement;
+			
+			TraceManager::add ( $sqlStatement, TraceCategory::SQL, __CLASS__.'::'.__METHOD__ );
 		}
-		
+		if ($removeExistingForeignKeys == 'true') {
+			$database = $this->dataSource->getParam ( 'database', true );
+			$table = $entity ['name'];
+			$sqlStatementExistingFKs = "
+				SELECT CONSTRAINT_NAME
+				FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+				WHERE
+					CONSTRAINT_SCHEMA = '$database' AND	TABLE_NAME = '$table' AND REFERENCED_TABLE_NAME IS NOT NULL;";
+			$existingFKs = $this->executeSql ( $sqlStatementExistingFKs, null );
+			foreach ( $existingFKs as $fk ) {
+				$sqlStatement = 'ALTER TABLE  ' . $this->encloseIdentifier($table) . ' DROP FOREIGN KEY ' . $this->encloseIdentifier($fk['CONSTRAINT_NAME']) . ';';
+				$sqlStatementsArray ['-'.$table . ':' . $fk ['CONSTRAINT_NAME']] = $sqlStatement;
+			}
+		}		
+		if ($removeExistingIndexes == 'true') {
+			$database = $this->dataSource->getParam ( 'database', true );
+			$table = $entity ['name'];
+			$sqlStatementExistingIndexes = "
+				SELECT INDEX_NAME
+				FROM INFORMATION_SCHEMA.STATISTICS
+				WHERE TABLE_SCHEMA = '$database' AND TABLE_NAME = '$table' AND INDEX_NAME != 'PRIMARY';";
+			$existingIndexes = $this->executeSql ( $sqlStatementExistingIndexes, null );
+			foreach ( $existingIndexes as $index ) {
+				$sqlStatement = 'DROP INDEX ' . $this->encloseIdentifier($index['INDEX_NAME']) . ' ON ' . $this->encloseIdentifier($table) . ';';
+				$sqlStatementsArray ['-'.$table . ':' . $index ['INDEX_NAME']] = $sqlStatement;
+			}
+		}
 		// Add the foreign keys indexes after the table creations to avoid invalid references
 		if ($createForeignKeyIndexes == 'true') {
 			foreach ( $sqlForeignKeysArray as $fk ) {
-				$sqlStatement = 'CREATE INDEX `ix_' . $fk ['attribute'] . '` ON `' . $fk ['entity'] . '` ( `' . $fk ['attribute'] . '`);';
-				$sqlStatementsArray [$fk ['entity'] . ':ix_' . $fk ['attribute']] = $sqlStatement;
+				$sqlStatement = 'CREATE INDEX ' . $this->encloseIdentifier('ix_'.$fk ['attribute']) . ' ON ' . $this->encloseIdentifier($fk ['entity']) . ' ( ' . $this->encloseIdentifier($fk ['attribute']) . ');';
+				$sqlStatementsArray ['+'.$fk ['entity'] . ':ix_' . $fk ['attribute']] = $sqlStatement;
 			}
 		}
 		if ($createForeignKeys == 'true') {
 			foreach ( $sqlForeignKeysArray as $fk ) {
 				// ALTER TABLE Orders ADD CONSTRAINT fk_PerOrders FOREIGN KEY (P_Id) REFERENCES Persons(P_Id)
 				
-				$sqlStatement = 'ALTER TABLE  `' . $fk ['entity'] . '` ADD CONSTRAINT `fk_' . $fk ['entity'] . '_' . $fk ['attribute'] . '` FOREIGN KEY(`' . $fk ['attribute'] . '`) REFERENCES `' . $fk ['refentity'] . '`( `' . $fk ['refattr'] . '`);';
-				$sqlStatementsArray [$fk ['entity'] . ':fk_' . $fk ['attribute']] = $sqlStatement;
+				$sqlStatement = 'ALTER TABLE  ' . $this->encloseIdentifier($fk ['entity']) . ' ADD CONSTRAINT ' .$this->encloseIdentifier( 'fk_'.$fk ['entity'] . '_' . $fk ['attribute']) . ' FOREIGN KEY(' . $this->encloseIdentifier($fk ['attribute']) . ') REFERENCES ' . $this->encloseIdentifier($fk ['refentity']) . '( ' . $this->encloseIdentifier($fk ['refattr']) . ');';
+				$sqlStatementsArray ['+'.$fk ['entity'] . ':fk_' . $fk ['attribute']] = $sqlStatement;
 			}
 		}
 		
@@ -1804,7 +2064,7 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		
 		foreach ( $sqlStatementsArray as $key => $sqlStatement ) {
 			try {
-				$this->executeSql ( $sqlStatement );
+				$this->executeSql ( $sqlStatement, null );
 				$log [] = array (
 						'entity' => $key,
 						'status' => 'OK',
@@ -1822,6 +2082,73 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		// print_object($log);
 		return $log;
 	}
+
+	public function getLogicalEntities($params) {
+		$application = ( string ) $params ['application'];
+		$process = isset($params ['process']) ? ( string ) $params ['process'] : null;
+		$node = ( string ) $params ['node'];
+		
+		$nodeManager = new NodeManager ( $application, $process, NodeType::DATA_DEFINITION, $node );
+		
+		$nodeManager->load ();
+
+		/*
+		if ($attr ['domain'] != '') {
+			$domain = $nodeManager->getDomain ( $attr ['domain'] );
+			$domain = $this->domainToArray ( $domain, $nodeManager );
+			if (! isset ( $domain ))
+				throw new DomainNotFound ( __CLASS__, $attr ['domain'] );
+		}
+		*/
+		
+		$entities = (array)$nodeManager->getEntities ( $nodeManager );
+		$entitiesArray = array();
+		foreach ( $entities as $entity ) {			
+			$entityArray = $this->entityToArray ( $entity->Attributes, $nodeManager );
+			$entitiesArray[$entityArray['__attributes'][name]] = $entityArray;
+		}
+		return $entitiesArray;
+	}
+
+	public function getLogicalEntitiesUml( $params ) {
+		$application = ( string ) $params ['application'];
+		$node = ( string ) $params ['node'];				
+		$template = ( string ) $params ['template'];
+		$template = ($template == '') ? 'medium' : $template;
+		kuink_mydebug('Template', $template);
+		$logicalEntities = $this->getLogicalEntities($params);		
+		//get all nodes
+		$diagram = new \Kuink\Core\Diagram();
+		$diagram->addTitle('Entities: '.$application.','.$node);
+
+		//Get nodes first
+		$relations = array();
+		foreach ($logicalEntities as $logicalEntity) {
+			$attributes = array();
+			foreach ($logicalEntity as $logicalEntityAttrs) {
+
+				if (isset($logicalEntityAttrs['domain']) && ($logicalEntityAttrs['domain'] == 'foreign') && (isset($logicalEntityAttrs['refentity']))) {
+					$refEntitySplit = explode(',', $logicalEntityAttrs['refentity']);
+					$relations[] = array('from'=>end($refEntitySplit), 'to'=>$logicalEntity['__attributes']['name']);
+					$attributes[] = $logicalEntityAttrs;
+				} else {
+					if (isset($logicalEntityAttrs['domain']) && ($logicalEntityAttrs['domain'] == 'id') ) {
+						$attributes[] = $logicalEntityAttrs;
+					} else {
+						if ($template=='complete' )
+							$attributes[] = $logicalEntityAttrs;
+					}
+				} 	
+			}
+			$diagram->addEntity($logicalEntity['__attributes']['name'], $logicalEntity['__attributes']['multilang'], $logicalEntity['__attributes']['doc'], $attributes);			
+		}
+		foreach ($relations as $relation) {
+			$diagram->addEntityRelation($relation['from'], $relation['to']);
+		}
+
+		return $diagram->getUml();
+	}
+
 	private function getAttribute($arr, $key, $required, $context, $default = '') {
 		if (! isset ( $arr [$key] ) && $required) {
 			$a = var_export ( $arr, true );
@@ -1830,35 +2157,58 @@ class SqlDatabaseConnector extends \Kuink\Core\DataSourceConnector {
 		$value = isset ( $arr [$key] ) ? ( string ) $arr [$key] : $default;
 		return $value;
 	}
+
 	private function checkRequiredAttribute($arr, $key, $entityName) {
 		if (! isset ( $arr [$key] ))
 			throw new ParameterNotFound ( __CLASS__, $entityName, $key );
 		return;
 	}
+
 	function beginTransaction() {
-		$this->connect ();
-		if (! $this->db->inTransaction ()) {
-			$this->db->beginTransaction ();
-			parent::beginTransaction ();
-		}
-		return;
+		global $KUINK_CFG;
+
+		if ($KUINK_CFG->useTransactions) {
+			$this->connect ();
+			if (! $this->db->inTransaction ()) {
+				$this->db->beginTransaction ();
+				parent::beginTransaction ();
+				TraceManager::add ( 'Transactions are enabled... begin transaction', TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
+			}
+			return;
+		}	else
+			TraceManager::add ( 'Transactions are disabled... skipping begin', TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 	}
+
 	function commitTransaction() {
-		$this->connect ();
-		if ($this->db->inTransaction ()) {
-			$this->db->commit ();
-			parent::commitTransaction ();
-		}
+		global $KUINK_CFG;
+
+		if ($KUINK_CFG->useTransactions) {		
+			$this->connect ();
+			if ($this->db->inTransaction ()) {
+				$this->db->commit ();
+				parent::commitTransaction ();
+				TraceManager::add ( 'Transactions are enabled... commit transaction', TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
+			}
+		} else
+			TraceManager::add ( 'Transactions are disabled... skipping commit', TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 		
 		return;
 	}
+
 	function rollbackTransaction() {
+		global $KUINK_CFG;
+
+		if ($KUINK_CFG->useTransactions) {		
 		$this->connect ();
 		if (isset($this->db))
 			if ($this->db->inTransaction ()) {
 				$this->db->rollBack ();
 				parent::rollbackTransaction ();
+				TraceManager::add ( 'Transactions are enabled... rollback transaction', TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
 			}
+		} else
+		TraceManager::add ( 'Transactions are disabled... skipping rollback', TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );
+
 		
 		return;
 	}

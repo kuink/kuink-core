@@ -33,13 +33,14 @@ abstract class Control {
 	var $properties;
 	var $datasources;
 	var $bind_data;
-	var $name; // This control name
-	var $type; // This control type: Form, Grid, Chart, etc...
-	var $skeleton; // This control skeleton
-	var $skin; // This control skin
-	var $position; // position of the control in the template
-	var $guid; // Control uniqueid
-	var $refreshing; // Is this control being refreshed?
+	var $name; 				// This control name
+	var $type; 				// This control type: Form, Grid, Chart, etc...
+	var $skeleton; 		// This control skeleton
+	var $skin; 				// This control skin
+	var $position; 		// position of the control in the template
+	var $guid; 				// Control uniqueid
+	var $refreshing; 	// Is this control being refreshed?
+	var $focus; 			// Is this control the one tyo get the focus automatically (auto scroll)?
 	
 	/**
 	 * Base Contructor
@@ -54,16 +55,19 @@ abstract class Control {
 	function __construct($nodeconfiguration, $xml_definition) {
 		$this->nodeconfiguration = $nodeconfiguration;
 		$this->xml_definition = $xml_definition;
-		
-		$this->name = ( string ) $xml_definition ['name'];
-		$this->type = ( string ) $xml_definition->getName ();
-		// kuink_mydebug('NAME::', $this->name);
-		$this->skeleton = ( string ) $this->getProperty ( $this->name, 'skeleton', false, '' );
-		$this->skin = ( string ) $this->getProperty ( $this->name, 'skin', false, '' );
-		$this->position = ( string ) $this->getProperty ( $this->name, 'position', false, '' );
-		$this->guid = 'k'.uniqid(); //allways start with a letter
-		$this->refreshing = false;
-		$this->bind_data = array();
+		if ($xml_definition != null) {
+			$this->name = ( string ) $xml_definition ['name'];
+			$this->type = ( string ) $xml_definition->getName ();
+			// kuink_mydebug('NAME::', $this->name);
+			$this->skeleton = ( string ) $this->getProperty ( $this->name, 'skeleton', false, '' );
+			$this->skin = ( string ) $this->getProperty ( $this->name, 'skin', false, '' );
+			$this->position = ( string ) $this->getProperty ( $this->name, 'position', false, '' );
+			$this->focus = ( string ) $this->getProperty ( $this->name, 'focus', false, 'false' );		
+			$this->properties [$this->name] ['focus'] = $this->focus;
+			$this->guid = 'k'.uniqid(); //allways start with a letter
+			$this->refreshing = false;
+			$this->bind_data = array();
+		}
 	}
 	function setRefreshing() {
 		$this->refreshing = true;
@@ -100,18 +104,16 @@ abstract class Control {
 	 *        	[1] - (array) datasource
 	 */
 	function addDataSource($params) {
-		$ds_name = ( string ) $this->getParam ( $params, 0, true );
+		$dsName = ( string ) $this->getParam ( $params, 0, true );
 		$ds = $this->getParam ( $params, 1, true );
 		
 		// Convert all stdClass to Array
 		$datasource = array ();
 		foreach ( $ds as $key => $value ) {
-			$new_value = ( array ) $value;
-			$datasource [$key] = $new_value;
+			$newValue = ( array ) $value;
+			$datasource [$key] = $newValue;
 		}
-		$ds = $datasource;
-		
-		$this->datasources [$ds_name] = $ds;
+		$this->datasources [$dsName] = $datasource;
 	}
 	
 	/**
@@ -156,6 +158,11 @@ abstract class Control {
 	function render($params) {
 		$layout = \Kuink\UI\Layout\Layout::getInstance ();
 		$idContext = \Kuink\Core\ProcessOrchestrator::getContextId();
+
+		//Build the base url
+		$url = $nodeconfiguration ['baseurl'];
+		$baseUrl = \Kuink\Core\Tools::setUrlParams ( $url );
+
 		// Add the guid to the render
 		$params ['_idContext'] = $idContext;		
 		$params ['_guid'] = $this->guid;
@@ -164,7 +171,13 @@ abstract class Control {
 		$params ['_position'] = $this->position;
 		$params ['_skin'] = $this->skin;
 		$params ['_skeleton'] = $this->skeleton;
+		$params ['_focus'] = ( string ) $this->getProperty ( $this->name, 'focus', true, 'false', $this->xml_definition, true );
+		$params ['_baseUrl'] = $baseUrl;
+
 		$layout->addControl ( $this->type, $params, $this->skeleton, $this->skin, $this->position );
+		//kuink_mydebug('Focus - '.$this->guid, $this->focus);
+		if ($params ['_focus'] != 'false')
+			$layout->setFocus($this->guid);
 	}
 	
 	/**
@@ -201,8 +214,10 @@ abstract class Control {
 	 * @throws Exception
 	 */
 	function getParam($params, $num, $mandatory, $default = null) {
-		if (! isset ( $params [$num] ) && $mandatory)
+		if (! isset ( $params [$num] ) && $mandatory) {
+			var_dump($params);
 			throw new \Exception ( $this->type . '->' . $this->name . ': Required parameter ' . $num . ' not found.' );
+		}
 		
 		if (! isset ( $params [$num] ))
 			return $default;
@@ -235,9 +250,15 @@ abstract class Control {
 			// Parse the conditionExpr
 			$eval = new \Kuink\Core\EvalExpr ();
 			try {
+				$data = array();
+				foreach ( $this->bind_data as $bind ) {
+					$bind = ( array ) $bind;
+					$data = array_merge($data, $bind);
+				}	
 				$data ['CAPABILITY'] = $this->nodeconfiguration ['capabilities'];
 				$data ['ROLE'] = $this->nodeconfiguration ['roles'];
 				$value = ($eval->e ( $value, $data, TRUE )) ? 'true' : 'false';
+				//kuink_mydebugObj($this->name.'::'.$property, $value);
 			} catch ( \Exception $e ) {
 				var_dump ( 'Exception: eval' );
 				die ();
@@ -248,6 +269,49 @@ abstract class Control {
 		return $value;
 	}
 	
+	/*
+	 * This function will look for any child elements given the $elementName 
+	 * 
+	 * @param    string  $elementName The element name to search the attribute
+	 * @param    bool		 $mandatory The attribute is mandatory
+	 * @param    object  $xml The root xmlDefinition
+ 	 * @return   string		the inner element xml
+	 */
+	protected function getInnerElement($elementName, $mandatory=false, $xml=null) {
+		$innerElementXmlCollection = $xml->xpath ( './'.$elementName);
+		$innerElementXml = $innerElementXmlCollection[0];
+		
+		if (!isset($innerElementXml) && $mandatory)
+			throw new \Exception ( $this->type . '->' . $this->name . ': Required xml element &lt;' . $elementName . '/&gt; not found.' );		
+
+		return $innerElementXml;
+	}
+
+	/*
+	 * This function will look for any child elements given the $elementName and retrieve the $attributeName
+	 * 
+	 * @param    string  $elementName The element name to search the attribute
+	 * @param    string  $attributeName The attribute name to get the value
+	 * @param    bool		 $mandatory The attribute is mandatory
+	 * @param    string	 $default The attribute default value
+	 * @param    object  $xml The root xmlDefinition* 
+ 	 * @return   string		the attribute value
+	 */
+	protected function getInnerElementAttribute($elementName, $attributeName, $mandatory=false, $default='', $xml=null) {
+		$innerElementXmlCollection = $xml->xpath ( './'.$elementName);
+		$innerElementXml = $innerElementXmlCollection[0];
+		
+		if (!isset($innerElementXml) && $mandatory)
+			throw new \Exception ( $this->type . '->' . $this->name . ': Required xml element &lt;' . $elementName . '/&gt; not found.' );		
+
+		if (!isset($innerElementXml[$attributeName]) && $mandatory)
+			throw new \Exception ( $this->type . '->' . $this->name . ': Required xml element &lt;'.$elementName.'/&gt; attribute::'.$attributeName.' not found.' );
+
+		$attributeValue = isset($innerElementXml[$attributeName]) ? (string)$innerElementXml[$attributeName] : $default;
+
+		return $attributeValue;
+	}
+
 	/**
 	 * Loads a datasource only once and store it in datasources property
 	 * 
@@ -258,7 +322,7 @@ abstract class Control {
 	 */
 	function loadDataSource($datasourcename, $bindid, $bindvalue, $data=null) {
 		// only load the datasource if the datasource is not loaded yet
-		//var_dump($data);
+		//var_dump($datasourcename);
 		$datasourcename = trim($datasourcename);
 		if (! isset ( $this->datasources [$datasourcename] )) {
 			//kuink_mydebug('Loading...', $datasourcename.(string)count($data));
@@ -316,8 +380,8 @@ abstract class Control {
 				//var_dump($callParams);
 				$parts = explode ( ',', $library );
 				if (count ( $parts ) != 4) {
-					var_dump($datasourcename);					
-					throw new \Exception ( 'Invalid lirary,function name: ' . $datasourcename .' - '. count ( $parts ) );
+					//var_dump($datasourcename);					
+					throw new \Exception ( 'Invalid library,function name: ' . $datasourcename .' - '. count ( $parts ) );
 				}
 				$node = new \Kuink\Core\Node ( $parts [0], $parts [1], $parts [2] );
 				$runtime = new \Kuink\Core\Runtime ( $node, 'lib', null );
@@ -355,7 +419,7 @@ abstract class Control {
 
 	function callFormatter($formatter_name, $value, $formatter_params = null, $formatter_params_expand_data = null)
 	{
-		//neon_mydebug($formatter_name, $value);
+		//kuink_mydebugobj($formatter_name, $value);
 		//Expand the formatter params data
 		
 		//Check if ther's a condition and evaluate 
@@ -372,7 +436,7 @@ abstract class Control {
 				//print_object($conditionResult);
 				 
 			} catch ( \Exception $e) {
-				print_object('Exception: eval');
+				var_dump('Exception: eval');
 				die();
 			}
 			
@@ -441,12 +505,15 @@ abstract class Control {
 		// return $renderer;
 	}
 	public function setContextVariable($key, $value) {
+		//kuink_mydebugObj('Set: '.$key, $value);
 		$currentNode = \Kuink\Core\ProcessOrchestrator::getCurrentNode ();
 		\Kuink\Core\ProcessOrchestrator::setProcessVariable ( '_' . $currentNode->nodeGuid . '_' . $this->type . '_' . $this->name, $key, $value );
 	}
 	public function getContextVariable($key) {
 		$currentNode = \Kuink\Core\ProcessOrchestrator::getCurrentNode ();
 		$value = \Kuink\Core\ProcessOrchestrator::getProcessVariable ( '_' . $currentNode->nodeGuid . '_' . $this->type . '_' . $this->name, $key );
+		//kuink_mydebugObj('Get: ('.'_' . $currentNode->nodeGuid . '_' . $this->type . '_' . $this->name.')::'.$key, $value);
+
 		return $value;
 	}
 }

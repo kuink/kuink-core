@@ -387,6 +387,14 @@ class ReflectionLib extends \Kuink\Core\Lib {
 		}
 		return;
 	}
+	function getUml($params) {
+		$application = isset($params[0]) ? $params[0]: null;
+		$process = isset($params[1]) ? $params[1]: null;
+		$node = isset($params[2]) ? $params[2]: null;
+		$nodeType = isset($params[3]) ? $params[3]: null;
+		$uml = \Kuink\Core\Reflection::getUml ($application, $process, $node, $nodeType);
+		return $uml;
+	}	
 }
 
 ?>

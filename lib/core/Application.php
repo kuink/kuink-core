@@ -17,53 +17,6 @@
 namespace Kuink\Core;
 
 /**
- * Enum values used for Url get params
- * 
- * @author ptavares
- *        
- */
-class UrlParam {
-	const PROCESS = 'startuc';
-	const NODE = 'startnode';
-	const EVENT = 'event';
-	const ACTION = 'action';
-	const ACTION_VALUE = 'actionvalue';
-	const TRACE = 'trace';
-	const ROLE = 'role';
-	const DOC = 'doc';
-	const MODAL = 'modal';
-}
-
-/**
- * Enum values used for nodeconfiguration keys
- * 
- * @author ptavares
- *        
- */
-class NodeConfKey {
-	const APPLICATION = 'customappname';
-	const PROCESS = 'master_process_name';
-	const NODE = 'startnode';
-	const ACTION = 'action';
-	const ACTION_VALUE = 'actionvalue';
-	const EVENT = 'event';
-	const BASEURL = 'baseurl';
-	const CONFIG = 'config';
-	const ROLES = 'roles';
-	const CAPABILITIES = 'capabilities';
-	const INSTANCE_CONFIG_RAW = 'instance_config_raw';
-	const ACTION_PERMISSIONS = 'actionPermissions';
-	const NODE_ROLES = 'nodeRoles';
-	
-	// Description of the referal node
-	const REF_APPLICATION_DESC = 'REF_APPLICATION_DESC';
-	const REF_PROCESS_DESC = 'REF_PROCESS_DESC';
-	const REF_NODE_DESC = 'REF_NODE_DESC';
-	const USER = 'USER';
-	const SYSTEM = 'SYSTEM';
-}
-
-/**
  * Kuink application
  * 
  * @author ptavares
@@ -82,8 +35,9 @@ class Application {
 	private $inMaintenance; // Is this application in maintenance?
 	public $appManager; // Application manager
 	public $nodeconfiguration;
-	function __construct($name, $lang, $config) {
-		global $KUINK_CFG, $KUINK_LAYOUT;
+	public $core; //The kuink core object
+	function __construct($name, $lang, $config, $core) {
+		global $KUINK_CFG;
 		
 		// If it's not a restart and there's an application in the stack, the use it
 		// Get the application to execute from the top of process stack
@@ -116,7 +70,8 @@ class Application {
 		$this->config = $config;
 		$this->roles = array ();
 		$this->capabilities = array ();
-		
+		$this->core = $core;
+				
 		// Loads the config keys from instance
 		$this->loadInstanceConfig ( $config );
 		
@@ -271,15 +226,15 @@ class Application {
 		// Load the roles
 		try {
 			if ($KUINK_CFG->useGlobalACL) {	
-			  $datasource = new \Kuink\Core\DataSource( null, 'framework/framework,acl,getRoles','framework', 'user');
+			  $da = new \Kuink\Core\DataAccess('framework/framework,acl,getRoles','framework', 'user');
 			  $pars=array( 'acl_code'=>'_global', 'id_person'=>$idNumber, 'id_company' => $idCompany );
 			} else {
-			  $datasource = new \Kuink\Core\DataSource( null, 'framework/framework,user,user.getRoles','framework', 'user');
+			  $da = new \Kuink\Core\DataAccess('framework/framework,user,user.getRoles','framework', 'user');
 			  $pars=array( 'id_person'=>$idNumber, 'id_company' => $idCompany );
 			}
-			$alocs = $datasource->execute($pars);
-		  
-     	if (isset($alocs))
+			$da->setCache(\Kuink\Core\CacheType::SESSION, 'core/application::userRoles');
+			$alocs = $da->execute($pars);
+     		if (isset($alocs))
 				foreach ( $alocs as $aloc ) {
 					if ($KUINK_CFG->useNewDataAccessInfrastructure)
 						$this->addRole ( ( string ) $aloc ['code'] );
@@ -344,6 +299,7 @@ class Application {
 	 * @by Joao Patricio - Show the menu in topbar naviagtion
 	 */
 	public function getMenuHtml() {
+		global $KUINK_CFG;
 		$layout = \Kuink\UI\Layout\Layout::getInstance ();
 		
 		$menu = array ();
@@ -352,9 +308,18 @@ class Application {
 		$currentRole = '';
 		if (isset ( $this->roles ['framework.admin'] ))
 			$currentRole = ($get_role == '') ? key ( $this->roles ) : $get_role;
-			
+
+		$xmlDefinition = $this->xmlDefinition;
+
+		$baseNode = ProcessOrchestrator::getBaseNode(); 
+		if ($baseNode->application != $this->name) {
+			//Get allways the base application menu!!
+			$baseAppBase = $this->appManager->getApplicationBase($baseNode->application);
+			$baseAppFileName = $KUINK_CFG->appRoot.'apps/'.$baseAppBase.'/' . $baseNode->application . '/application.xml';
+			$xmlDefinition = simplexml_load_file($baseAppFileName, 'SimpleXmlElement', LIBXML_COMPACT | LIBXML_NOCDATA);
+		}			
 			// Get the application top menu for the current role
-		$flowMenu = $this->xmlDefinition->xpath ( '/Application/Menus/Menu[contains(@role, \'' . $currentRole . '\') and not(@startuc=\'\')]' );
+		$flowMenu = $xmlDefinition->xpath ( '/Application/Menus/Menu[contains(@role, \'' . $currentRole . '\') and not(@startuc=\'\')]' );
 		$menu = $this->makeMenuItems ( $flowMenu );
 		
 		// var_dump($menu);
@@ -370,7 +335,7 @@ class Application {
 		$menu = array ();
 		$menuitemscount = count ( $flowMenu );
 		$counter = 1;
-		while ( list ( , $node ) = each ( $flowMenu ) ) {
+		foreach ($flowMenu as $node) {
 			
 			$templname = ($node ['template'] != '') ? $node ['template'] : 'default';
 			
@@ -399,12 +364,14 @@ class Application {
 				$qstrTrace = isset($_GET['trace']) ? $_GET['trace'] : '';
 				$href = $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $qstrId . '&idcontext=' . $_GET ['idcontext'] . '&startuc=' . $node ['startuc'] . '&startnode=' . $node ['startnode'] . '&event=' . $node ['event'] . '&trace=' . $qstrTrace;
 				$hrefNoContext = ($KUINK_CFG->allowMultipleContexts) ? $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $qstrId . '&idcontext=' . uniqid () . '&startuc=' . $node ['startuc'] . '&startnode=' . $node ['startnode'] . '&event=' . $node ['event'] . '&trace=' . $qstrTrace : '';
+				$icon = isset($node['icon']) ? (string)$node['icon'] : '';
 				$menu [] = array (
 						'label' => kuink_get_string ( ( string ) $node ['label'], $this->name ),
 						'target' => isset($this->target) ? kuink_get_string ( ( string ) $node ['target'], $this->target ) : '_self',
 						'href' => $href,
 						'hrefNoContext' => $hrefNoContext,
-						'child' => $childMenus 
+						'child' => $childMenus,
+						'icon' => $icon
 				);
 			}
 			
@@ -421,7 +388,7 @@ class Application {
 		$display_menu = isset ( $this->config ['HIDE_APP_MENU'] ) ? ! ($this->config ['HIDE_APP_MENU'] == 'true') : true;
 		
 		if ($display_menu)
-			print ($this->getMenuHtml ()) ;
+			$this->getMenuHtml () ;
 	}
 	
 	/**
@@ -449,7 +416,7 @@ class Application {
 	 * It will get all necessary params
 	 */
 	function run($node = null, $functionName = null, $function_params = null) {
-		global $KUINK_CFG, $SESSION, $KUINK_LAYOUT;
+		global $KUINK_CFG;
 		
 		$msgManager = \Kuink\Core\MessageManager::getInstance ();
 		
@@ -470,7 +437,7 @@ class Application {
 			if ($functionName == null) {
 				$layout = \Kuink\UI\Layout\Layout::getInstance ();
 				$layout->setBaseUrl ( $KUINK_CFG->wwwRoot );
-				$layout->setLogOut ( $KUINK_CFG->auth->user->firstName . ' ' . $KUINK_CFG->auth->user->lastName, $KUINK_CFG->auth->user->id, $KUINK_CFG->auth->sessionKey );
+				$layout->setLogOut ( $KUINK_CFG->auth->user->firstName . ' ' . $KUINK_CFG->auth->user->lastName, $KUINK_CFG->auth->user->id_bridge, $KUINK_CFG->auth->sessionKey );
 			}
 			$runtime = null;
 			if ($functionName == null)

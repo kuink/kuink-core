@@ -18,7 +18,7 @@ namespace Kuink\UI\Formatter;
 
 class YesNo extends Formatter {
 	function format($value, $params = null) {
-		if ($value != '1' && $value != '0' && $value != 'true' && $value != 'false')
+		if ($value != '1' && $value != '0' && $value != 'true' && $value != 'false' && $value !== true && $value !== false)
 			return $value;
 		
 		$format = '';

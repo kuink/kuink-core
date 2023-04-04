@@ -15,10 +15,12 @@ class TransactionInstruction extends \Kuink\Core\Instruction {
 	 * @see \Kuink\Core\DataSourceConnector::connect()
 	 */
 	static public function execute($instManager, $instructionXmlNode) {
-		global $KUINK_DATASOURCES;
+		\Kuink\Core\DataSourceManager::beginTransaction ();
 		
-		// TODO
-		return '';
+		$value = $instManager->executeInnerInstructions( $instructionXmlNode );		
+		
+		\Kuink\Core\DataSourceManager::commitTransaction ();
+		return $value;
 	}
 }
 

@@ -91,7 +91,7 @@ class MathLib {
 		$sum = 0;
 		$count = 0;
 		foreach ( $params as $param ) {
-			if (! empty ( $param )) {
+			if (!empty($param) && (is_numeric($param))) { 
 				$sum += ( float ) $param;
 				$count ++;
 			}

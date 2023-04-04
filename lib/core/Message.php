@@ -16,14 +16,6 @@
 // along with Kuink Application Framework. If not, see <http://www.gnu.org/licenses/>.
 namespace Kuink\Core;
 
-class MessageType {
-	const ERROR = 0;
-	const WARNING = 1;
-	const INFORMATION = 2;
-	const SUCCESS = 3;
-	const EXCEPTION = 4;
-	// etc.
-}
 class Message {
 	var $type;
 	var $msg;
@@ -88,66 +80,6 @@ class Message {
 		 *
 		 * return '<div align="center" style="verticalte-align:middle; color:'.$color.';background-color:'.$bkg_color.';"><img height="20" style="vertical-align:middle; margin-right: 15px;" src="pix/icon_themes/standard/'.$icon.'"/><span><strong>'.$this->msg.'</strong></span></div>';
 		 */
-	}
-}
-class MessageManager {
-	var $msgs;
-	private static $instance;
-	function __construct() {
-		$this->msgs = array ();
-		return;
-	}
-	
-	/**
-	 * Get current \Kuink\UI\Layout\Layout instance
-	 */
-	public static function getInstance() {
-		if (! self::$instance)
-			self::$instance = new MessageManager ();
-		return self::$instance;
-	}
-	function add($msg_type, $msg_string) {
-		$this->msgs [] = new Message ( $msg_type, $msg_string );
-	}
-	function get_messages() {
-		$errors = $this->get_msgs_from_type ( MessageType::ERROR );
-		$warnings = $this->get_msgs_from_type ( MessageType::WARNING );
-		$informations = $this->get_msgs_from_type ( MessageType::INFORMATION );
-		$successes = $this->get_msgs_from_type ( MessageType::SUCCESS );
-		$exceptions = $this->get_msgs_from_type ( MessageType::EXCEPTION );
-		return array_merge ( $errors, $warnings, $informations, $successes, $exceptions );
-	}
-	function print_messages() {
-		$layout_msgs = array ();
-		
-		// @TODO STI: Joao Patricio - clean this code
-		/*
-		 * foreach($out_msgs as $msg)
-		 * print($msg->get_formatted_msg());
-		 */
-		
-		foreach ( $this->msgs as $msg )
-			$layout_msgs [] = $msg->get_formatted_msg ();
-		
-		$layout = \Kuink\UI\Layout\Layout::getInstance ();
-		$layout->addUserMessages ( $layout_msgs );
-	}
-	// MessageType::error
-	function has_type($type) {
-		foreach ( $this->msgs as $msg )
-			if ($msg->type == $type)
-				return 1;
-		
-		return 0;
-	}
-	function get_msgs_from_type($type) {
-		$msgs_type = array ();
-		
-		foreach ( $this->msgs as $msg )
-			if ($msg->type == $type)
-				$msgs_type [] = $msg;
-		
-		return $msgs_type;
 	}
 }
 

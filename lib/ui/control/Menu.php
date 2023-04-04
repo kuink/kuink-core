@@ -36,7 +36,7 @@ class Menu extends Control {
 		$menuSize = !(isset($this->dynamic_fields)) ? 0 : sizeof ( $this->dynamic_fields );
 		if ($menuSize <= 0) {
 			foreach ( $root as $action ) {
-				
+
 				$name = isset ( $action ['name'] ) ? ( string ) $action ['name'] : '';
 				$id = isset ( $action ['id'] ) ? ( string ) $action ['id'] : '';
 				$label = isset ( $action ['label'] ) ? ( string ) $action ['label'] : $id;
@@ -44,7 +44,11 @@ class Menu extends Control {
 				$modal = isset ( $action ['modal'] ) ? ( string ) $action ['modal'] : '';
 				$target = isset ( $action ['target'] ) ? ( string ) $action ['target'] : '_self';
 				$icon = isset ( $action ['icon'] ) ? ( string ) $action ['icon'] : 'circle';
-				
+				$value = isset ( $action ['value'] ) ? ( string ) $action ['value'] : '';
+				//Keep compatibility with attribute value and actionvalue
+				if ($value == '')
+					$value = isset ( $action ['actionvalue'] ) ? ( string ) $action ['actionvalue'] : '';
+			
 				if ($actionPermissions [$name] && $visible == 'true') {
 					// The user has permissions to execute this action
 					// Add this action to the array
@@ -54,6 +58,8 @@ class Menu extends Control {
 							0 => $name 
 					) );
 					$url = ($modal == 'true') ? $url . '&modal=true' : $url;
+					$url = ($value != '') ? $url . '&actionvalue=' . $value : $url;
+
 					$menu ['child'] [] = array (
 							'href' => $url,
 							'modal' => $modal,
@@ -77,6 +83,9 @@ class Menu extends Control {
 					$target = isset ( $actionAttributes ['target'] ) ? ( string ) $actionAttributes ['target'] : '_self';
 					$icon = isset ( $actionAttributes ['icon'] ) ? ( string ) $actionAttributes ['icon'] : 'circle';
 					$value = isset ( $actionAttributes ['value'] ) ? ( string ) $actionAttributes ['value'] : '';
+					//Keep compatibility with attribute value and actionvalue
+					if ($value == '')
+						$value = isset ( $actionAttributes ['actionvalue'] ) ? ( string ) $actionAttributes ['actionvalue'] : '';
 					
 					// print_object($actionPermissions[ $name ].' '.$visible);
 					

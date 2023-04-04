@@ -20,9 +20,9 @@ class Separator extends Formatter {
 	function format($value, $params) {
 		return $this->custom ( $value, $params );
 	}
-	function space($value, $params) {
+	function dot($value, $params) {
 		$this->validateParams ( $params );
-		$separator = '&nbsp;';
+		$separator = '.';
 		$append = isset ( $params ['affix'] ) ? ( string ) $params ['affix'] : 'suffix';
 		if ($append == 'prefix')
 			$result = $separator . $value;
@@ -45,6 +45,28 @@ class Separator extends Formatter {
 	function pipe($value, $params) {
 		$this->validateParams ( $params );
 		$separator = ' | ';
+		$append = isset ( $params ['affix'] ) ? ( string ) $params ['affix'] : 'suffix';
+		if ($append == 'prefix')
+			$result = $separator . $value;
+		else
+			$result = $value . $separator;
+		
+		return $result;
+	}
+	function slash($value, $params) {
+		$this->validateParams ( $params );
+		$separator = '/';
+		$append = isset ( $params ['affix'] ) ? ( string ) $params ['affix'] : 'suffix';
+		if ($append == 'prefix')
+			$result = $separator . $value;
+		else
+			$result = $value . $separator;
+		
+		return $result;
+	}
+	function space($value, $params) {
+		$this->validateParams ( $params );
+		$separator = '&nbsp;';
 		$append = isset ( $params ['affix'] ) ? ( string ) $params ['affix'] : 'suffix';
 		if ($append == 'prefix')
 			$result = $separator . $value;
