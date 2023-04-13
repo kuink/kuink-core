@@ -809,7 +809,7 @@ class ProcessOrchestrator {
 			redirect ( $KUINK_CFG->wwwRoot );
 		} else if (! isset ( $context->idCompany )) {
 			// Load the user companies
-			$datasource = new \Kuink\Core\DataSource ( null, 'framework/framework,user,user.getCompanies', 'framework', 'user' );
+			$datasource = new \Kuink\Core\DataSource ( null, 'framework/framework,fw.person,getCompanies', 'framework', 'fw.person' );
 			$idNumber = ($KUINK_CFG->auth->user->id) ? $KUINK_CFG->auth->user->id : 0;
 			$pars = array (
 					'id_person' => $idNumber 

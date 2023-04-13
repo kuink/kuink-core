@@ -226,10 +226,10 @@ class Application {
 		// Load the roles
 		try {
 			if ($KUINK_CFG->useGlobalACL) {	
-			  $da = new \Kuink\Core\DataAccess('framework/framework,acl,getRoles','framework', 'user');
+			  $da = new \Kuink\Core\DataAccess('framework/framework,acl,getRoles','framework', 'fw.person');
 			  $pars=array( 'acl_code'=>'_global', 'id_person'=>$idNumber, 'id_company' => $idCompany );
 			} else {
-			  $da = new \Kuink\Core\DataAccess('framework/framework,user,user.getRoles','framework', 'user');
+			  $da = new \Kuink\Core\DataAccess('framework/framework,fw.person,getRoles','framework', 'fw.person');
 			  $pars=array( 'id_person'=>$idNumber, 'id_company' => $idCompany );
 			}
 			$da->setCache(\Kuink\Core\CacheType::SESSION, 'core/application::userRoles');
@@ -251,7 +251,7 @@ class Application {
 		// Load capabilities
 		// try {
 		// $idNumber=($USER->idnumber) ? (string)$USER->idnumber : 0;
-		// $datasource = new \Kuink\Core\DataSource( null, 'framework,user,user.getCapabilities','framework', 'user');
+		// $datasource = new \Kuink\Core\DataSource( null, 'framework,user,getCapabilities','framework', 'user');
 		// $pars=array( 'id_person'=>$idNumber, 'id_company' => $idCompany );
 		// //TODO: change for the correct company id
 		// $caps = $datasource->execute( $pars );

@@ -69,7 +69,7 @@ class User {
 		
 		// Load the person from fw_person
 		// Set the public key
-		$personDa = new DataAccess ( 'framework,user,person.get', 'framework', 'user' );
+		$personDa = new DataAccess ( 'framework,fw.person,get', 'framework', 'fw.person' );
 		$personDa->setCache(\Kuink\Core\CacheType::SESSION, 'core/runtime::userGet');
 		$personData = array (
 				'id_person' => $kuinkUser ['id'],
@@ -84,7 +84,7 @@ class User {
 		$kuinkUser ['name'] = $person ['display_name']; // $USER->firstname . ' ' . $USER->lastname;
 		$kuinkUser ['email'] = $person ['email']; // $USER->email;
 		$kuinkUser ['publicKey'] = $person ['public_key']; // $USER->email;
-		                                                 // $kuink_user['tipo'] = $current_user->tipo;
+		// $kuink_user['tipo'] = $current_user->tipo;
 		$kuinkUser ['idExternal'] = $KUINK_CFG->auth->user->id; // $current_user->idexternal;
 		$kuinkUser ['lang'] = $KUINK_CFG->auth->user->lang;
 		
@@ -288,11 +288,11 @@ class Runtime {
 	public function buildCapabilitiesOfList($roles, $force=false) {
 		if ($roles != '') {
 			// get the value from fw_config
-			$dataAccess = new \Kuink\Core\DataAccess ( 'framework/framework,user.role,getCapabilitiesOfList', 'framework', 'role' );
+			$dataAccess = new \Kuink\Core\DataAccess ( 'framework/framework,role.capability,getCapabilitiesOfRolesList', 'framework', 'role.capability' );
 			if (!$force) //Use cache if not force rebuilding permissions
-				$dataAccess->setCache(\Kuink\Core\CacheType::REQUEST, 'core/runtime::userCapabilitiesOfList');
+				$dataAccess->setCache(\Kuink\Core\CacheType::REQUEST, 'core/runtime::userCapabilitiesOfRolesList');
 			$rolesCleaned = str_replace("'", '"', $roles); // substr($roles,1,strlen($roles)-2);
-			$params ['role_codes'] = $rolesCleaned;
+			$params ['code_role_list'] = $rolesCleaned;
 			$resultset = $dataAccess->execute ( $params );
 			if ($resultset) {
 				foreach ( $resultset as $capability ) {
