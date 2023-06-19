@@ -1449,11 +1449,14 @@ private function encloseIdentifier($identifier) {
 				'type' => 'text',
 				'size' => '' 
 		);
+		$KUINKSql ['mediumtext'] = array (
+			'type' => 'mediumtext',
+			'size' => '' 
+		);
 		$KUINKSql ['longtext'] = array (
 				'type' => 'longtext',
 				'size' => '' 
 		);
-		
 		$KUINKSql ['longint'] = array (
 				'type' => 'bigint',
 				'size' => '10' 
@@ -2030,6 +2033,8 @@ private function encloseIdentifier($identifier) {
 				$sqlStatement .= $sqlAttributes . ' ';
 			}
 			
+			$sqlStatementsArray [$entity ['name']] = $sqlStatement;
+
 			// Add unique indexes
 			foreach ( $sqlUniquesArray as $uk ) {
 				$sqlStatement = 'CREATE UNIQUE INDEX '.$this->encloseIdentifier('ix_' . $uk) . ' ON ' . $this->encloseIdentifier($entity ['name']) . ' ( ' . $this->encloseIdentifier($uk) . ');';
