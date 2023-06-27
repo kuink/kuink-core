@@ -24,6 +24,7 @@ namespace Kuink\Core;
  */
 class Application {
 	private $name;
+	private $version;
 	private $lang; // Current user language
 	private $config; // Application configuration from the application instance
 	private $roles; // Roles of the user at a given moment
@@ -100,7 +101,9 @@ class Application {
 			// Load application.xml now that we have the app base in apps dir
 		$this->loadApplicationDefinition ();
 
-	
+			// Load application version
+		$this->version = (string) $this->xmlDefinition->xpath ('/Application/@version')[0];
+
 		if ($KUINK_CFG->useNewDataAccessInfrastructure)
 			// Setup framework dataSources
 			\Kuink\Core\DataSourceManager::setupApplicationDS ( $this );
@@ -529,6 +532,13 @@ class Application {
 		return $fwConfig;
 	}
 	
+	/**
+	 * Get the application version
+	 */
+	public function getApplicationVersion() {
+		return $this->version;
+	}
+
 	/**
 	 * Builds a node configuration object to be passed to the runtime
 	 * 

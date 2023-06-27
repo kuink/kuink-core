@@ -197,6 +197,7 @@ class Runtime {
 		$this->nodeconfiguration [NodeConfKey::SYSTEM] = $server_info;
 		
 		$nodeContext ['application'] = isset($currentNode->application) ? $currentNode->application : null;
+		$nodeContext ['applicationVersion'] = $KUINK_APPLICATION->getApplicationVersion();
 		$nodeContext ['process'] = isset($currentNode->process) ? $currentNode->process : null;
 		$nodeContext ['node'] = isset($currentNode->node) ? $currentNode->node : null;
 		$nodeContext ['action'] = isset($currentNode->action) ? $currentNode->action : null;
