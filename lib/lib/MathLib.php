@@ -146,6 +146,11 @@ class MathLib {
 		$max = ( int ) $params [1];
 		return rand ( $min, $max );
 	}
+	function random_int($params) {
+		$min = ( int ) $params [0];
+		$max = ( int ) $params [1];
+		return random_int ( $min, $max );
+	}
 }
 
 ?>
