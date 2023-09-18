@@ -156,6 +156,16 @@ class StringLib {
 			return strtoupper ( $params [0] );
 		return;
 	}
+	function length($params) {
+		if (isset ( $params [0] ))
+			return strlen ( $params [0] );
+		return;
+	}
+	function split($params) {
+		if (isset ( $params [0] ))
+			return str_split ( $params [0] );
+		return;
+	}
 }
 
 ?>
