@@ -212,7 +212,33 @@ class Core {
 					readfile ( $base . $file );
 				}
 				break;
-			
+			case "bwphoto":
+				$file = $guid . '.jpg';
+				$base = $KUINK_CFG->imageRoot . $type . '/';
+
+
+				$baseRP = realpath ( $base );
+				$path = realpath ( $base . $file );
+				$pos = strpos ( $path . '/', $baseRP );
+				if ($pos === FALSE) {
+					$file = 'default.jpg';
+				}
+				$size = getimagesize ( $base . $file );
+				if ($size) {
+					ob_clean ();
+					header ( 'Content-Type: ' . $size ['mime'] );
+					header ( 'Content-Length: ' . filesize ( $base . $file ) );
+
+
+					$image = imagecreatefromjpeg($base . $file);
+
+					if ($image !== false) {
+						imagefilter($image, IMG_FILTER_GRAYSCALE);
+						imagejpeg($image);
+						imagedestroy($image);
+					}
+				}
+				break;
 			case "bpmn" :
 				$split = explode ( ',', $guid );
 				$application = $split [0];
