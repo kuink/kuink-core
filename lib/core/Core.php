@@ -197,7 +197,6 @@ class Core {
 				$file = $guid . '.jpg';
 				$base = $KUINK_CFG->imageRoot . $type . '/';
 
-
 				$baseRP = realpath ( $base );
 				$path = realpath ( $base . $file );
 				$pos = strpos ( $path . '/', $baseRP );
@@ -212,10 +211,9 @@ class Core {
 					readfile ( $base . $file );
 				}
 				break;
-			case "bwphoto":
+			case "bw_photo":
 				$file = $guid . '.jpg';
-				$base = $KUINK_CFG->imageRoot . $type . '/';
-
+				$base = $KUINK_CFG->imageRoot . 'photo' . '/';
 
 				$baseRP = realpath ( $base );
 				$path = realpath ( $base . $file );
@@ -229,6 +227,8 @@ class Core {
 					header ( 'Content-Type: ' . $size ['mime'] );
 					header ( 'Content-Length: ' . filesize ( $base . $file ) );
 
+					$a = extension_loaded('gd');
+					$b = file_exists($base . $file);
 
 					$image = imagecreatefromjpeg($base . $file);
 
