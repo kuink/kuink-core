@@ -153,6 +153,8 @@ class GridColumnProperty {
 	const CONDITION = 'condition';
 	const SORTABLE = 'sortable';
 	const DEFAULTSORT = 'defaultsort';
+	const HIGHLIGHTSTYLE = 'highlightstyle';
+	const HIGHLIGHTVALUE = 'highlightvalue';
 }
 
 /**
@@ -195,6 +197,8 @@ class GridColumnDefaults {
 	const CONDITION = '';
 	const SORTABLE = 'false';
 	const DEFAULTSORT = '';
+	const HIGHLIGHTSTYLE = '';
+	const HIGHLIGHTVALUE = '1';
 }
 class GridContextVariables {
 	const PAGE = 'page';
@@ -282,8 +286,8 @@ class Grid extends Control {
 		// set current page
 		if (isset ( $_GET [$this->name . '_page'] ))
 			$this->page = $_GET [$this->name . '_page'];
-		else if (! empty ( $_POST ))
-			$this->page = 0;
+		//else if (! empty ( $_POST ))		// Code commented to support the page keeping, if an action takes place:
+		//	$this->page = 0;				// UNKNOWN IMPACT, to evaluate later...
 		else
 			$this->page = isset ( $currentStoredPage ) ? $currentStoredPage : 0;
 		
@@ -494,6 +498,9 @@ class Grid extends Control {
 		
 		$attributes [GridColumnProperty::ACTION] = $this->getProperty ( $name, GridColumnProperty::ACTION, false, GridColumnDefaults::ACTION, $column );
 		$attributes [GridColumnProperty::ACTIONVALUE] = $this->getProperty ( $name, GridColumnProperty::ACTIONVALUE, false, GridColumnDefaults::ACTIONVALUE, $column );
+
+		$attributes [GridColumnProperty::HIGHLIGHTSTYLE] = $this->getProperty ( $name, GridColumnProperty::HIGHLIGHTSTYLE, false, GridColumnDefaults::HIGHLIGHTSTYLE, $column );
+		$attributes [GridColumnProperty::HIGHLIGHTVALUE] = $this->getProperty ( $name, GridColumnProperty::HIGHLIGHTVALUE, false, GridColumnDefaults::HIGHLIGHTVALUE, $column );
 		
 		if ($attributes [GridColumnProperty::TYPE] == GridColumnType::SELECT || $attributes [GridColumnProperty::TYPE] == GridColumnType::CSTATIC)
 			$attributes ['options'] = $this->getColumnOptions ( $column, $attributes );
@@ -977,6 +984,7 @@ class Grid extends Control {
 					if (! $inline) {
 						$current_key = ( string ) $column;
 						$datatoinsert [$current_key] ['value'] = $value;
+						$datatoinsert [$current_key] ['nonformatedvalue'] = $value;
 					}
 					// Handling rules
 					$colRules = isset($this->tablecolrules [$index]) ? $this->tablecolrules [$index] : array();
@@ -1080,6 +1088,7 @@ class Grid extends Control {
 							$datatoinsert [$current_key] ['value'] .= $formatted_value;
 						} else
 							$datatoinsert [$current_key] ['value'] = $formatted_value;
+							$datatoinsert [$current_key] ['nonformatedvalue'] = $value;
 					} else if ($inline && ! $hasLookUp) // If it has look up the value is allready concatenated
 						$datatoinsert [$current_key] ['value'] = $datatoinsert [$current_key] ['value'] . $value;
 						
