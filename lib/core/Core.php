@@ -226,12 +226,7 @@ class Core {
 					ob_clean ();
 					header ( 'Content-Type: ' . $size ['mime'] );
 					header ( 'Content-Length: ' . filesize ( $base . $file ) );
-
-					$a = extension_loaded('gd');
-					$b = file_exists($base . $file);
-
 					$image = imagecreatefromjpeg($base . $file);
-
 					if ($image !== false) {
 						imagefilter($image, IMG_FILTER_GRAYSCALE);
 						imagejpeg($image);
