@@ -98,7 +98,7 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceMultiEntityCon
     $this->alternativeDomain = $this->dataSource->getParam ( 'alternativeDomain', true );
     $this->licenceSkuId = $this->dataSource->getParam ( 'licenceSkuId', true );
 
-		//Setup handler class names. The configEntityHandlers variable 
+		// Setup handler class names. The configEntityHandlers variable 
 		$this->configEntityHandlers = [
       MicrosoftAPIAdminSDKEntity::USER => "\Kuink\Core\DataSourceConnector\MicrosoftAPIAdminSDKUserHandler",
       MicrosoftAPIAdminSDKEntity::GROUP => "\Kuink\Core\DataSourceConnector\MicrosoftAPIAdminSDKGroupHandler",
@@ -126,7 +126,7 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceMultiEntityCon
       $this->connector = new Graph();
       $this->connector->setAccessToken($this->accessToken);
 
-      //Setup specific entity connection properties
+      // Setup specific entity connection properties
       if (isset($entity)) {
         $handler = $this->getEntityHandler($entity);
         $handler->connect();
@@ -280,13 +280,16 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
     }
     
     try {
+      \Kuink\Core\TraceManager::add(' Loading user: '.$mailNickname, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
       $result = $this->connector->connector->createRequest("GET", "/users/$id".$query)
                                            ->setReturnType(Model\User::class)
                                            ->execute();
       //var_dump($result);
-    } catch (\Exception $e) {
+    } 
+    catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+    
       return 1;
     }
 
@@ -315,13 +318,16 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
     }
 
     try {
+      \Kuink\Core\TraceManager::add(' Getting all users', \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
       $result = $this->connector->connector->createRequest("GET", "/users".$query)
                                             ->setReturnType(Model\User::class)
                                             ->execute();
-    //var_dump($result);
-    } catch (\Exception $e) {
+      //var_dump($result);
+    } 
+    catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR getting all users', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+    
       return 1;
     }
 
@@ -347,18 +353,19 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 	 */
   public function insert($params) {
   	$this->connect();
-
+    
+    // Set USER data
     $givenName = (string)$this->connector->getParam($params, $this->translator['givenName'], true);
     $surname = (string)$this->connector->getParam($params, $this->translator['surname'], true);
     $displayName = (string)$this->connector->getParam($params, $this->translator['displayName'], false, $givenName." ".$surname);
 
-    $jobTitle = (string)$this->connector->getParam($params, $this->translator['jobTitle'], false, null);
-    $mobilePhone = (string)$this->connector->getParam($params, $this->translator['mobilePhone'], false, null);
-    $officeLocation = (string)$this->connector->getParam($params, $this->translator['officeLocation'], false, null);
-
     $mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], true);
     $mail = (string)$this->connector->getParam($params, $this->translator['email'], false, $mailNickname.'@'.$this->connector->domain);
     $userPrincipalName = $mailNickname.'@'.$this->connector->domain;
+
+    $jobTitle = isset ($params[$this->translator['jobTitle']]) ? (string)$this->connector->getParam($params, $this->translator['jobTitle'], false) : null;
+    $mobilePhone = isset ($params[$this->translator['mobilePhone']]) ? (string)$this->connector->getParam($params, $this->translator['mobilePhone'], false) : null;
+    $officeLocation = isset ($params[$this->translator['officeLocation']]) ? (string)$this->connector->getParam($params, $this->translator['officeLocation'], false) : null;
 
     $otherMails = (string)$this->connector->getParam($params, $this->translator['otherMails'], false, 
                     $mailNickname.'@'.$this->connector->alternativeDomain);
@@ -376,7 +383,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
     $userType = isset ($params['userType']) ? (string)$this->connector->getParam($params, 'userType', false) : "Member";
     $ageGroup = (string)$this->connector->getParam($params, $this->translator['ageGroup'], false, null);
 
-
+    // Set the object with the data
     $data = [
       'accountEnabled' => 'true',
       'displayName' => $displayName,
@@ -393,23 +400,25 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
       'usageLocation' => $usageLocation,
       'passwordPolicies' => $passwordPolicies,
       'passwordProfile' => [
-          'password' => $password,
-          'forceChangePasswordNextSignIn' => $changePasswordAtNextLogin,
+        'password' => $password,
+        'forceChangePasswordNextSignIn' => $changePasswordAtNextLogin,
       ],
       'userType' => $userType,
       'ageGroup' => $ageGroup,
     ];
 
-    //var_dump($data);
     try {
+      \Kuink\Core\TraceManager::add(' Inserting user: '.$mailNickname, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
       $result = $this->connector->connector->createRequest("POST", "/users")
                                            ->attachBody($data)
                                            ->setReturnType(Model\User::class)
                                            ->execute();
-    //var_dump($result);
-    } catch ( \Exception $e ) {
+      //var_dump($result);
+    }
+    catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR creating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+      
       return 1;
     }
 
@@ -450,7 +459,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
     if (isset($params[$this->translator['mailNickname']]))
 			unset($params[$this->translator['mailNickname']]);
 
-    $data = array();         // Data to update
+    $data = array(); // Data to update
 
     // Password stuff, if updated
     if (isset ($params[$this->translator['password']])) {
@@ -486,16 +495,18 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
       }
     }
      
-    //var_dump($data);
     try {
+      \Kuink\Core\TraceManager::add(' Updating user '.$mailNickname, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
       $result = $this->connector->connector->createRequest("PATCH", "/users/$id")
                                            ->attachBody($data)
                                            ->setReturnType(Model\User::class)
                                            ->execute();
-    //var_dump($result);
-    } catch (\Exception $e) {
+      //var_dump($result);
+    } 
+    catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+      
       return 1;
     }
 
@@ -549,23 +560,26 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
     // Licence Stuff!
     $licences = [
       'addLicenses' => [
-          [
-            'disabledPlans' => [],
-            'skuId' => $licenceSkuId,
-          ],
+        [
+          'disabledPlans' => [],
+          'skuId' => $licenceSkuId,
+        ],
       ],
       'removeLicenses' => []
     ];
 
     try {
+      \Kuink\Core\TraceManager::add(' Assigning license '.$licenceSkuId.' to user '.$mailNickname, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
       $result = $this->connector->connector->createRequest("POST", "/users/$id/assignLicense")
                                            ->attachBody($licences)
                                            ->setReturnType(Model\User::class)
                                            ->execute();
       //var_dump($result);
-    } catch ( \Exception $e ) {
+    } 
+    catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR assigning licence', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+    
       return 1;
     }
 
@@ -591,7 +605,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
                                            ->setReturnType(Model\User::class)
                                            ->execute();
     //var_dump($result);
-    } catch ( \Exception $e ) {
+    } catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
 			return 1;
@@ -621,13 +635,16 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
       $id = (string)$this->connector->getParam($params, 'id', true);    
 
     try {
+      \Kuink\Core\TraceManager::add(' Deleting user '.$mailNickname, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
       $result = $this->connector->connector->createRequest("DELETE", "/users/".$id)
                                             ->setReturnType(Model\User::class)
                                             ->execute();
-    //var_dump($result);
-    } catch ( \Exception $e ) {
+      //var_dump($result);
+    } 
+    catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR deleting user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+    
       return 1;
     }
 
@@ -655,7 +672,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
                                 ->setReturnType(Model\User::class)
                                 ->execute();
     //var_dump($result);
-    } catch ( \Exception $e ) {
+    } catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
       return 1;
@@ -760,22 +777,25 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
     if (!isset($id)) {
       $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
     }
+    
     // List of parameters
     $query = (string)$this->connector->getParam($params, '_attributes', false);
     if ($query !== '') {
       $query = '?$select='.$query;
     }
-    
-    //var_dump($id);
+
     try {
+      \Kuink\Core\TraceManager::add(' Loading group '.$uid, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
       $result = $this->connector->connector->createRequest("GET", "/groups/$id".$query)
                                            ->setReturnType(Model\Group::class)
                                            ->execute();
       //var_dump($result);
-    } catch ( \Exception $e ) {
+    }
+    catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
-			return 1;
+			
+      return 1;
     }
 
     return $this->objectArrayTranslated($result);
@@ -801,14 +821,17 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
     }
     
     try {
+      \Kuink\Core\TraceManager::add(' Loading all groups', \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
       $result = $this->connector->connector->createRequest("GET", "/groups".$query)
                                 ->setReturnType(Model\Group::class)
                                 ->execute();
       //var_dump($result);
-    } catch ( \Exception $e ) {
+    }
+    catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR getting all groups', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
-			return 1;
+			
+      return 1;
     }
 
     return $this->objectArrayTranslated($result);
@@ -877,16 +900,19 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
 
     // Create group
     try {
+      \Kuink\Core\TraceManager::add(' Inserting group '.$mailNickname, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
       $result = $this->connector->connector->createRequest("POST", "/groups")
                                            ->attachBody($data)
                                            ->setReturnType(Model\Group::class)
                                            ->execute();
       //var_dump($result);
-    } catch ( \Exception $e ) {
-        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR creating group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
-        \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
-        return 1;
-      }
+    } 
+    catch (\Exception $e) {
+      \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR creating group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+      \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+      
+      return 1;
+    }
     
     return $this->objectArrayTranslated($result);
   }
@@ -953,13 +979,14 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
      * $allowExternalSenders = (bool)$this->connector->getParam($params, $this->translator['allow_external_senders'], false, false);
      */
     try {
-      var_dump($uid);
+      \Kuink\Core\TraceManager::add(' Updating group '.$uid, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
       $result = $this->connector->connector->createRequest("PATCH", "/groups/".$id)
                                            ->attachBody($data)
                                            ->setReturnType(Model\Group::class)
                                            ->execute();
       //var_dump($result);
-    } catch ( \Exception $e ) {
+    }
+    catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
      
@@ -981,48 +1008,42 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
 	}
 
 
-  /**
-   * Assignes a Licence to GROUP
+ /**
+   * Deletes a GROUP
+   * It goes to trash bin, deleted list
    * 
+   * Example: Deletes the group "_dummy"
+   *   <DataAccess method="delete" datasource="microsoftAPIAdminSDK">
+   *    <Param name="_entity">group</Param>
+   *    <Param name="id">123456789ABCDEFGH</Param>
+   *   </DataAccess>
    */
-  public function assignLicense($params) {
-    // Set GROUP by UID or Azure ID
+  function delete($params) {
+  	$this->connect();
+
+    // Get GROUP ID by UID or Azure ID
     $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
     if ($uid !== "")
       $id = $this->load(array('uid'=>$uid))['id'];
-    // Get GROUP ID
     if (!isset($id))
       $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
-                                        
-    $licenceSkuId = (string)$this->connector->getParam($params, 'licenceSkuId', false, $this->connector->licenceSkuId);
-
-    // Licence Stuff!
-    $licences = [
-      'addLicenses' => [
-          [
-            'disabledPlans' => [],
-            'skuId' => $licenceSkuId,
-          ],
-      ],
-      'removeLicenses' => []
-    ];
 
     try {
-      $result = $this->connector->connector->createRequest("POST", "/groups/$id/assignLicense")
-                                           ->attachBody($licences)
-                                           ->setReturnType(Model\Group::class)
-                                           ->execute();
-    //var_dump($result);
-    } catch ( \Exception $e ) {
-			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR assigning licence', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
-			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
-      
+      \Kuink\Core\TraceManager::add(' Deleting group '.$uid, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
+      $result = $this->connector->connector->createRequest("DELETE", "/groups/".$id)
+                                            ->setReturnType(Model\Group::class)
+                                            ->execute();
+      //var_dump($result);
+    } 
+    catch (\Exception $e) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR deleting group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+		
       return 1;
     }
 
-    // Translate data before return
-    return $this->objectArrayTranslated($result);	
-  }  
+    return 0;
+  }
 
 
   /**
@@ -1038,94 +1059,51 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
    *   </DataAccess>
    */
   function addUser($params) {
-    // Set GROUP by UID or Azure ID
+    // Get GROUP by UID or Azure ID
     $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
     if ($uid !== "")
       $id = $this->connector->load(array ('_entity'=>'group','uid'=>$uid))['id'];
-    
-      // Get GROUP ID
     if (!isset($id))
       $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
 
-    // Set USER by UID or Azure ID
+    // Get USER by UID or Azure ID
     $userUID = (string)$this->connector->getParam($params, $this->translator['userUID'], false);
     if ($userUID !== "")
       $user = $this->connector->load(array ('_entity'=>'user','uid'=>$userUID))['id'];
-
     if ($user == null)
       $userID = (string)$this->connector->getParam($params, $this->translator['userID'], true);
     else
       $userID = $user;
 
+    // Set USER role
     $role = (bool)$this->connector->getParam($params, $this->translator['isOwner'], false, 0);
-
-    if ($role)
+    if ($role) {
       $data = [
         'owners@odata.bind' => ["https://graph.microsoft.com/v1.0/users/".$userID,]
       ];
-    else
+    }
+    else {
       $data = [
         'members@odata.bind' => ["https://graph.microsoft.com/v1.0/users/".$userID,]
       ];
-
-    //var_dump($data);
+    }
+      
     try {
+      \Kuink\Core\TraceManager::add(' Adding user '.$userUID.' to group '.$uid, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
       $result = $this->connector->connector->createRequest("PATCH", "/groups/".$id)
                                            ->attachBody($data)
                                            ->setReturnType(Model\Group::class)
                                            ->execute();
-    //var_dump($result);
-    } catch ( \Exception $e ) {
+      //var_dump($result);
+    } 
+    catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR adding user to group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
-			return 1;
+			
+      return 1;
     }
 
     return 0;
-  }
-
-
-  /**
-   * List GROUP Users (members/owners)
-   * Parameter:
-   *    .is_owner => 1 -> List owners
-   *    .is_owner = 0 or null -> List members
-   * 
-   * Example: List members of group "_dummy"
-   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
-   *    <Param name="_entity">group</Param>
-   *    <Param name="_method">listUsers</Param>
-   *    <Param name="uid">_dummy</Param>
-   *    <Param name="is_owner">0</Param>
-   *   </DataAccess>
-   */
-  function listUsers($params) {
-    // Set GROUP by UID or Azure ID
-    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
-    if ($uid !== "")
-      $id = $this->connector->load(array ('_entity'=>'group','uid'=>$uid))['id'];
-    // Get GROUP ID
-    if (!isset($id))
-      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
-                                        
-    // Get role!
-    if ((bool)$this->connector->getParam($params, $this->translator['isOwner'], false, 0))
-      $role = 'owners';
-    else
-      $role = 'members';
-
-    try {
-      $result = $this->connector->connector->createRequest("GET", "/groups/".$id."/".$role)
-                                           ->setReturnType(Model\Group::class)
-                                           ->execute();
-    //var_dump($result);
-    } catch ( \Exception $e ) {
-			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR getting users of group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
-			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
-			return 1;
-    }
-
-    return $this->objectArrayTranslated($result);
   }
 
 
@@ -1147,11 +1125,10 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
       $id = $this->connector->load(array('_entity'=>'group','uid'=>$uid))['id'];
     else
       $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
-    
     if (!isset($id))
       return 1;
     
-    // Get USER ID by UID or Azure ID
+    // Get USER by UID or Azure ID
     $userUID = (string)$this->connector->getParam($params, $this->translator['userUID'], false);
     if ($userUID !== "")
       $userID = $this->connector->load(array ('_entity'=>'user','uid'=>$userUID))['id'];
@@ -1159,11 +1136,13 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
       $userID = (string)$this->connector->getParam($params, $this->translator['userID'], true);
 
     try {
+      \Kuink\Core\TraceManager::add(' Removing user '.$userUID.' from group '.$uid, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
       $result = $this->connector->connector->createRequest("DELETE", "/groups/".$id."/members/".$userID."/\$ref")
                                             ->setReturnType(Model\Group::class)
                                             ->execute();
       //var_dump($result);
-    } catch ( \Exception $e ) {
+    } 
+    catch (\Exception $e) {
       \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR removing user from group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
       \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
       
@@ -1174,38 +1153,195 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
   }
 
 
- /**
-   * Deletes a GROUP
-   * It goes to trash bin, deleted list
+  /**
+   * Adds a USER as owner of a GROUP
    * 
-   * Example: Deletes the group "_dummy"
-   *   <DataAccess method="delete" datasource="microsoftAPIAdminSDK">
+   * Example: Add user "dummy.xpto" as owner of group "_dummy"
+   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
    *    <Param name="_entity">group</Param>
-   *    <Param name="id">123456789ABCDEFGH</Param>
+   *    <Param name="_method">addOwner</Param>
+   *    <Param name="uid">_dummy</Param>
+   *    <Param name="uid_user">dummy.xpto</Param>
    *   </DataAccess>
    */
-  function delete($params) {
-  	$this->connect();
+  function addOwner($params) {
+    // Get GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->connector->load(array ('_entity'=>'group','uid'=>$uid))['id'];
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
 
-    $id = (string)$this->connector->getParam($params, 'id', true);  
+    // Get USER by UID or Azure ID
+    $userUID = (string)$this->connector->getParam($params, $this->translator['userUID'], false);
+    if ($userUID !== "")
+      $user = $this->connector->load(array ('_entity'=>'user','uid'=>$userUID))['id'];
+    if ($user == null)
+      $userID = (string)$this->connector->getParam($params, $this->translator['userID'], true);
+    else
+      $userID = $user;
 
-    //var_dump($id);
+    // Set owner data
+    $data['@odata.id'] = "https://graph.microsoft.com/v1.0/users/".$userID;
+   
     try {
-      $result = $this->connector->connector->createRequest("DELETE", "/groups/".$id)
-                                            ->setReturnType(Model\Group::class)
-                                            ->execute();
-    //var_dump($result);
-    } catch ( \Exception $e ) {
-			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR deleting group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+      \Kuink\Core\TraceManager::add(' Adding user '.$userUID.' as owner of group '.$uid, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
+      $result = $this->connector->connector->createRequest("POST", "/groups/".$id."/owners/\$ref")
+                                           ->attachBody($data)
+                                           ->setReturnType(Model\Group::class)
+                                           ->execute();
+      //var_dump($result);
+    } 
+    catch (\Exception $e) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR adding owner of group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
-			return 1;
+			
+      return 1;
     }
 
     return 0;
   }
 
 
-   /**
+  /**
+   * Removes a USER as owner of a GROUP
+   * 
+   * Example: Remove user "dummy.xpto" as owner of group "_dummy"
+   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
+   *    <Param name="_entity">group</Param>
+   *    <Param name="_method">removeOwner</Param>
+   *    <Param name="uid">_dummy</Param>
+   *    <Param name="uid_user">dummy.xpto</Param>
+   *   </DataAccess>
+   */
+  function removeOwner($params) {
+    // Get GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->connector->load(array ('_entity'=>'group','uid'=>$uid))['id'];
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+
+    // Get USER by UID or Azure ID
+    $userUID = (string)$this->connector->getParam($params, $this->translator['userUID'], false);
+    if ($userUID !== "")
+      $user = $this->connector->load(array ('_entity'=>'user','uid'=>$userUID))['id'];
+    if ($user == null)
+      $userID = (string)$this->connector->getParam($params, $this->translator['userID'], true);
+    else
+      $userID = $user;
+   
+    try {
+      \Kuink\Core\TraceManager::add(' Removing user '.$userUID.' as owner of group '.$uid, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
+      $result = $this->connector->connector->createRequest("DELETE", "/groups/".$id."/owners/".$userID."/\$ref")
+                                           ->setReturnType(Model\Group::class)
+                                           ->execute();
+      //var_dump($result);
+    } 
+    catch (\Exception $e) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR adding owner of group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+			
+      return 1;
+    }
+
+    return 0;
+  }
+
+
+  /**
+   * List GROUP Users (members/owners)
+   * Parameter:
+   *    .is_owner => 1 -> List owners
+   *    .is_owner = 0 or null -> List members
+   * 
+   * Example: List members of group "_dummy"
+   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
+   *    <Param name="_entity">group</Param>
+   *    <Param name="_method">listUsers</Param>
+   *    <Param name="uid">_dummy</Param>
+   *    <Param name="is_owner">0</Param>
+   *   </DataAccess>
+   */
+  function listUsers($params) {
+    // Get GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->connector->load(array ('_entity'=>'group','uid'=>$uid))['id'];
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+                                        
+    // Get user role
+    if ((bool)$this->connector->getParam($params, $this->translator['isOwner'], false, 0))
+      $role = 'owners';
+    else
+      $role = 'members';
+
+    try {
+      \Kuink\Core\TraceManager::add(' Listing users of group '.$uid, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
+      $result = $this->connector->connector->createRequest("GET", "/groups/".$id."/".$role)
+                                           ->setReturnType(Model\Group::class)
+                                           ->execute();
+      //var_dump($result);
+    } 
+    catch (\Exception $e) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR getting users of group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+		
+      return 1;
+    }
+
+    return $this->objectArrayTranslated($result);
+  }
+
+
+  /**
+   * Assignes a Licence to GROUP
+   * 
+   */
+  public function assignLicense($params) {
+    // Set GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->load(array('uid'=>$uid))['id'];
+    // Get GROUP ID
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+                                        
+    $licenceSkuId = (string)$this->connector->getParam($params, 'licenceSkuId', false, $this->connector->licenceSkuId);
+
+    // Licence Stuff!
+    $licences = [
+      'addLicenses' => [
+        [
+          'disabledPlans' => [],
+          'skuId' => $licenceSkuId,
+        ],
+      ],
+      'removeLicenses' => []
+    ];
+
+    try {
+      \Kuink\Core\TraceManager::add(' Assigning license '.$licenceSkuId.' to group '.$uid, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
+      $result = $this->connector->connector->createRequest("POST", "/groups/$id/assignLicense")
+                                           ->attachBody($licences)
+                                           ->setReturnType(Model\Group::class)
+                                           ->execute();
+      //var_dump($result);
+    }
+    catch (\Exception $e) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR assigning licence', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+      
+      return 1;
+    }
+
+    // Translate data before return
+    return $this->objectArrayTranslated($result);	
+  }
+
+
+  /**
    * If this datasource have more than one schema then get it
    * For instance in a database server this could return the database name 
    * @param array  $params The params that are passed to get all records of an entity
@@ -1295,7 +1431,7 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
                                            ->setReturnType(Model\Team::class)
                                            ->execute();
     //var_dump($result);
-    } catch ( \Exception $e ) {
+    } catch (\Exception $e) {
       \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
       \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
       return 1;
@@ -1352,7 +1488,7 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
                                            ->setReturnType(Model\Team::class)
                                            ->execute();
     //var_dump($result);
-    } catch ( \Exception $e ) {
+    } catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
 			return 1;
@@ -1398,7 +1534,7 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
                                            ->setReturnType(Model\Group::class)
                                            ->execute();
     //var_dump($result);
-    } catch ( \Exception $e ) {
+    } catch (\Exception $e) {
       \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
       \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
       return 1;
@@ -1461,7 +1597,7 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
                                            ->setReturnType(Model\Team::class)
                                            ->execute();
     //var_dump($result);
-    } catch ( \Exception $e ) {
+    } catch (\Exception $e) {
         \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
         \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
         return 1;
@@ -1518,7 +1654,7 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
                                             ->setReturnType(Model\Group::class)
                                             ->execute();
     //var_dump($result);
-    } catch ( \Exception $e ) {
+    } catch (\Exception $e) {
       \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
       \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
       return 1;
@@ -1640,7 +1776,7 @@ class MicrosoftAPIAdminSDKDirectoryServiceHandler extends \Kuink\Core\DataSource
                                            ->setReturnType(Model\Directory::class)
                                            ->execute();
     //var_dump($result);
-    } catch ( \Exception $e ) {
+    } catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
 			return 1;
@@ -1662,7 +1798,7 @@ class MicrosoftAPIAdminSDKDirectoryServiceHandler extends \Kuink\Core\DataSource
                                            ->setReturnType(Model\Directory::class)
                                            ->execute();
     //var_dump($result);
-    } catch ( \Exception $e ) {
+    } catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
 			return 1;
