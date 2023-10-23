@@ -55,7 +55,7 @@ namespace Kuink\Core\DataSourceConnector;
 use Kuink\Core\Exception\NotImplementedException;
 use Kuink\Core\Exception\ParameterNotFound;
 
-// Include the Microsoft Graph classes
+//Include the Microsoft Graph classes
 use \Microsoft\Graph\Graph;
 use \Microsoft\Graph\Model;
 
@@ -68,6 +68,8 @@ class MicrosoftAPIAdminSDKEntity {
   const TEAM = 'team';
 	const DIRECTORY_SERVICE = 'directory.service';
 }
+
+
 
 /**
  * Description of MicrosoftAPIAdminSDKConnector
@@ -134,6 +136,7 @@ class MicrosoftAPIAdminSDKConnector extends \Kuink\Core\DataSourceMultiEntityCon
 }
 
 
+
 /**
  * Description of MicrosoftAPIAdminSDKConnectorCommon
  * Common methods for MicrosoftAPIAdminSDKConnector implementation.
@@ -170,9 +173,14 @@ abstract class MicrosoftAPIAdminSDKConnectorCommon {
   }
 }
 
-/******************************************************************************
- *  Entity Handlers
- ******************************************************************************/
+
+
+
+/********************************************************************************************
+ *  
+ * Entity Handlers
+ * 
+ ********************************************************************************************/
 /**
  * Class to handle all basic user operations
  *
@@ -247,9 +255,16 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 
 
   /**
-   * Get a USER
+   * Gets a USER
    * Parameters are optional, example: _attributes => displayName,givenName,id 
-   */
+	 * 
+	 * Example: Get the user "dummy.xpto" with the following attributes: id, mail and display name
+	 * 		<DataAccess method="load" datasource="microsoftAPIAdminSDK">
+	 * 			<Param name="_entity">user</Param>
+	 * 			<Param name="uid">dummy.xpto</Param>
+	 * 			<Param name="_attributes">id,mail,displayName</Param>
+	 * 		</DataAccess>
+	 */
   public function load($params, $operators) {
   	$this->connect();
 
@@ -281,11 +296,16 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
   
 
   /**
-   * Get all USERs
+   * Gets all USERs
    * Parameters are optional, example: query => $select=displayName,givenName,id
    * https://docs.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0&tabs=http
-   * 
-   */
+	 * 
+	 * Example: Gets all of the users with the following attributes: id, mail and display name
+	 * 		<DataAccess method="getAll" datasource="microsoftAPIAdminSDK">
+	 * 			<Param name="_entity">user</Param>
+	 * 			<Param name="_attributes">id,mail,displayName</Param>
+	 * 		</DataAccess>
+	 */
   public function getAll($params, $operators) {
   	$this->connect();
 
@@ -310,9 +330,21 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
   }
  
   
-  /**
-   * Insert a USER
-   */
+	/**
+	 * Inserts a USER
+	 * 
+	 * Example: Insert the user "dummy.xpto"
+	 * 		<DataAccess method="insert" datasource="microsoftAPIAdminSDK">
+	 * 			<Param name="_entity">user</Param>
+	 * 			<Param name="uid">dummy.xpto</Param>
+	 * 			<Param name="given_name">Dummy</Param>
+	 *			<Param name="surname">Xpto</Param>
+	 *			<Param name="display_name">Dummy Xpto</Param>
+	 *			<Param name="mobile">123456789</Param>
+	 *			<Param name="password">password1234</Param>
+	 *			<Param name="age_group">adult</Param>
+	 * 		</DataAccess>
+	 */
   public function insert($params) {
   	$this->connect();
 
@@ -386,9 +418,16 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
   }
 
 
-  /**
-   * Updates a USER
-   */
+	/**
+	 * Updates a USER
+	 * 
+	 * Example: Updates the surname of the user "dummy.xpto"
+	 * 		<DataAccess method="update" datasource="microsoftAPIAdminSDK">
+	 * 			<Param name="_entity">user</Param>
+	 * 			<Param name="uid">dummy.xpto</Param>
+	 *			<Param name="surname">Dummy</Param>
+	 * 		</DataAccess>
+	 */
   public function update($params) {
   	$this->connect();
     
@@ -398,17 +437,23 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
     else
       $id = (string)$this->connector->getParam($params, 'id', true);
 
-    if (isset ( $params ['_entity'] ))
-			unset ( $params ['_entity'] );
-    if (isset ( $params ['_method'] ))
-			unset ( $params ['_method'] );
-    if (isset ( $params [$this->translator['mailNickname']] ))
-			unset ( $params [$this->translator['mailNickname']] );
+    if (isset($params[$this->translator['givenName']]) || isset($params[$this->translator['surname']])) {
+      $givenName = $params[$this->translator['givenName']];
+      $surname = $params[$this->translator['surname']];
+			$params['displayName'] = $givenName.' '.$surname;
+    }
+    
+    if (isset($params['_entity']))
+			unset($params['_entity']);
+    if (isset($params['_method']))
+			unset($params['_method']);
+    if (isset($params[$this->translator['mailNickname']]))
+			unset($params[$this->translator['mailNickname']]);
 
     $data = array();         // Data to update
 
     // Password stuff, if updated
-    if (isset ( $params [$this->translator['password']] )){
+    if (isset ($params[$this->translator['password']])) {
       $password = (string)$this->connector->getParam($params, 'password', true);
       $passwordPolicies = (string)$this->connector->getParam($params, 'passwordPolicies', false, "DisablePasswordExpiration,DisableStrongPassword");
       $changePasswordAtNextLogin = (string)$this->connector->getParam($params, $this->translator['changePasswordAtNextLogin'], false);
@@ -431,22 +476,22 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
         unset ( $params [$this->translator['changePasswordAtNextLogin']] );
     }
 
-    foreach ( $params as $key => $value )
-      if (!is_null($value)){
+    foreach ( $params as $key => $value ) {
+      if (!is_null($value)) {
         $aux = isset ($this->rTranslator[$key]) ? (string)$this->rTranslator[$key] : $key;
         if (substr($aux,0,18) === "extensionAttribute")
           $data['onPremisesExtensionAttributes'][$aux] = is_array ( $value ) ? $value : ( string ) $value;
         else
           $data[$aux] = is_array ( $value ) ? $value : ( string ) $value;
       }
-
+    }
+     
     //var_dump($data);
     try {
       $result = $this->connector->connector->createRequest("PATCH", "/users/$id")
                                            ->attachBody($data)
                                            ->setReturnType(Model\User::class)
                                            ->execute();
-
     //var_dump($result);
     } catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
@@ -460,6 +505,8 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 
 
 	/**
+   * NOT IMPLEMENTED 
+   * 
 	 * Save a user
 	 */
 	public function save($params) {
@@ -468,7 +515,9 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 
 
   /**
-   * Reset USER PASSWORD | Not yet!
+   * NOT IMPLEMENTED 
+   * 
+   * Resets a USER password
    * @param array $params The params that are passed to update an entity record
    * ---> Missing: Delegated access!
    */
@@ -485,6 +534,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
    *     <Param name="_entity">user</Param>
    *     <Param name="_method">assignLicense</Param>
    *     <Param name="uid">dummy</Param>
+   *     <Param name="licenceSkuId"></Param>
    *   </DataAccess>
    */
   public function assignLicense($params) {
@@ -525,10 +575,10 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 
 
   /**
-   * Get USER Licence Details
+   * Gets a USER license details
    */
-  function licenseDetails($params){
-                                            // Set USER by UID or Azure ID
+  function licenseDetails($params) {
+    // Set USER by UID or Azure ID
     $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
     if ($uid !== "")
       $id = $this->connector->load(array ('_entity'=>'user','uid'=>$uid))['id'];
@@ -554,6 +604,12 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
   /**
    * Deletes a USER
    * It goes to trash bin, deleted list
+	 * 
+	 * Example: Deletes the user "dummy.xpto"
+	 * 		<DataAccess method="delete" datasource="microsoftAPIAdminSDK">
+	 * 			<Param name="_entity">user</Param>
+	 * 			<Param name="uid">dummy.xpto</Param>
+	 * 		</DataAccess>
    */
   public function delete($params) {
   	$this->connect();
@@ -621,6 +677,8 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 }
 
 
+
+
 /**
  * Class to handle all basic GROUP operations
  *
@@ -678,13 +736,12 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
 
 
   /**
-   * Get a GROUP
+   * Gets a GROUP
    * 
-   * Example: Get from group "_dummy", attributes "mailNickname,id"
-   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
+   * Example: Get the group "_xpto" with the following attributes: mailNickname and id
+   *   <DataAccess method="load" datasource="microsoftAPIAdminSDK">
    *     <Param name="_entity">group</Param>
-   *     <Param name="_method">load</Param>
-   *     <Param name="uid">_dummy</Param>
+   *     <Param name="uid">_xpto</Param>
    *     <Param name="_attributes">mailNickname,id</Param>
    *   </DataAccess>
    */
@@ -726,19 +783,23 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
 
 
   /**
-   * Get all GROUPs
+   * Gets all GROUPs
    * Parameters are optional, example: query => $select=displayName,givenName,id
    * https://docs.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0&tabs=http
    * 
+   * Example: Gets all groups with the following attributes: mailNickname and id
+   *   <DataAccess method="getAll" datasource="microsoftAPIAdminSDK">
+   *     <Param name="_entity">group</Param>
+   *     <Param name="_attributes">mailNickname,id</Param>
+   *   </DataAccess>
    */
   function getAll($params, $operators=null) {
-                                            // List of parameters
+    // List of parameters
     $query = (string)$this->connector->getParam($params, '_attributes', false);
     if ($query !== '') {
       $query = '?$select='.$query.'&$top=999';
     }
     
-    //var_dump($id);
     try {
       $result = $this->connector->connector->createRequest("GET", "/groups".$query)
                                 ->setReturnType(Model\Group::class)
@@ -757,6 +818,17 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
   /**
    * Inserts a GROUP
    * 
+	 * Example: Insert the group "_xpto" with "dummy.xpto" as owner
+   *   <DataAccess method="insert" datasource="microsoftAPIAdminSDK">
+   *    <Param name="uid">_xpto</Param>
+   *    <Param name="display_name">XPTO</Param>
+   *    <Param name="description">Xpto Group</Param>
+   *    <Param name="mail_enabled">1</Param>
+   *    <Param name="security_enabled">1</Param>
+   *    <Param name="uid_user">dummy.xpto</Param>
+   *    <Param name="is_owner">1</Param>
+   *    <Param name="is_collaborative">1</Param>					
+   *   </DataAccess>
    */
   function insert($params) {
     $displayName = (string)$this->connector->getParam($params, $this->translator['displayName'], true);
@@ -823,17 +895,23 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
   /**
    * Updates a GROUP
    * @param array $params The params that are passed to update an entity record
+   * 
+	 * Example: Updates the group "_xpto"
+   *   <DataAccess method="update" datasource="microsoftAPIAdminSDK">
+   *    <Param name="uid">_xpto</Param>
+   *    <Param name="description">Xpto Test Group</Param>				
+   *   </DataAccess>
    */
   function update($params) {
-                                            // Set GROUP by UID or Azure ID
+    // Set GROUP by UID or Azure ID
     $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
     if ($uid !== "")
       $id = $this->load(array('uid'=>$uid))['id'];
-                                            // Get GROUP ID
+    // Get GROUP ID
     if (!isset($id))
       $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
 
-                                            // Unset config params
+    // Unset config params
     if (isset ( $params ['_entity'] ))
 			unset ( $params ['_entity'] );
     if (isset ( $params ['_method'] ))
@@ -844,9 +922,9 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
 			unset ( $params [$this->translator['id']] );
 
                                           
-    $data = array();                        // Data to update
+    $data = array(); // Data to update
 
-                                            // Group type, if updated
+    // Group type, if updated
     $collaborative = (bool)$this->connector->getParam($params, $this->translator['collaborative'], false, false);
     if ($collaborative){
       $data = ['groupTypes' => [ "Unified" ]];
@@ -860,21 +938,22 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
       }
 
 
-    foreach ( $params as $key => $value )
-      if (!is_null($value)){
+    foreach ( $params as $key => $value ) {
+      if (!is_null($value)) {
         $aux = isset ($this->rTranslator[$key]) ? (string)$this->rTranslator[$key] : $key;
         if ($aux === "securityEnabled")
           $data['securityEnabled'] = (bool)$this->connector->getParam($params, $this->translator['securityEnabled'], false);
         else
-          $data[$aux] = is_array ( $value ) ? $value : ( string ) $value;
+          $data[$aux] = is_array ($value) ? $value : (string) $value;
       }
-
+    }
   
     /**
      * TODO
      * $allowExternalSenders = (bool)$this->connector->getParam($params, $this->translator['allow_external_senders'], false, false);
      */
     try {
+      var_dump($uid);
       $result = $this->connector->connector->createRequest("PATCH", "/groups/".$id)
                                            ->attachBody($data)
                                            ->setReturnType(Model\Group::class)
@@ -883,6 +962,7 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
     } catch ( \Exception $e ) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+     
       return 1;
     }
 
@@ -892,9 +972,10 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
 
 
   /**
-	 * Save a GROUP
+   * NOT IMPLEMENTED 
+   * 
+	 * Saves a GROUP
 	 */
-
 	public function save($params) {
 		\Kuink\Core\TraceManager::add ( __METHOD__.' Not implemented', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
 	}
@@ -905,11 +986,11 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
    * 
    */
   public function assignLicense($params) {
-                                            // Set GROUP by UID or Azure ID
+    // Set GROUP by UID or Azure ID
     $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
     if ($uid !== "")
       $id = $this->load(array('uid'=>$uid))['id'];
-                                            // Get GROUP ID
+    // Get GROUP ID
     if (!isset($id))
       $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
                                         
@@ -935,6 +1016,7 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
     } catch ( \Exception $e ) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR assigning licence', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+      
       return 1;
     }
 
@@ -944,14 +1026,14 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
 
 
   /**
-   * Add User to GROUP
+   * Adds a USER to a GROUP
    * 
-   * Example: Add user "dummy" to group "_dummy"
+   * Example: Add user "dummy.xpto" to group "_dummy"
    *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
    *    <Param name="_entity">group</Param>
    *    <Param name="_method">addUser</Param>
    *    <Param name="uid">_dummy</Param>
-   *    <Param name="uid_user">dummy</Param>
+   *    <Param name="uid_user">dummy.xpto</Param>
    *    <Param name="is_owner">0</Param>
    *   </DataAccess>
    */
@@ -1008,17 +1090,25 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
    * Parameter:
    *    .is_owner => 1 -> List owners
    *    .is_owner = 0 or null -> List members
+   * 
+   * Example: List members of group "_dummy"
+   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
+   *    <Param name="_entity">group</Param>
+   *    <Param name="_method">listUsers</Param>
+   *    <Param name="uid">_dummy</Param>
+   *    <Param name="is_owner">0</Param>
+   *   </DataAccess>
    */
   function listUsers($params) {
-                                            // Set GROUP by UID or Azure ID
+    // Set GROUP by UID or Azure ID
     $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
     if ($uid !== "")
       $id = $this->connector->load(array ('_entity'=>'group','uid'=>$uid))['id'];
-                                            // Get GROUP ID
+    // Get GROUP ID
     if (!isset($id))
       $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
                                         
-                                            // Get role!
+    // Get role!
     if ((bool)$this->connector->getParam($params, $this->translator['isOwner'], false, 0))
       $role = 'owners';
     else
@@ -1040,8 +1130,15 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
 
 
   /**
-   * Remove User from GROUP
+   * Removes a USER from a GROUP
    * 
+   * Example: Remove user "dummy.xpto" from the group "_dummy"
+   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
+   *    <Param name="_entity">group</Param>
+   *    <Param name="_method">removeUser</Param>
+   *    <Param name="uid">_dummy</Param>
+   *    <Param name="uid_user">dummy.xpto</Param>
+   *   </DataAccess>
    */
   function removeUser($params) {    
     // Get GROUP by UID or Azure ID
@@ -1058,10 +1155,8 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
     $userUID = (string)$this->connector->getParam($params, $this->translator['userUID'], false);
     if ($userUID !== "")
       $userID = $this->connector->load(array ('_entity'=>'user','uid'=>$userUID))['id'];
-
     if (!isset($userID))
       $userID = (string)$this->connector->getParam($params, $this->translator['userID'], true);
-
 
     try {
       $result = $this->connector->connector->createRequest("DELETE", "/groups/".$id."/members/".$userID."/\$ref")
@@ -1071,6 +1166,7 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
     } catch ( \Exception $e ) {
       \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR removing user from group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
       \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+      
       return 1;
     }
 
@@ -1081,6 +1177,12 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
  /**
    * Deletes a GROUP
    * It goes to trash bin, deleted list
+   * 
+   * Example: Deletes the group "_dummy"
+   *   <DataAccess method="delete" datasource="microsoftAPIAdminSDK">
+   *    <Param name="_entity">group</Param>
+   *    <Param name="id">123456789ABCDEFGH</Param>
+   *   </DataAccess>
    */
   function delete($params) {
   	$this->connect();
@@ -1112,6 +1214,8 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
   	return null;
   }
 }
+
+
 
 
 /**
@@ -1442,6 +1546,8 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
   	return null;
   }
 }
+
+
 
 
 /**
