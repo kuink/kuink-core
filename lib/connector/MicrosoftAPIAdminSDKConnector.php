@@ -279,22 +279,25 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
       $query = '?$select='.$query;
     }
     
-    try {
-      \Kuink\Core\TraceManager::add(' Loading user: '.$mailNickname, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
-      $result = $this->connector->connector->createRequest("GET", "/users/$id".$query)
-                                           ->setReturnType(Model\User::class)
-                                           ->execute();
-      //var_dump($result);
-    } 
-    catch (\Exception $e) {
-			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
-			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
-    
-      return 1;
-    }
+    if (isset($id) && !empty($id)) {
+      try {
+        \Kuink\Core\TraceManager::add(' Loading user: '.$mailNickname, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
+        $result = $this->connector->connector->createRequest("GET", "/users/$id".$query)
+                                            ->setReturnType(Model\User::class)
+                                            ->execute();
+        //var_dump($result);
+      } 
+      catch (\Exception $e) {
+        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+        \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+      
+        return 1;
+      }
 
-    // Translate data before return
-    return $this->objectArrayTranslated($result);
+      // Translate data before return
+      return $this->objectArrayTranslated($result);
+    }
+    return 1;
   }
   
 
@@ -784,21 +787,23 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
       $query = '?$select='.$query;
     }
 
-    try {
-      \Kuink\Core\TraceManager::add(' Loading group '.$uid, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
-      $result = $this->connector->connector->createRequest("GET", "/groups/$id".$query)
-                                           ->setReturnType(Model\Group::class)
-                                           ->execute();
-      //var_dump($result);
+    if (isset($id) && !empty($id)) {
+      try {
+        \Kuink\Core\TraceManager::add(' Loading group '.$uid, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
+        $result = $this->connector->connector->createRequest("GET", "/groups/$id".$query)
+                                            ->setReturnType(Model\Group::class)
+                                            ->execute();
+        //var_dump($result);
+      }
+      catch (\Exception $e) {
+        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+        \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+        
+        return 1;
+      }
+      return $this->objectArrayTranslated($result);
     }
-    catch (\Exception $e) {
-			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
-			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
-			
-      return 1;
-    }
-
-    return $this->objectArrayTranslated($result);
+    return 1;
   }
 
 
