@@ -272,7 +272,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
     if ($mailNickname !== '')
       $id = $mailNickname.'@'.$this->connector->domain;     // Uses userPrincipalName parameter
     else
-      $id = (string)$this->connector->getParam($params, 'id', true);
+      $id = (string)$this->connector->getParam($params, 'id', false);
 
     $query = (string)$this->connector->getParam($params, '_attributes', false);            // List of parameters
     if ($query !== '') {
@@ -772,13 +772,13 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
       $groups = $this->connector->getAll(array('_entity'=>'group','_attributes'=>'mailNickname,id'));
       foreach ( $groups as $key => $value )
         if ($value[$this->translator['mailNickname']] == $uid){
-          $id = $value[$this->translator['id']];
+          $id = $value['id'];
           break;
         }
     }
     // Get GROUP ID
     if (!isset($id)) {
-      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+      $id = (string)$this->connector->getParam($params, 'id', false);
     }
     
     // List of parameters
@@ -1423,31 +1423,35 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
       $teams = $this->connector->getAll(array('_entity'=>'team','_attributes'=>'mailNickname,id'));
       foreach ( $teams as $key => $value )
         if ($value[$this->translator['mailNickname']] == $uid){
-          $id = $value[$this->translator['id']];
+          $id = $value['id'];
           break;
         }
     }                                       // Get GROUP ID
     if (!isset($id))
-      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+      $id = (string)$this->connector->getParam($params, 'id', false);
     
     //var_dump($id);
-    try {
-      $result = $this->connector->connector->createRequest("GET", "/teams/$id")
-                                           ->setReturnType(Model\Team::class)
-                                           ->execute();
-    //var_dump($result);
-    } catch (\Exception $e) {
-      \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
-      \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
-      return 1;
-    }
+    if (isset($id) && !empty($id)) {
+      try {
+        $result = $this->connector->connector->createRequest("GET", "/teams/$id")
+                                             ->setReturnType(Model\Team::class)
+                                             ->execute();
 
-                                                // Convert TEAM to array?
-    $c = (string)$this->connector->getParam($params, 'convertToArray', false, true);
-    if ($c==0 OR $c=='N' OR $c=='n' OR $c=false)
-      return $result;
-    else
-      return $this->objectArrayTranslated($result);
+      }
+      catch (\Exception $e) {
+        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading team', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+        \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+        
+        return 1;
+      }
+      // Convert TEAM to array?
+      $c = (string)$this->connector->getParam($params, 'convertToArray', false, true);
+      if ($c==0 OR $c=='N' OR $c=='n' OR $c=false)
+        return $result;
+      else
+        return $this->objectArrayTranslated($result);
+    }
+    return 1;
   }
 
 
