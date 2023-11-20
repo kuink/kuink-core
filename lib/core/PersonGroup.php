@@ -19,6 +19,7 @@ class PersonGroupProperty {
 
 	const TOTAL_MEMBERS = 'total_members';
 	const IS_OWNER = 'is_owner';
+	const IS_MANAGER = 'is_manager';
 	const IS_MEMBER = 'is_member';
 
 	const _CREATION = '_creation';
