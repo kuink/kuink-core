@@ -928,7 +928,7 @@ class googleAPIAdminSDKGroupHandler extends GoogleAPIAdminSDKConnectorCommon
    *    <Param name="_method">addUser</Param>
    *    <Param name="uid">_xpto</Param>
    *    <Param name="uid_user">dummy</Param>
-	 * 		<Param name="is_owner">0</Param>
+   * 	<Param name="role">MEMBER</Param>
    *   </DataAccess>
    */
 	function addUser($params)	
@@ -939,9 +939,8 @@ class googleAPIAdminSDKGroupHandler extends GoogleAPIAdminSDKConnectorCommon
 		$uid = (string) $this->connector->getParam($params, \Kuink\Core\PersonGroupProperty::UID, true);
 		$groupKey = $uid.'@'.$this->connector->domain;
 		$userEmail = $params['uid_user'].'@'.$this->connector->domain;
-		if($params[\Kuink\Core\PersonGroupProperty::IS_OWNER] == 1)
-			$userRole = 'OWNER';
-		else
+		$userRole = strtoupper($params['role']);
+		if (!(isset($userRole) && $userRole !== ""))
 			$userRole = 'MEMBER';
 		$memberParams[\Kuink\Core\PersonGroupProperty::EMAIL] = $userEmail;
 		$memberParams['role'] = $userRole;
@@ -1000,18 +999,18 @@ class googleAPIAdminSDKGroupHandler extends GoogleAPIAdminSDKConnectorCommon
 
 
 	/**
-   * Adds a USER as owner of a GROUP
+   * Updates a USER in a GROUP. Adds it if non-member.
    * 
-   * Example: Add user "dummy" as owner of group "_xpto"
+   * Example: Updates user "dummy" as owner of group "_xpto"
    *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
    *    <Param name="_entity">group</Param>
-   *    <Param name="_method">addUser</Param>
+   *    <Param name="_method">updateUser</Param>
    *    <Param name="uid">_xpto</Param>
    *    <Param name="uid_user">dummy</Param>
-	 * 		<Param name="is_owner">0</Param>
+   *    <Param name="role">OWNER</Param>
    *   </DataAccess>
    */
-	function addOwner($params)	
+	function updateUser($params)	
 	{
 		$dir = new \Google_Service_Directory($this->connector->connector);
 
@@ -1022,71 +1021,23 @@ class googleAPIAdminSDKGroupHandler extends GoogleAPIAdminSDKConnectorCommon
 
 		//Check if the user is already member of the group
 		$isMember = $dir->members->hasMember($groupKey, $memberKey);
-		if($isMember['isMember'] == false) { 
-			//The user is not a member, so add it as OWNER
-			$memberParams[\Kuink\Core\PersonGroupProperty::EMAIL] = $memberKey;
-			$memberParams['role'] = 'OWNER';
-
-			$member = new \Google_Service_Directory_Member($memberParams);
-			$dir->members->insert($groupKey, $member);
-		}
+		if($isMember['isMember'] == false)
+			$result = $this->addUser($params);
 		else {
 			//The user already is a member, so update its role to OWNER
 			$member = $dir->members->get($groupKey, $memberKey);
-			$member['role'] = 'OWNER';
-		}
-		
-		try {
-			\Kuink\Core\TraceManager::add(' Adding user '.$params['uid_user'].' as owner of group '.$uid, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);		
-			$result = $dir->members->update($groupKey, $memberKey, $member);
-			//var_dump($result);
-		}
-		catch (\Exception $e) {
-			\Kuink\Core\TraceManager::add(__METHOD__.' ERROR adding user to group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
-			\Kuink\Core\TraceManager::add($e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__);
-			
-			return 1;
-		}
-
-		return 0;
-	}
-
-
-	/**
-   * Adds a USER as owner of a GROUP
-   * 
-   * Example: Add user "dummy" as owner of group "_xpto"
-   *   <DataAccess method="execute" datasource="microsoftAPIAdminSDK">
-   *    <Param name="_entity">group</Param>
-   *    <Param name="_method">addUser</Param>
-   *    <Param name="uid">_xpto</Param>
-   *    <Param name="uid_user">dummy</Param>
-	 * 		<Param name="is_owner">0</Param>
-   *   </DataAccess>
-   */
-	function removeOwner($params)	
-	{
-		$dir = new \Google_Service_Directory($this->connector->connector);
-
-		//Set the necessary params
-		$uid = (string) $this->connector->getParam($params, \Kuink\Core\PersonGroupProperty::UID, true);
-		$groupKey = $uid.'@'.$this->connector->domain;
-		$memberKey = $params['uid_user'].'@'.$this->connector->domain;
-
-		//Set the user role to MEMBER
-		$member = $dir->members->get($groupKey, $memberKey);
-		$member['role'] = 'MEMBER';
-		
-		try {
-			\Kuink\Core\TraceManager::add(' Removing user '.$params['uid_user'].' as owner of group '.$uid, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);		
-			$result = $dir->members->update($groupKey, $memberKey, $member);
-			//var_dump($result);
-		}
-		catch (\Exception $e) {
-			\Kuink\Core\TraceManager::add(__METHOD__.' ERROR adding user to group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
-			\Kuink\Core\TraceManager::add($e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__);
-			
-			return 1;
+			$member['role'] = strtoupper($params['role']);
+			try {
+				\Kuink\Core\TraceManager::add(' Updating user '.$params['uid_user'].' as '. $params['role'] .' of group '.$uid, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);		
+				$result = $dir->members->update($groupKey, $memberKey, $member);
+				//var_dump($result);
+			}
+			catch (\Exception $e) {
+				\Kuink\Core\TraceManager::add(__METHOD__.' ERROR updating user in group', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+				\Kuink\Core\TraceManager::add($e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__);
+				
+				return 1;
+			}
 		}
 
 		return 0;

@@ -861,10 +861,9 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
   function insert($params) {
     $displayName = (string)$this->connector->getParam($params, $this->translator['displayName'], true);
     $description = isset ($params[$this->translator['description']]) ? (string)$this->connector->getParam($params, $this->translator['description'], false) : $displayName;
-
     $mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], true);
-    $groupType = (string)$this->connector->getParam($params, $this->translator['groupType'], false, "Unified");
-    $mailEnabled = isset ($params[$this->translator['mailEnabled']]) ? (string)$this->connector->getParam($params, $this->translator['mailEnabled'], false) : true;
+    $groupType = (string)$this->connector->getParam($params, $this->translator['groupType'], false);
+    $mailEnabled = (isset ($params[$this->translator['mailEnabled']]) ? (int)$this->connector->getParam($params, $this->translator['mailEnabled'], false) : true) ? true : false;
     $securityEnabled = isset ($params[$this->translator['securityEnabled']]) ? (bool)$this->connector->getParam($params, $this->translator['securityEnabled'], false) : true;
 
     $visibility = (string)$this->connector->getParam($params, $this->translator['visibility'], false, "Private");
@@ -879,29 +878,34 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
     else
       $userID = $user;
 
-    $role = (bool)$this->connector->getParam($params, $this->translator['isOwner'], false, 0);
+    // $role = (bool)$this->connector->getParam($params, $this->translator['isOwner'], false, 0);
 
     $collaborative = (bool)$this->connector->getParam($params, $this->translator['collaborative'], false, false);
-    if ($collaborative && isset($userID) && $role){
-      $groupType = "Unified";
+    
+    if ($collaborative) {
       $mailEnabled = true;
-      $owner = "https://graph.microsoft.com/v1.0/users/".$userID;
-    }
+      $groupTypes = ["Unified"];
+    } else if ( empty($groupType) ) {
+      $mailEnabled = false;
+      $groupTypes = [];
+    } else
+      $groupTypes = [$groupType];    
+
 
     $data = [
       'displayName' => $displayName,
       'description' => $description,
-      'groupTypes' => [
-        $groupType
-      ],
+      'groupTypes' => $groupTypes,
       'mailEnabled' => $mailEnabled,
       'mailNickname' => $mailNickname,
       'securityEnabled' => $securityEnabled,
-      'visibility' => $visibility,
-      'owners@odata.bind' => [
-        $owner
-      ],
+      'visibility' => $visibility
     ];
+
+    if (isset($userID) && !empty($userID)) {
+      $owner = "https://graph.microsoft.com/v1.0/users/".$userID;
+      $data['owners@odata.bind'] = [$owner];
+    }
 
     // Create group
     try {
