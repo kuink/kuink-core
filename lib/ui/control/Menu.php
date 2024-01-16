@@ -30,7 +30,7 @@ class Menu extends Control {
 		$menu ['href'] = ($actionName != '') ? $utils->ActionUrl ( array (
 				0 => $actionName 
 		) ) : '#';
-		$menu ['icon'] = (isset ( $parent [0] ['icon'] )) ? ( string ) $parent [0] ['icon'] : 'circle-o';
+		$menu ['icon'] = (isset ( $parent [0] ['icon'] )) ? ( string ) $parent [0] ['icon'] : 'circle';
 		$menu ['id'] = (isset ( $parent [0] ['id'] )) ? ( string ) $parent [0] ['id'] : '';
 		//var_dump(sizeof($this->dynamic_fields));
 		$menuSize = !(isset($this->dynamic_fields)) ? 0 : sizeof ( $this->dynamic_fields );
@@ -43,7 +43,7 @@ class Menu extends Control {
 				$visible = isset ( $action ['visible'] ) ? ( string ) $action ['visible'] : 'true';
 				$modal = isset ( $action ['modal'] ) ? ( string ) $action ['modal'] : '';
 				$target = isset ( $action ['target'] ) ? ( string ) $action ['target'] : '_self';
-				$icon = isset ( $action ['icon'] ) ? ( string ) $action ['icon'] : 'circle-o';
+				$icon = isset ( $action ['icon'] ) ? ( string ) $action ['icon'] : 'circle';
 				$value = isset ( $action ['value'] ) ? ( string ) $action ['value'] : '';
 				//Keep compatibility with attribute value and actionvalue
 				if ($value == '')
@@ -81,7 +81,7 @@ class Menu extends Control {
 					$visible = isset ( $actionAttributes ['visible'] ) ? ( string ) $actionAttributes ['visible'] : 'true';
 					$modal = isset ( $actionAttributes ['modal'] ) ? ( string ) $actionAttributes ['modal'] : '';
 					$target = isset ( $actionAttributes ['target'] ) ? ( string ) $actionAttributes ['target'] : '_self';
-					$icon = isset ( $actionAttributes ['icon'] ) ? ( string ) $actionAttributes ['icon'] : 'circle-o';
+					$icon = isset ( $actionAttributes ['icon'] ) ? ( string ) $actionAttributes ['icon'] : 'circle';
 					$value = isset ( $actionAttributes ['value'] ) ? ( string ) $actionAttributes ['value'] : '';
 					//Keep compatibility with attribute value and actionvalue
 					if ($value == '')

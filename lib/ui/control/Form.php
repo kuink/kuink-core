@@ -55,7 +55,7 @@ class FormPropertyDefaults {
 	const INFER = 'false';
 	const TABS = 'top';
 	const BUTTONS_POSITION = 'bottom';
-	const BUTTONS_ALIGN = 'right';
+	const BUTTONS_ALIGN = 'left';
 	const PERSIST = 'false';
 }
 
