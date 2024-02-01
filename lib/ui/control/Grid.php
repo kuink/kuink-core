@@ -155,7 +155,8 @@ class GridColumnProperty {
 	const DEFAULTSORT = 'defaultsort';
 	const HIGHLIGHTSTYLE = 'highlightstyle';
 	const HIGHLIGHTVALUE = 'highlightvalue';
-	const ALIGN = 'align';
+	const HORIZONTALALIGN = 'horizontalalign';
+	const VERTICALALIGN = 'verticalalign';
 	const HEADERALIGN = 'headeralign';
 }
 
@@ -201,7 +202,8 @@ class GridColumnDefaults {
 	const DEFAULTSORT = '';
 	const HIGHLIGHTSTYLE = '';
 	const HIGHLIGHTVALUE = '1';
-	const ALIGN = 'left';
+	const HORIZONTALALIGN = 'left';
+	const VERTICALALIGN = 'top';
 	const HEADERALIGN = '';
 }
 class GridContextVariables {
@@ -506,7 +508,8 @@ class Grid extends Control {
 		$attributes [GridColumnProperty::HIGHLIGHTSTYLE] = $this->getProperty ( $name, GridColumnProperty::HIGHLIGHTSTYLE, false, GridColumnDefaults::HIGHLIGHTSTYLE, $column );
 		$attributes [GridColumnProperty::HIGHLIGHTVALUE] = $this->getProperty ( $name, GridColumnProperty::HIGHLIGHTVALUE, false, GridColumnDefaults::HIGHLIGHTVALUE, $column );
 
-		$attributes [GridColumnProperty::ALIGN] = $this->getProperty ( $name, GridColumnProperty::ALIGN, false, GridColumnDefaults::ALIGN, $column );
+		$attributes [GridColumnProperty::HORIZONTALALIGN] = $this->getProperty ( $name, GridColumnProperty::HORIZONTALALIGN, false, GridColumnDefaults::HORIZONTALALIGN, $column );
+		$attributes [GridColumnProperty::VERTICALALIGN] = $this->getProperty ( $name, GridColumnProperty::VERTICALALIGN, false, GridColumnDefaults::VERTICALALIGN, $column );
 		$attributes [GridColumnProperty::HEADERALIGN] = $this->getProperty ( $name, GridColumnProperty::HEADERALIGN, false, GridColumnDefaults::HEADERALIGN, $column );
 		
 		if ($attributes [GridColumnProperty::TYPE] == GridColumnType::SELECT || $attributes [GridColumnProperty::TYPE] == GridColumnType::CSTATIC)
