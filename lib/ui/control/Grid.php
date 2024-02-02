@@ -240,6 +240,8 @@ class Grid extends Control {
 	var $tableConfirmActions; // All actions that nedd confirmation are set here for modal creation
 	var $hasactions;
 	var $action_separator; // Use a separator for actions? (true|false)
+	var $actions_horizontalalign;
+	var $actions_verticalalign;
 	var $actions;
 	var $nodeconfiguration;
 	var $pagingaction;
@@ -724,6 +726,8 @@ class Grid extends Control {
 		
 		$actions_tag = $tablexml->xpath ( './Template/Actions' );
 		$this->action_separator = isset ( $actions_tag [0] ['separator'] ) ? (( string ) $actions_tag [0] ['separator'] == 'true') : 'false';
+		$this->actions_horizontalalign = isset ( $actions_tag [0] ['horizontalalign'] ) ? (( string ) $actions_tag [0] ['horizontalalign']) : 'left';
+		$this->actions_verticalalign = isset ( $actions_tag [0] ['verticalalign'] ) ? (( string ) $actions_tag [0] ['verticalalign']) : 'top';
 		
 		$this->hasactions = $hasactions;
 		$this->actions = $actions;
@@ -877,6 +881,9 @@ class Grid extends Control {
 		
 		if ($hasactions) {
 			$table_columns [$index] = 'actions';
+			$table_colattributes[$index]['horizontalalign'] = $this->actions_horizontalalign;
+			$table_colattributes[$index]['verticalalign'] = $this->actions_verticalalign;
+			//$table_columns [$index] ['horizontalalign'] = 'right';
 			$table_headers [$index] = Core\Language::getString ( 'actions', $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		}
 		// var_dump($table_headers);
