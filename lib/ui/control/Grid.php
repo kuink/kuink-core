@@ -204,7 +204,7 @@ class GridColumnDefaults {
 	const HIGHLIGHTVALUE = '1';
 	const HORIZONTALALIGN = 'left';
 	const VERTICALALIGN = 'top';
-	const HEADERALIGN = '';
+	const HEADERALIGN = 'left';
 }
 class GridContextVariables {
 	const PAGE = 'page';
