@@ -800,14 +800,17 @@ class ProcessOrchestrator {
 			
 			// Set the company id
 			$companies = $_SESSION ['KUINK_CONTEXT'] ['companies'];
-			foreach ( $companies as $company )
-				if ($company->id == $idCompany)
+			foreach ( $companies as $company ) {
+				$actualCompanyId = $company ['id'];
+				if (strcmp($actualCompanyId, $idCompany) === 0)
 					$context->idCompany = $idCompany;
+			}
 			
 			self::setContext ( $context );
 			// Redirect to home page...
-			redirect ( $KUINK_CFG->wwwRoot );
-		} else if (! isset ( $context->idCompany )) {
+			// redirect ( $KUINK_CFG->wwwRoot );
+		}
+		if (! isset ( $context->idCompany )) {
 			// Load the user companies
 			$datasource = new \Kuink\Core\DataSource ( null, 'framework/framework,fw.person,getCompanies', 'framework', 'fw.person' );
 			$idNumber = ($KUINK_CFG->auth->user->id) ? $KUINK_CFG->auth->user->id : 0;
