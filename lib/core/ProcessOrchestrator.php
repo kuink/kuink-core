@@ -170,6 +170,12 @@ class ProcessOrchestrator {
 			$context->processVars = array (); // init process variables array
 			$context->eventParams = array (); // last event params
 			$context->sessionVars = array (); // last event params
+
+			if ($numContexts > 0) {
+				$lastContext = end($_SESSION ['KUINK_CONTEXT'] ['CONTEXTS']);
+				$context->idCompany = $lastContext->idCompany;
+			}
+			//$context->idCompany
 			$_SESSION ['KUINK_CONTEXT'] ['CONTEXTS'] [$contextId] = $context; // add the context
 			// var_dump($_SESSION['KUINK_CONTEXT']['CONTEXTS'][$contextId]);
 		} else {
