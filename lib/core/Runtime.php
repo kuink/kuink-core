@@ -294,6 +294,7 @@ class Runtime {
 				$dataAccess->setCache(\Kuink\Core\CacheType::REQUEST, 'core/runtime::userCapabilitiesOfRolesList');
 			$rolesCleaned = str_replace("'", '"', $roles); // substr($roles,1,strlen($roles)-2);
 			$params ['code_role_list'] = $rolesCleaned;
+			$params['id_company'] = $this->nodeconfiguration[NodeConfKey::USER]['idCompany'];
 			$resultset = $dataAccess->execute ( $params );
 			if ($resultset) {
 				foreach ( $resultset as $capability ) {
@@ -316,8 +317,8 @@ class Runtime {
 			$dataAccess = new \Kuink\Core\DataAccess('framework/framework,acl,getRoles', 'framework', 'acl');
 			$params['id'] = $idAcl;
 			$params['id_person'] = $this->nodeconfiguration[NodeConfKey::USER]['id'];
-			$resultset = $dataAccess->execute($params);
 			$params['id_company'] = $this->nodeconfiguration[NodeConfKey::USER]['idCompany'];			
+			$resultset = $dataAccess->execute($params);			
 			//print_object($resultset);
 			if ($resultset){
 				foreach ($resultset as $role){
