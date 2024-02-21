@@ -83,7 +83,7 @@ class User {
 		$kuinkUser ['uid'] = $person ['uid']; // $USER->username;
 		$kuinkUser ['name'] = $person ['display_name']; // $USER->firstname . ' ' . $USER->lastname;
 		$kuinkUser ['email'] = $person ['email']; // $USER->email;
-		$kuinkUser ['publicKey'] = $person ['public_key']; // $USER->email;
+		$kuinkUser ['publicKey'] = $person ['public_key']; // $USER->public_key;
 		// $kuink_user['tipo'] = $current_user->tipo;
 		$kuinkUser ['idExternal'] = $KUINK_CFG->auth->user->id; // $current_user->idexternal;
 		$kuinkUser ['lang'] = $KUINK_CFG->auth->user->lang;
