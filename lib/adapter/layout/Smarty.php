@@ -21,6 +21,7 @@ require_once ($KUINK_INCLUDE_PATH . 'lib/tools/smarty/Smarty.class.php');
 class Smarty extends \Smarty {
 	private $themeName;
 	private $appTemplate;
+	private $screenTitle;
 	private $userMessages = array ();
 	private $positionsHtml = array ();
 	private $menuItems = array ();
@@ -38,6 +39,7 @@ class Smarty extends \Smarty {
 		
 		$this->themeName = $themeName;
 		$this->appTemplate = "1col";
+		$this->screenTitle = "";
 		$this->assign ( 'THEME', $themeName );
 		$context = \Kuink\Core\ProcessOrchestrator::getContext ();
 		$this->assign ( '_idContext', ($context == null) ? null : $context->id );
@@ -88,6 +90,10 @@ class Smarty extends \Smarty {
 		$this->appTemplate = $appTemplate;
 	}
 
+	public function setScreenTitle($screenTitle) {
+		$this->screenTitle = $screenTitle;
+	}
+
 	public function setRedirectHeader($url) {
 		global $KUINK_CFG;
 		
@@ -132,6 +138,7 @@ class Smarty extends \Smarty {
 		$this->loadPlugin ( 'smarty_block_translate' );
 		$this->registerPlugin ( 'block', 'translate', 'smarty_block_translate' );
 		$this->assign ( "userMessages", $this->userMessages );
+		$this->assign ( "screenTitle", $this->screenTitle );
 		$this->assign ( "appTemplate", "App_" . $this->appTemplate . ".tpl" );
 		
 		$modal = isset ( $_GET ['modal'] ) ? ( string ) $_GET ['modal'] : 'false';

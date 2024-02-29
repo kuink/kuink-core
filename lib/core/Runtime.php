@@ -1131,10 +1131,13 @@ class Runtime {
 			
 			// var_dump( $screen_obj );
 			$screen_tmpl = isset ( $screen_obj [0] ['template'] ) ? ( string ) $screen_obj [0] ['template'] : '1col';
+			$screen_title = isset ( $screen_obj [0] ['title'] ) ? kuink_get_string ( ( string ) $screen_obj [0] ['title'], $this->nodeconfiguration [NodeConfKey::APPLICATION] ) : '';
 			
 			// UI nodes will use the parent template for screen
 			if ($this->type == 'nodes')
 				$layout->setAppTemplate ( $screen_tmpl );
+
+			$layout->setScreenTitle ( $screen_title );
 			
 			$layout->setGlobalVariable ( '_idContext', $context->id );
 			
