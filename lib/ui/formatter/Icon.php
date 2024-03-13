@@ -47,8 +47,8 @@ class Icon extends Formatter {
 		 * else
 		 * $icon = 'pix/icon_themes/standard/default.png';
 		 */
-		
-		return '<img align="left" src="' . $icon . '" style="height: ' . $size . 'px; width: auto;" />';
+
+		return '<img src="' . $icon . '" style="height: ' . $size . 'px; width: auto;" />';
 	}
 	function repeater($value, $params = null) {
 		global $KUINK_CFG;
@@ -60,7 +60,7 @@ class Icon extends Formatter {
 		
 		$icon = 'theme/' . $KUINK_CFG->theme . '/img/' . $icon;
 		for($i = 1; $i <= $i_value; $i ++)
-			$formatter .= '<img align="left" src="' . $icon . '" style="height: ' . $size . 'px; width: auto;" />';
+			$formatter .= '<img src="' . $icon . '" style="height: ' . $size . 'px; width: auto;" />';
 		
 		return $formatter;
 	}
