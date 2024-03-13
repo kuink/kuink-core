@@ -155,6 +155,9 @@ class GridColumnProperty {
 	const DEFAULTSORT = 'defaultsort';
 	const HIGHLIGHTSTYLE = 'highlightstyle';
 	const HIGHLIGHTVALUE = 'highlightvalue';
+	const HORIZONTALALIGN = 'horizontalalign';
+	const VERTICALALIGN = 'verticalalign';
+	const HEADERALIGN = 'headeralign';
 }
 
 /**
@@ -199,6 +202,9 @@ class GridColumnDefaults {
 	const DEFAULTSORT = '';
 	const HIGHLIGHTSTYLE = '';
 	const HIGHLIGHTVALUE = '1';
+	const HORIZONTALALIGN = 'left';
+	const VERTICALALIGN = 'top';
+	const HEADERALIGN = 'left';
 }
 class GridContextVariables {
 	const PAGE = 'page';
@@ -234,6 +240,8 @@ class Grid extends Control {
 	var $tableConfirmActions; // All actions that nedd confirmation are set here for modal creation
 	var $hasactions;
 	var $action_separator; // Use a separator for actions? (true|false)
+	var $actions_horizontalalign;
+	var $actions_verticalalign;
 	var $actions;
 	var $nodeconfiguration;
 	var $pagingaction;
@@ -501,6 +509,10 @@ class Grid extends Control {
 
 		$attributes [GridColumnProperty::HIGHLIGHTSTYLE] = $this->getProperty ( $name, GridColumnProperty::HIGHLIGHTSTYLE, false, GridColumnDefaults::HIGHLIGHTSTYLE, $column );
 		$attributes [GridColumnProperty::HIGHLIGHTVALUE] = $this->getProperty ( $name, GridColumnProperty::HIGHLIGHTVALUE, false, GridColumnDefaults::HIGHLIGHTVALUE, $column );
+
+		$attributes [GridColumnProperty::HORIZONTALALIGN] = $this->getProperty ( $name, GridColumnProperty::HORIZONTALALIGN, false, GridColumnDefaults::HORIZONTALALIGN, $column );
+		$attributes [GridColumnProperty::VERTICALALIGN] = $this->getProperty ( $name, GridColumnProperty::VERTICALALIGN, false, GridColumnDefaults::VERTICALALIGN, $column );
+		$attributes [GridColumnProperty::HEADERALIGN] = $this->getProperty ( $name, GridColumnProperty::HEADERALIGN, false, GridColumnDefaults::HEADERALIGN, $column );
 		
 		if ($attributes [GridColumnProperty::TYPE] == GridColumnType::SELECT || $attributes [GridColumnProperty::TYPE] == GridColumnType::CSTATIC)
 			$attributes ['options'] = $this->getColumnOptions ( $column, $attributes );
@@ -714,6 +726,8 @@ class Grid extends Control {
 		
 		$actions_tag = $tablexml->xpath ( './Template/Actions' );
 		$this->action_separator = isset ( $actions_tag [0] ['separator'] ) ? (( string ) $actions_tag [0] ['separator'] == 'true') : 'false';
+		$this->actions_horizontalalign = isset ( $actions_tag [0] ['horizontalalign'] ) ? (( string ) $actions_tag [0] ['horizontalalign']) : 'left';
+		$this->actions_verticalalign = isset ( $actions_tag [0] ['verticalalign'] ) ? (( string ) $actions_tag [0] ['verticalalign']) : 'top';
 		
 		$this->hasactions = $hasactions;
 		$this->actions = $actions;
@@ -867,6 +881,9 @@ class Grid extends Control {
 		
 		if ($hasactions) {
 			$table_columns [$index] = 'actions';
+			$table_colattributes[$index]['horizontalalign'] = $this->actions_horizontalalign;
+			$table_colattributes[$index]['verticalalign'] = $this->actions_verticalalign;
+			//$table_columns [$index] ['horizontalalign'] = 'right';
 			$table_headers [$index] = Core\Language::getString ( 'actions', $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
 		}
 		// var_dump($table_headers);

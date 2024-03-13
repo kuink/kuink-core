@@ -24,8 +24,8 @@ class Menu extends Control {
 		$root = ($this->xml_definition->xpath ( './Action' ));
 		$parent = $this->xml_definition->xpath ( '.' );
 		$actionName = ( string ) $parent [0] ['action'];
-		$visible = isset ( $parent [0] ['visible'] ) ? ( string ) $parent [0] ['visible'] : 'true';
-		
+		$menuVisible = ( string ) $this->getProperty ( $this->name, 'visible', true, 'true', $this->xml_definition, true );
+
 		$menu ['label'] = \Kuink\Core\Language::getString ( ( string ) $parent [0] ['label'], $this->nodeconfiguration [\Kuink\Core\NodeConfKey::APPLICATION] );
 		$menu ['href'] = ($actionName != '') ? $utils->ActionUrl ( array (
 				0 => $actionName 
@@ -116,7 +116,7 @@ class Menu extends Control {
 		$layout = \Kuink\UI\Layout\Layout::getInstance ();
 		
 		// print_object(count($menu['child']));
-		if (isset($actionPermissions [$actionName]) || ($actionName == '' && isset($menu ['child']) && count ( $menu ['child'] ) > 0))
+		if ((isset($actionPermissions [$actionName]) || ($actionName == '' && isset($menu ['child']) && count ( $menu ['child'] ) > 0)) && $menuVisible == 'true')
 			$layout->setNodeMenu ( $menu );
 	}
 	

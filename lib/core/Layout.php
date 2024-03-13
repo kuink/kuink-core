@@ -60,6 +60,9 @@ class Layout {
 	public function setAppTemplate($appTemplate) {
 		$this->layoutAdapter->setAppTemplate ( $appTemplate );
 	}
+	public function setScreenTitle($screenTitle) {
+		$this->layoutAdapter->setScreenTitle ( $screenTitle );
+	}
 	public function setBaseUrl($baseurl) {
 		$this->layoutAdapter->setBaseUrl ( $baseurl );
 	}

@@ -83,7 +83,7 @@ class User {
 		$kuinkUser ['uid'] = $person ['uid']; // $USER->username;
 		$kuinkUser ['name'] = $person ['display_name']; // $USER->firstname . ' ' . $USER->lastname;
 		$kuinkUser ['email'] = $person ['email']; // $USER->email;
-		$kuinkUser ['publicKey'] = $person ['public_key']; // $USER->email;
+		$kuinkUser ['publicKey'] = $person ['public_key']; // $USER->public_key;
 		// $kuink_user['tipo'] = $current_user->tipo;
 		$kuinkUser ['idExternal'] = $KUINK_CFG->auth->user->id; // $current_user->idexternal;
 		$kuinkUser ['lang'] = $KUINK_CFG->auth->user->lang;
@@ -294,6 +294,7 @@ class Runtime {
 				$dataAccess->setCache(\Kuink\Core\CacheType::REQUEST, 'core/runtime::userCapabilitiesOfRolesList');
 			$rolesCleaned = str_replace("'", '"', $roles); // substr($roles,1,strlen($roles)-2);
 			$params ['code_role_list'] = $rolesCleaned;
+			$params['id_company'] = $this->nodeconfiguration[NodeConfKey::USER]['idCompany'];
 			$resultset = $dataAccess->execute ( $params );
 			if ($resultset) {
 				foreach ( $resultset as $capability ) {
@@ -316,8 +317,8 @@ class Runtime {
 			$dataAccess = new \Kuink\Core\DataAccess('framework/framework,acl,getRoles', 'framework', 'acl');
 			$params['id'] = $idAcl;
 			$params['id_person'] = $this->nodeconfiguration[NodeConfKey::USER]['id'];
-			$resultset = $dataAccess->execute($params);
 			$params['id_company'] = $this->nodeconfiguration[NodeConfKey::USER]['idCompany'];			
+			$resultset = $dataAccess->execute($params);			
 			//print_object($resultset);
 			if ($resultset){
 				foreach ($resultset as $role){
@@ -1130,10 +1131,13 @@ class Runtime {
 			
 			// var_dump( $screen_obj );
 			$screen_tmpl = isset ( $screen_obj [0] ['template'] ) ? ( string ) $screen_obj [0] ['template'] : '1col';
+			$screen_title = isset ( $screen_obj [0] ['title'] ) ? kuink_get_string ( ( string ) $screen_obj [0] ['title'], $this->nodeconfiguration [NodeConfKey::APPLICATION] ) : '';
 			
 			// UI nodes will use the parent template for screen
 			if ($this->type == 'nodes')
 				$layout->setAppTemplate ( $screen_tmpl );
+
+			$layout->setScreenTitle ( $screen_title );
 			
 			$layout->setGlobalVariable ( '_idContext', $context->id );
 			
