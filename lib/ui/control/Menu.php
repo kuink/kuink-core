@@ -36,7 +36,6 @@ class Menu extends Control {
 		$menuSize = !(isset($this->dynamic_fields)) ? 0 : sizeof ( $this->dynamic_fields );
 		if ($menuSize <= 0) {
 			foreach ( $root as $action ) {
-
 				$name = isset ( $action ['name'] ) ? ( string ) $action ['name'] : '';
 				$id = isset ( $action ['id'] ) ? ( string ) $action ['id'] : '';
 				$label = isset ( $action ['label'] ) ? ( string ) $action ['label'] : $id;
