@@ -1869,6 +1869,7 @@ class Grid extends Control {
 
         $params['calendarOptions'] = $this->view_params;
         $params['data'] = $this->databind;
+		$params ['printTitle'] = Core\Language::getString ( $this->title, $this->nodeconfiguration [Core\NodeConfKey::APPLICATION] );
         $this->skeleton = '_calendar';
         $this->render($params);
 	}
