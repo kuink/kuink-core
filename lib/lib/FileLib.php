@@ -885,6 +885,10 @@ class FileLib {
 		// open this directory
 		$myDirectory = opendir ( $directory );
 		
+		// PHP 8.0, check added
+		if (!$myDirectory)
+			return [];
+
 		// get each entry
 		while ( $entryName = readdir ( $myDirectory ) ) {
 			if ($entryName != '.' && $entryName != '..' && is_file ( $directory . '/' . $entryName ))
@@ -894,8 +898,9 @@ class FileLib {
 		// close directory
 		closedir ( $myDirectory );
 		
+		if (is_array($dirArray))  // PHP 8.0, check added
 		// sort 'em
-		sort ( $dirArray );
+			sort ( $dirArray );
 		
 		// remove self
 		// unset( $dirArray[0] );
@@ -904,6 +909,10 @@ class FileLib {
 	static private function directorySubDirs($directory) {
 		// open this directory
 		$myDirectory = opendir ( $directory );
+
+		// PHP 8.0, check added
+		if (!$myDirectory)
+			return [];
 
 		// get each entry
 		while ( $entryName = readdir ( $myDirectory ) ) {
@@ -914,8 +923,9 @@ class FileLib {
 		// close directory
 		closedir ( $myDirectory );
 		
+		if (is_array($dirArray))  // PHP 8.0, check added
 		// sort 'em
-		sort ( $dirArray );
+			sort ( $dirArray );
 		// remove self
 		// unset( $dirArray[0] );
 		return $dirArray;
@@ -1137,7 +1147,8 @@ class upload_manager {
 				$destination = substr ( $destination, strlen ( $CFG->dataRoot ) + 1 );
 			}
 			
-			if ($destination {strlen ( $destination ) - 1} == '/') { // strip off a trailing / if we have one
+			// PHP 8.0, fix from		if ($destination {strlen ( $destination ) - 1} == '/') { // strip off a trailing / if we have one
+			if ($destination [strlen ( $destination ) - 1] == '/') { // strip off a trailing / if we have one
 				$destination = substr ( $destination, 0, - 1 );
 			}
 			

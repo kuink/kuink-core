@@ -600,7 +600,8 @@ class Form extends Control {
 		$storedData = $this->getContextVariable ( $this->name . '_contextData' );
 		//var_dump($storedData);
 		// print_object($this->name.'_contextData');
-		if (count ( $this->bind_data ) > 0) {
+		if (is_countable ( $this->bind_data ) && count ( $this->bind_data ) > 0) {
+		// PHP 8.0, fix from		if (count ( $this->bind_data ) > 0) 
 			// print_object('currentData::POSTDATA');
 			// print_object($this->bind_data);
 			$newBindDataArray = array ();
@@ -611,12 +612,14 @@ class Form extends Control {
 			$currentData = $newBindDataArray;
 			// return $this->bind_data[0];
 		} else
-		if (count ( $storedData ) > 0) {
+		if (is_countable ( $storedData ) && count ( $storedData ) > 0) {
+		// PHP 8.0, fix from		if (count ( $storedData ) > 0) {
 			// print_object('currentData::CONTEXT');
 			// return $storedData[0];
 			$currentData =  $storedData;
 		} else
-		if (count ( $this->defaultData ) > 0) {
+		if (is_countable ( $this->defaultData ) && count ( $this->defaultData ) > 0) {
+		// PHP 8.0, fix from		if (count ( $this->defaultData ) > 0) {
 			// print_object('currentData::DEFAULT');
 			$currentData =  $this->defaultData;
 		}

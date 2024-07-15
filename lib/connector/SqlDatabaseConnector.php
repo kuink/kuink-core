@@ -488,7 +488,8 @@ private function encloseIdentifier($identifier) {
 		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );	
 		
 		$records = $this->executeSql ( $sql, $params, true, false );
-		$record = (count ( $records ) > 0) ? $records [0] : null;
+		// PHP 8.0, fix from		$record = (count ( $records ) > 0) ? $records [0] : null;
+		$record = (is_countable ( $records ) && count ( $records ) > 0) ? $records [0] : null;
 
 		// add the multilang data if it is set
 		$multilangTransformedRecords = array ();

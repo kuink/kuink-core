@@ -58,7 +58,9 @@ class Smarty extends \Smarty {
 		$this->assign ( '_userEmail',  $userEmail  );		
 		//Get rid of unnecessary reporting
 		$this->error_reporting = E_ALL & ~E_NOTICE;
-		$this->muteExpectedErrors();
+
+		//$this->muteExpectedErrors();		// PHP 8.0, fix 
+
 		//Do not use this in production
 		// $this->force_compile = true;
 	}
