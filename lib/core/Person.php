@@ -9,6 +9,7 @@ class PersonProperty {
 	const DISPLAY_NAME = 'display_name';
 	const NAME = 'name';
 
+	const DOMAIN = 'domain';
 	const MOBILE = 'mobile';
 	const EMAIL = 'email';
 
