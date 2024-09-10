@@ -223,6 +223,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
     $this->translator['officeLocation'] = 'office_location';
     $this->translator['usageLocation'] = 'usage_location';
     $this->translator['ageGroup'] = 'age_group';
+    $this->translator['consentProvidedForMinor'] = 'consent_provided_for_minor';
 
     $this->translator['extensionAttribute1'] = 'attribute1';
     $this->translator['extensionAttribute2'] = 'attribute2';
@@ -388,6 +389,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 
     $userType = isset ($params['userType']) ? (string)$this->connector->getParam($params, 'userType', false) : "Member";
     $ageGroup = (string)$this->connector->getParam($params, $this->translator['ageGroup'], false, null);
+    $consentProvidedForMinor = (string)$this->connector->getParam($params, $this->translator['consentProvidedForMinor'], false, null);
 
     // Set the object with the data
     $data = [
@@ -411,6 +413,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
       ],
       'userType' => $userType,
       'ageGroup' => $ageGroup,
+      'consentProvidedForMinor' => $consentProvidedForMinor
     ];
 
     try {
