@@ -270,9 +270,10 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
   	$this->connect();
 
     $mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
-    if ($mailNickname !== '')
-      $id = $mailNickname.'@'.$this->connector->domain;     // Uses userPrincipalName parameter
-    else
+    if ($mailNickname !== '') {
+      $userDomain = (string)$this->connector->getParam($params, $this->translator['domain'], false, $this->connector->domain);
+      $id = $mailNickname.'@'.$userDomain;     // Uses userPrincipalName parameter
+    } else
       $id = (string)$this->connector->getParam($params, 'id', false);
 
     $query = (string)$this->connector->getParam($params, '_attributes', false);            // List of parameters
@@ -442,6 +443,8 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 	 * 			<Param name="uid">dummy.xpto</Param>
 	 *			<Param name="surname">Dummy</Param>
 	 * 		</DataAccess>
+   * 
+   *  TODO: Add string 'domain', string 'password', string 'age_group', string 'consent_provided_for_minor' parameters.
 	 */
   public function update($params) {
   	$this->connect();
@@ -733,6 +736,7 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
     $this->translator['userUID'] = 'uid_user';
     $this->translator['groupID'] = 'id_group';
     $this->translator['owner'] = 'owner';
+    $this->translator['domain'] = 'domain';
 
     $this->translator['allow_external_senders'] = \Kuink\Core\PersonGroupProperty::ALLOW_EXTERNAL_SENDERS;
     $this->translator['auto_subscribe_new_members'] = \Kuink\Core\PersonGroupProperty::AUTO_SUBSCRIBE_NEW_MEMBERS;
@@ -1080,8 +1084,10 @@ class MicrosoftAPIAdminSDKGroupHandler extends \Kuink\Core\DataSourceConnector\M
 
     // Get USER by UID or Azure ID
     $userUID = (string)$this->connector->getParam($params, $this->translator['userUID'], false);
-    if ($userUID !== "")
-      $user = $this->connector->load(array ('_entity'=>'user','uid'=>$userUID))['id'];
+    if ($userUID !== "") {
+      $userDomain = (string)$this->connector->getParam($params, $this->translator['domain'], false, $this->connector->domain);
+      $user = $this->connector->load(array ('_entity'=>'user','uid'=>$userUID, $this->translator['domain']=>$userDomain))['id'];
+    }
     if ($user == null)
       $userID = (string)$this->connector->getParam($params, $this->translator['userID'], true);
     else
@@ -1396,6 +1402,7 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
     $this->translator['userUID'] = 'uid_user';
     $this->translator['groupID'] = 'id_group';
     $this->translator['owner'] = 'owner';
+    $this->translator['domain'] = 'domain';
 
     $this->translator['isOwner'] = \Kuink\Core\PersonGroupProperty::IS_OWNER;
     $this->translator['isMember'] = \Kuink\Core\PersonGroupProperty::IS_MEMBER;
@@ -1696,6 +1703,79 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
    */
 	public function getSchemaNameT($params) {
   	return null;
+  }
+
+
+  /**
+   * TEAM CHANNELS
+   */
+
+  function listChannels($params, $operators) {
+
+    // Set GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== "")
+      $id = $this->load(array('uid'=>$uid))['id'];
+    // Get GROUP ID
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    $group = $this->load($params, $operators);
+                                            // Set GROUP by UID or Azure ID
+    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
+    if ($uid !== ""){
+      $teams = $this->connector->getAll(array('_entity'=>'team','_attributes'=>'mailNickname,id'));
+      foreach ( $teams as $key => $value )
+        if ($value[$this->translator['mailNickname']] == $uid){
+          $id = $value['id'];
+          break;
+        }
+    }                                       // Get GROUP ID
+    if (!isset($id))
+      $id = (string)$this->connector->getParam($params, 'id', false);
+    
+    //var_dump($id);
+    if (isset($id) && !empty($id)) {
+      try {
+        $result = $this->connector->connector->createRequest("GET", "/teams/$id")
+                                             ->setReturnType(Model\Team::class)
+                                             ->execute();
+
+        // Get the channels for the team
+        $channelsResult = $this->connector->connector->createRequest("GET", "/teams/$id/channels")
+                                                    ->setReturnType(Model\Channel::class)
+                                                    ->execute();
+        
+
+      }
+      catch (\Exception $e) {
+        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading team', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+        \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+        
+        return 1;
+      }
+      // Convert TEAM to array?
+      $c = (string)$this->connector->getParam($params, 'convertToArray', false, true);
+      if ($c==0 OR $c=='N' OR $c=='n' OR $c=false)
+        return $result;
+      else
+        return $this->objectArrayTranslated($channelsResult);
+    }
+    return 1;
   }
 }
 
