@@ -206,6 +206,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 
     $this->translator['mobilePhone'] = \Kuink\Core\PersonProperty::MOBILE;
     $this->translator['mail'] = \Kuink\Core\PersonProperty::EMAIL;
+    $this->translator['domain'] = \Kuink\Core\PersonProperty::DOMAIN;
 
     $this->translator['password'] = \Kuink\Core\PersonProperty::PASSWORD;
     $this->translator['otherMails'] = \Kuink\Core\PersonProperty::RECOVERY_EMAIL;
@@ -222,6 +223,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
     $this->translator['officeLocation'] = 'office_location';
     $this->translator['usageLocation'] = 'usage_location';
     $this->translator['ageGroup'] = 'age_group';
+    $this->translator['consentProvidedForMinor'] = 'consent_provided_for_minor';
 
     $this->translator['extensionAttribute1'] = 'attribute1';
     $this->translator['extensionAttribute2'] = 'attribute2';
@@ -350,6 +352,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 	 *			<Param name="surname">Xpto</Param>
 	 *			<Param name="display_name">Dummy Xpto</Param>
 	 *			<Param name="mobile">123456789</Param>
+   *			<Param name="domain">something.pt</Param>
 	 *			<Param name="password">password1234</Param>
 	 *			<Param name="age_group">adult</Param>
 	 * 		</DataAccess>
@@ -362,9 +365,10 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
     $surname = (string)$this->connector->getParam($params, $this->translator['surname'], true);
     $displayName = (string)$this->connector->getParam($params, $this->translator['displayName'], false, $givenName." ".$surname);
 
+    $userDomain = (string)$this->connector->getParam($params, $this->translator['domain'], false, $this->connector->domain);
     $mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], true);
-    $mail = (string)$this->connector->getParam($params, $this->translator['email'], false, $mailNickname.'@'.$this->connector->domain);
-    $userPrincipalName = $mailNickname.'@'.$this->connector->domain;
+    $mail = (string)$this->connector->getParam($params, $this->translator['email'], false, $mailNickname.'@'.$userDomain);
+    $userPrincipalName = $mailNickname.'@'.$userDomain;
 
     $jobTitle = isset ($params[$this->translator['jobTitle']]) ? (string)$this->connector->getParam($params, $this->translator['jobTitle'], false) : null;
     $mobilePhone = isset ($params[$this->translator['mobilePhone']]) ? (string)$this->connector->getParam($params, $this->translator['mobilePhone'], false) : null;
@@ -385,6 +389,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 
     $userType = isset ($params['userType']) ? (string)$this->connector->getParam($params, 'userType', false) : "Member";
     $ageGroup = (string)$this->connector->getParam($params, $this->translator['ageGroup'], false, null);
+    $consentProvidedForMinor = (string)$this->connector->getParam($params, $this->translator['consentProvidedForMinor'], false, null);
 
     // Set the object with the data
     $data = [
@@ -408,6 +413,7 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
       ],
       'userType' => $userType,
       'ageGroup' => $ageGroup,
+      'consentProvidedForMinor' => $consentProvidedForMinor
     ];
 
     try {
