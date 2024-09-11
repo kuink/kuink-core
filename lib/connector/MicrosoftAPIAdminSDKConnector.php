@@ -1714,59 +1714,22 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
    */
 
   function listChannels($params, $operators) {
-
-    // Set GROUP by UID or Azure ID
-    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
-    if ($uid !== "")
-      $id = $this->load(array('uid'=>$uid))['id'];
-    // Get GROUP ID
-    if (!isset($id))
-      $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     $group = $this->load($params, $operators);
-                                            // Set GROUP by UID or Azure ID
-    $uid = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
-    if ($uid !== ""){
-      $teams = $this->connector->getAll(array('_entity'=>'team','_attributes'=>'mailNickname,id'));
-      foreach ( $teams as $key => $value )
-        if ($value[$this->translator['mailNickname']] == $uid){
-          $id = $value['id'];
-          break;
-        }
-    }                                       // Get GROUP ID
-    if (!isset($id))
-      $id = (string)$this->connector->getParam($params, 'id', false);
     
-    //var_dump($id);
+    if ($group == 1)
+      return 1;
+
+    $id = $group['id'];
+
     if (isset($id) && !empty($id)) {
       try {
-        $result = $this->connector->connector->createRequest("GET", "/teams/$id")
-                                             ->setReturnType(Model\Team::class)
-                                             ->execute();
-
         // Get the channels for the team
         $channelsResult = $this->connector->connector->createRequest("GET", "/teams/$id/channels")
                                                     ->setReturnType(Model\Channel::class)
                                                     ->execute();
-        
-
       }
       catch (\Exception $e) {
-        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading team', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading channels', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
         \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
         
         return 1;
@@ -1774,7 +1737,39 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
       // Convert TEAM to array?
       $c = (string)$this->connector->getParam($params, 'convertToArray', false, true);
       if ($c==0 OR $c=='N' OR $c=='n' OR $c=false)
-        return $result;
+        return $channelsResult;
+      else
+        return $this->objectArrayTranslated($channelsResult);
+    }
+    return 1;
+  }
+
+  function addChannel($params, $operators) {
+    $group = $this->load($params, $operators);
+    
+    if ($group == 1)
+      return 1;
+
+    $id = $group['id'];
+
+    if (isset($id) && !empty($id)) {
+      try {
+        // Get the channels for the team
+        $channelsResult = $this->connector->connector->createRequest("POST", "/teams/$id/channels")
+                                                    ->attachBody($teamData)
+                                                    ->setReturnType(Model\Channel::class)
+                                                    ->execute();
+      }
+      catch (\Exception $e) {
+        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR creating channel', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+        \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+        
+        return 1;
+      }
+      // Convert TEAM to array?
+      $c = (string)$this->connector->getParam($params, 'convertToArray', false, true);
+      if ($c==0 OR $c=='N' OR $c=='n' OR $c=false)
+        return $channelsResult;
       else
         return $this->objectArrayTranslated($channelsResult);
     }
