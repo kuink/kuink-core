@@ -1406,6 +1406,10 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
     $this->translator['groupID'] = 'id_group';
     $this->translator['owner'] = 'owner';
     $this->translator['domain'] = 'domain';
+    $this->translator['membershipType'] = 'membership_type';
+    $this->translator['isFavoriteByDefault'] = 'is_favorite_by_default';
+    $this->translator['groupID'] = 'id_group';
+    $this->translator['groupUID'] = 'uid_group';
 
     $this->translator['isOwner'] = \Kuink\Core\PersonGroupProperty::IS_OWNER;
     $this->translator['isMember'] = \Kuink\Core\PersonGroupProperty::IS_MEMBER;
@@ -1714,17 +1718,17 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
    */
 
   function listChannels($params, $operators) {
-    $group = $this->load($params, $operators);
+    $team = $this->load($params, $operators);
     
-    if ($group == 1)
+    if ($team == 1)
       return 1;
 
-    $id = $group['id'];
+    $id = $team['id'];
 
     if (isset($id) && !empty($id)) {
       try {
         // Get the channels for the team
-        $channelsResult = $this->connector->connector->createRequest("GET", "/teams/$id/channels")
+        $result = $this->connector->connector->createRequest("GET", "/teams/$id/channels")
                                                     ->setReturnType(Model\Channel::class)
                                                     ->execute();
       }
@@ -1734,47 +1738,141 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
         
         return 1;
       }
-      // Convert TEAM to array?
+      // Convert to array?
       $c = (string)$this->connector->getParam($params, 'convertToArray', false, true);
       if ($c==0 OR $c=='N' OR $c=='n' OR $c=false)
-        return $channelsResult;
+        return $result;
       else
-        return $this->objectArrayTranslated($channelsResult);
+        return $this->objectArrayTranslated($result);
     }
     return 1;
   }
+  function loadChannel($params, $operators) {
+    $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+    $group_data = [
+      'id' => (string)$this->connector->getParam($params, $this->translator['groupID'], false),
+      'uid' => (string)$this->connector->getParam($params, $this->translator['groupUID'], false)
+    ];
+    $team = $this->load($group_data, $operators);
 
-  function addChannel($params, $operators) {
-    $group = $this->load($params, $operators);
-    
-    if ($group == 1)
+    if ($team == 1)
       return 1;
 
-    $id = $group['id'];
+    $team_id = $team['id'];
 
-    if (isset($id) && !empty($id)) {
-      try {
-        // Get the channels for the team
-        $channelsResult = $this->connector->connector->createRequest("POST", "/teams/$id/channels")
-                                                    ->attachBody($teamData)
-                                                    ->setReturnType(Model\Channel::class)
-                                                    ->execute();
-      }
-      catch (\Exception $e) {
-        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR creating channel', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
-        \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
-        
-        return 1;
-      }
-      // Convert TEAM to array?
-      $c = (string)$this->connector->getParam($params, 'convertToArray', false, true);
-      if ($c==0 OR $c=='N' OR $c=='n' OR $c=false)
-        return $channelsResult;
-      else
-        return $this->objectArrayTranslated($channelsResult);
+    try {
+      $result = $this->connector->connector->createRequest("GET", "/teams/$team_id/channels/$id")
+                      ->setReturnType(Model\Channel::class)
+                      ->execute();
+    //var_dump($result);
+    } catch (\Exception $e) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading channel', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+			return 1;
     }
-    return 1;
+
+    // Convert CHANNEL to array?
+    $c = (string)$this->connector->getParam($params, 'convertToArray', false, true);
+    if ($c==0 OR $c=='N' OR $c=='n' OR $c=false)
+      return $result;
+    else
+      return $this->objectArrayTranslated($result);
   }
+  function addChannel($params, $operators) {
+    $team = $this->load($params, $operators);
+    $displayName = (string)$this->connector->getParam($params, $this->translator['displayName'], true);
+    $description = isset ($params[$this->translator['description']]) ? (string)$this->connector->getParam($params, $this->translator['description'], false) : $displayName;
+    $membershipType = (string)$this->connector->getParam($params, $this->translator['membershipType'], true);
+    $isFavoriteByDefault = (bool)$this->connector->getParam($params, $this->translator['isFavoriteByDefault'], true, true);
+
+
+    if ($team == 1)
+      return 1;
+
+    $id = $team['id'];
+    $data = [
+      'displayName' => $displayName,
+      'description' => $description,
+      'membershipType' => $membershipType,
+      'isFavoriteByDefault' => $isFavoriteByDefault,
+    ];
+  
+    try {
+      $result = $this->connector->connector->createRequest("POST", "/teams/$id/channels")
+                      ->attachBody($data)
+                      ->setReturnType(Model\Channel::class)
+                      ->execute();
+    //var_dump($result);
+    } catch (\Exception $e) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR creating channel', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+			return 1;
+    }
+
+    return 0;
+  }
+  function deleteChannel($params, $operators) {
+    $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+    $group_data = [
+      'id' => (string)$this->connector->getParam($params, $this->translator['groupID'], false),
+      'uid' => (string)$this->connector->getParam($params, $this->translator['groupUID'], false)
+    ];
+    $team = $this->load($group_data, $operators);
+
+    if ($team == 1)
+      return 1;
+
+    $team_id = $team['id'];
+
+    try {
+      $result = $this->connector->connector->createRequest("DELETE", "/teams/$team_id/channels/$id")
+                      ->execute();
+    //var_dump($result);
+    } catch (\Exception $e) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR deleting channel', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+			return 1;
+    }
+
+    return 0;
+  }
+  function updateChannel($params, $operators) {
+    $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+    $group_data = [
+      'id' => (string)$this->connector->getParam($params, $this->translator['groupID'], false),
+      'uid' => (string)$this->connector->getParam($params, $this->translator['groupUID'], false)
+    ];
+    $team = $this->load($group_data, $operators);
+    $displayName = (string)$this->connector->getParam($params, $this->translator['displayName'], true);
+    $description = isset ($params[$this->translator['description']]) ? (string)$this->connector->getParam($params, $this->translator['description'], false) : $displayName;
+
+    if ($team == 1)
+      return 1;
+
+    $team_id = $team['id'];
+    $data = [];
+    if (isset($displayName) && !empty($displayName)) {
+      $data['displayName'] = $displayName;
+    }
+    if (isset($description) && !empty($description)) {
+      $data['description'] = $description;
+    }
+  
+    try {
+      $result = $this->connector->connector->createRequest("PATCH", "/teams/$team_id/channels/$id")
+                      ->attachBody($data)
+                      ->setReturnType(Model\Channel::class)
+                      ->execute();
+    //var_dump($result);
+    } catch (\Exception $e) {
+			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR updating channel', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+			return 1;
+    }
+
+    return 0;
+  }
+  
 }
 
 
