@@ -272,6 +272,9 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
 
     $mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
     if ($mailNickname !== '') {
+      if (trim($params[$this->translator['domain']]) == "")
+        $params[$this->translator['domain']] = null;
+
       $userDomain = (string)$this->connector->getParam($params, $this->translator['domain'], false, $this->connector->domain);
       $id = $mailNickname.'@'.$userDomain;     // Uses userPrincipalName parameter
     } else
@@ -1408,8 +1411,10 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
     $this->translator['domain'] = 'domain';
     $this->translator['membershipType'] = 'membership_type';
     $this->translator['isFavoriteByDefault'] = 'is_favorite_by_default';
+    $this->translator['members'] = 'members';
     $this->translator['groupID'] = 'id_group';
     $this->translator['groupUID'] = 'uid_group';
+    $this->translator['roles'] = 'roles';
 
     $this->translator['isOwner'] = \Kuink\Core\PersonGroupProperty::IS_OWNER;
     $this->translator['isMember'] = \Kuink\Core\PersonGroupProperty::IS_MEMBER;
@@ -1717,6 +1722,8 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
    * TEAM CHANNELS
    */
 
+
+
   function listChannels($params, $operators) {
     $team = $this->load($params, $operators);
     
@@ -1727,7 +1734,6 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
 
     if (isset($id) && !empty($id)) {
       try {
-        // Get the channels for the team
         $result = $this->connector->connector->createRequest("GET", "/teams/$id/channels")
                                                     ->setReturnType(Model\Channel::class)
                                                     ->execute();
@@ -1747,6 +1753,9 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
     }
     return 1;
   }
+
+
+
   function loadChannel($params, $operators) {
     $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
     $group_data = [
@@ -1764,7 +1773,6 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
       $result = $this->connector->connector->createRequest("GET", "/teams/$team_id/channels/$id")
                       ->setReturnType(Model\Channel::class)
                       ->execute();
-    //var_dump($result);
     } catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading channel', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
@@ -1778,31 +1786,62 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
     else
       return $this->objectArrayTranslated($result);
   }
+
+
+
   function addChannel($params, $operators) {
     $team = $this->load($params, $operators);
     $displayName = (string)$this->connector->getParam($params, $this->translator['displayName'], true);
     $description = isset ($params[$this->translator['description']]) ? (string)$this->connector->getParam($params, $this->translator['description'], false) : $displayName;
     $membershipType = (string)$this->connector->getParam($params, $this->translator['membershipType'], true);
     $isFavoriteByDefault = (bool)$this->connector->getParam($params, $this->translator['isFavoriteByDefault'], true, true);
-
+    $members = (array)$this->connector->getParam($params, $this->translator['members'], false, []);
 
     if ($team == 1)
       return 1;
-
+   
     $id = $team['id'];
+
     $data = [
       'displayName' => $displayName,
       'description' => $description,
-      'membershipType' => $membershipType,
-      'isFavoriteByDefault' => $isFavoriteByDefault,
+      'membershipType' => $membershipType
     ];
-  
+
+    if ($membershipType == 'standard')
+      $data['isFavoriteByDefault'] = $isFavoriteByDefault;
+    else if ($membershipType == 'private' || $membershipType == 'shared') {
+      $msMembers = [];
+
+      foreach ($members as $member) {
+        $userMemberData = [
+          '_entity' => 'user',
+          'id' => $member[$this->translator['id']],
+          'uid' => $member[$this->translator['mailNickname']],
+          'domain' => $member[$this->translator['domain']]
+        ];
+
+        $userMember = $this->connector->load($userMemberData);
+        $userMemberId = $userMember['id'];
+        if ($userMember == 1)
+          return 1;
+
+        $msMember = [
+          '@odata.type' => '#microsoft.graph.aadUserConversationMember',
+          'roles' => $member[$this->translator['roles']],
+          'user@odata.bind' => 'https://graph.microsoft.com/v1.0/users/'.$userMemberId,
+        ];
+        $msMembers[] = $msMember;
+      }
+
+      $data['members'] = $msMembers;
+    }
+
     try {
       $result = $this->connector->connector->createRequest("POST", "/teams/$id/channels")
                       ->attachBody($data)
                       ->setReturnType(Model\Channel::class)
                       ->execute();
-    //var_dump($result);
     } catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR creating channel', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
@@ -1811,6 +1850,9 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
 
     return 0;
   }
+
+
+
   function deleteChannel($params, $operators) {
     $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
     $group_data = [
@@ -1827,7 +1869,6 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
     try {
       $result = $this->connector->connector->createRequest("DELETE", "/teams/$team_id/channels/$id")
                       ->execute();
-    //var_dump($result);
     } catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR deleting channel', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
@@ -1836,6 +1877,9 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
 
     return 0;
   }
+
+
+
   function updateChannel($params, $operators) {
     $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
     $group_data = [
@@ -1872,7 +1916,94 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
 
     return 0;
   }
-  
+
+
+
+  function listChannelMembers($params, $operators) {
+    $channel_id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+    $group_data = [
+      'id' => (string)$this->connector->getParam($params, $this->translator['groupID'], false),
+      'uid' => (string)$this->connector->getParam($params, $this->translator['groupUID'], false)
+    ];
+    $team = $this->load($group_data, $operators);
+    
+    if ($team == 1)
+      return 1;
+
+    $team_id = $team['id'];
+
+    if (isset($channel_id) && !empty($channel_id)) {
+      try {
+        $result = $this->connector->connector->createRequest("GET", "/teams/$team_id/channels/$channel_id/members")
+                                                    ->setReturnType(Model\ConversationMember::class)
+                                                    ->execute();
+      }
+      catch (\Exception $e) {
+        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR listing channel members', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+        \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+        
+        return 1;
+      }
+      // Convert to array?
+      $c = (string)$this->connector->getParam($params, 'convertToArray', false, true);
+      if ($c==0 OR $c=='N' OR $c=='n' OR $c=false)
+        return $result;
+      else
+        return $this->objectArrayTranslated($result);
+    }
+    return 1;
+  }
+
+
+
+  function addChannelMember($params, $operators) {
+    $channel_id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+    
+    $group_data = [
+      'id' => (string)$this->connector->getParam($params, $this->translator['groupID'], false),
+      'uid' => (string)$this->connector->getParam($params, $this->translator['groupUID'], false)
+    ];
+    
+    $team = $this->load($group_data, $operators);
+    if ($team == 1)
+      return 1;
+    $team_id = $team['id'];
+
+    $userMemberData = [
+      '_entity' => 'user',
+      'id' => $params[$this->translator['userID']],
+      'uid' => $params[$this->translator['userUID']],
+      'domain' => $params[$this->translator['domain']]
+    ];
+
+    $userMember = $this->connector->load($userMemberData);
+    $userMemberId = $userMember['id'];
+    if ($userMember == 1)
+      return 1;
+
+    $data = [
+      '@odata.type' => '#microsoft.graph.aadUserConversationMember',
+      'roles' => $params[$this->translator['roles']],
+      'user@odata.bind' => 'https://graph.microsoft.com/v1.0/users/'.$userMemberId,
+    ];
+
+    if (isset($channel_id) && !empty($channel_id)) {
+      try {
+        $result = $this->connector->connector->createRequest("POST", "/teams/$team_id/channels/$channel_id/members")
+                                                    ->attachBody($data)
+                                                    ->setReturnType(Model\ConversationMember::class)
+                                                    ->execute();
+      }
+      catch (\Exception $e) {
+        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR adding channel member', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+        \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+        
+        return 1;
+      }
+      return 0;
+    }
+    return 1;
+  }
 }
 
 
