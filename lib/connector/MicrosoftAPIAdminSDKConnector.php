@@ -1732,9 +1732,14 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
 
     $id = $team['id'];
 
+    $query = (string)$this->connector->getParam($params, '_attributes', false);
+    if ($query !== '') {
+      $query = '?$select='.$query;
+    }
+
     if (isset($id) && !empty($id)) {
       try {
-        $result = $this->connector->connector->createRequest("GET", "/teams/$id/channels")
+        $result = $this->connector->connector->createRequest("GET", "/teams/$id/channels$query")
                                                     ->setReturnType(Model\Channel::class)
                                                     ->execute();
       }
@@ -1769,8 +1774,12 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
 
     $team_id = $team['id'];
 
+    $query = (string)$this->connector->getParam($params, '_attributes', false);
+    if ($query !== '') {
+      $query = '?$select='.$query;
+    }
     try {
-      $result = $this->connector->connector->createRequest("GET", "/teams/$team_id/channels/$id")
+      $result = $this->connector->connector->createRequest("GET", "/teams/$team_id/channels/$id$query")
                       ->setReturnType(Model\Channel::class)
                       ->execute();
     } catch (\Exception $e) {
@@ -2003,6 +2012,55 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
       return 0;
     }
     return 1;
+  }
+
+
+
+  function removeChannelMember($params, $operators) {
+    $channel_id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+
+    $group_data = [
+      'id' => (string)$this->connector->getParam($params, $this->translator['groupID'], false),
+      'uid' => (string)$this->connector->getParam($params, $this->translator['groupUID'], false)
+    ];
+    
+    $team = $this->load($group_data, $operators);
+    if ($team == 1)
+      return 1;
+    $team_id = $team['id'];
+
+    $userMemberData = [
+      '_entity' => 'user',
+      'id' => $params[$this->translator['userID']],
+      'uid' => $params[$this->translator['userUID']],
+      'domain' => $params[$this->translator['domain']]
+    ];
+
+    $user = $this->connector->load($userMemberData);
+    $userId = $user['id'];
+    if ($user == 1)
+      return 1;
+
+    $members = $this->listChannelMembers($params, $operators);
+
+    foreach ($members as $member) {
+      if ($member['userId'] == $userId) {
+        $membershipId = $member['id'];
+        try {
+          $result = $this->connector->connector->createRequest("DELETE", "/teams/$team_id/channels/$channel_id/members/$membershipId")
+                                                      ->execute();
+        }
+        catch (\Exception $e) {
+          \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR removing channel member', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+          \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+          
+          return 1;
+        }
+        return 0;
+      }
+
+    }
+    return 1; // Did not find
   }
 }
 
