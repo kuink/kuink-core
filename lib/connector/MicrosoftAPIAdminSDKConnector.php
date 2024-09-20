@@ -1794,7 +1794,7 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
     $displayName = (string)$this->connector->getParam($params, $this->translator['displayName'], true);
     $description = isset ($params[$this->translator['description']]) ? (string)$this->connector->getParam($params, $this->translator['description'], false) : $displayName;
     $membershipType = (string)$this->connector->getParam($params, $this->translator['membershipType'], true);
-    $isFavoriteByDefault = (bool)$this->connector->getParam($params, $this->translator['isFavoriteByDefault'], true, true);
+    $isFavoriteByDefault = (bool)$this->connector->getParam($params, $this->translator['isFavoriteByDefault'], false, true);
     $members = (array)$this->connector->getParam($params, $this->translator['members'], false, []);
 
     if ($team == 1)
