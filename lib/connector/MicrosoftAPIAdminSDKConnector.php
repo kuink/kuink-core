@@ -270,12 +270,16 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
   public function load($params, $operators) {
   	$this->connect();
 
+    $allDomains = $this->connector->connector->createRequest("GET", "/domains")
+                                     ->execute()
+                                     ->getBody();
+
     $mailNickname = (string)$this->connector->getParam($params, $this->translator['mailNickname'], false);
     if ($mailNickname !== '') {
       if (trim($params[$this->translator['domain']]) == "")
         $params[$this->translator['domain']] = null;
 
-      $userDomain = (string)$this->connector->getParam($params, $this->translator['domain'], false, $this->connector->domain);
+      $userDomain = (string)$this->connector->getParam($params, $this->translator['domain'], false, '');
       $id = $mailNickname.'@'.$userDomain;     // Uses userPrincipalName parameter
     } else
       $id = (string)$this->connector->getParam($params, 'id', false);
@@ -286,22 +290,38 @@ class MicrosoftAPIAdminSDKUserHandler extends \Kuink\Core\DataSourceConnector\Mi
     }
     
     if (isset($id) && !empty($id)) {
-      try {
-        \Kuink\Core\TraceManager::add(' Loading user: '.$mailNickname, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
-        $result = $this->connector->connector->createRequest("GET", "/users/$id".$query)
-                                            ->setReturnType(Model\User::class)
-                                            ->execute();
-        //var_dump($result);
-      } 
-      catch (\Exception $e) {
-        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
-        \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
-      
+      if ($mailNickname === '' || ($mailNickname !== '' && $userDomain !== '')) {
+        try {
+          \Kuink\Core\TraceManager::add(' Loading user: '.$mailNickname, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
+          $result = $this->connector->connector->createRequest("GET", "/users/$id".$query)
+                                              ->setReturnType(Model\User::class)
+                                              ->execute();
+          return $this->objectArrayTranslated($result);
+        } catch (\Exception $e) {
+          \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading user', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+          \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );
+        
+          return 1;
+        }
+  
+      } else if ($mailNickname !== '' && $userDomain === '') {
+
+        foreach ($allDomains['value'] as $domain) {
+          $id = $mailNickname.'@'.$domain['id']; 
+          try {
+            $result = $this->connector->connector->createRequest("GET", "/users/$id".$query)
+                                              ->setReturnType(Model\User::class)
+                                              ->execute();
+
+            \Kuink\Core\TraceManager::add(' Loading user: '.$mailNickname, \Kuink\Core\TraceCategory::CONNECTOR, __CLASS__);
+            return $this->objectArrayTranslated($result);
+
+          } catch (\Exception $e) {
+            continue;
+          }
+        }
         return 1;
       }
-
-      // Translate data before return
-      return $this->objectArrayTranslated($result);
     }
     return 1;
   }
