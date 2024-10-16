@@ -1436,6 +1436,18 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
     $this->translator['groupUID'] = 'uid_group';
     $this->translator['roles'] = 'roles';
 
+    $this->translator['assignmentDisplayName'] = 'display_name';
+    $this->translator['assignmentInstructions'] = 'instructions';
+    $this->translator['maxPoints'] = 'max_points';
+    $this->translator['allowLateSubmissions'] = 'allow_late_submissions';
+    $this->translator['dueDatetime'] = 'due_datetime';
+    $this->translator['closeDatetime'] = 'close_datetime';
+    $this->translator['assignDatetime'] = 'assign_datetime';
+    $this->translator['allowStudentsToAddResourcesToSubmission'] = 'allow_students_to_add_resources_to_submission';
+    $this->translator['addedStudentAction'] = 'added_student_action';
+    $this->translator['publishNow'] = 'publish_now';
+    $this->translator['recipients'] = 'recipients';
+
     $this->translator['isOwner'] = \Kuink\Core\PersonGroupProperty::IS_OWNER;
     $this->translator['isMember'] = \Kuink\Core\PersonGroupProperty::IS_MEMBER;
 
@@ -1782,11 +1794,14 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
 
 
   function loadChannel($params, $operators) {
-    $id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+    $id = (string)$this->connector->getParam($params, $this->translator['id'], false);
+    $displayName = (string)$this->connector->getParam($params, $this->translator['displayName'], false);
+
     $group_data = [
       'id' => (string)$this->connector->getParam($params, $this->translator['groupID'], false),
       'uid' => (string)$this->connector->getParam($params, $this->translator['groupUID'], false)
     ];
+    
     $team = $this->load($group_data, $operators);
 
     if ($team == 1)
@@ -1799,9 +1814,16 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
       $query = '?$select='.$query;
     }
     try {
-      $result = $this->connector->connector->createRequest("GET", "/teams/$team_id/channels/$id$query")
-                      ->setReturnType(Model\Channel::class)
-                      ->execute();
+      if(!empty($id))
+        $result = $this->connector->connector->createRequest("GET", "/teams/$team_id/channels/$id")
+                        ->setReturnType(Model\Channel::class)
+                        ->execute();
+     /* else {
+        $filter = "?\$filter=displayName eq '$displayName'";
+        $result = $this->connector->connector->createRequest("GET", "/teams/$team_id/channels/channels" . $filter)
+                        ->setReturnType(Model\Channel::class)
+                        ->execute();
+      }*/
     } catch (\Exception $e) {
 			\Kuink\Core\TraceManager::add ( __METHOD__.' ERROR loading channel', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
 			\Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
@@ -2082,6 +2104,170 @@ class MicrosoftAPIAdminSDKTeamHandler extends \Kuink\Core\DataSourceConnector\Mi
     }
     return 1; // Did not find
   }
+
+
+  function listTeamAssignments($params, $operators) {   
+    $group_data = [
+      'id' => (string)$this->connector->getParam($params, $this->translator['groupID'], false),
+      'uid' => (string)$this->connector->getParam($params, $this->translator['groupUID'], false)
+    ];
+    
+    $team = $this->load($group_data, $operators);
+    if ($team == 1)
+      return 1;
+    $team_id = $team['id'];
+
+    if (isset($team_id) && !empty($team_id)) {
+      try {
+        $result = $this->connector->connector->createRequest("GET", "/education/classes/$team_id/assignments")
+                                            ->setReturnType(Model\EducationAssignment::class)
+                                            ->execute();
+      }
+      catch (\Exception $e) {
+        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR listing team assignments', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+        \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+        
+        return 1;
+      }
+      return $this->objectArrayTranslated($result);
+    }
+    return 1;
+  }
+
+
+  function addTeamAssignment($params, $operators) {   
+    $group_data = [
+      'id' => (string)$this->connector->getParam($params, $this->translator['groupID'], false),
+      'uid' => (string)$this->connector->getParam($params, $this->translator['groupUID'], false)
+    ];
+    $team = $this->load($group_data, $operators);
+    if ($team == 1)
+      return 1;
+    $team_id = $team['id'];
+
+    $displayName = (string)$this->connector->getParam($params, $this->translator['assignmentDisplayName'], true);
+    $instructions = (string)$this->connector->getParam($params, $this->translator['assignmentInstructions'], false);
+    $gradingMaxPoints = $this->connector->getParam($params, $this->translator['maxPoints'], false, NULL);
+    $gradingMaxPointsValue = (int)$gradingMaxPoints;
+    $allowLateSubmissions = (bool)$this->connector->getParam($params, $this->translator['allowLateSubmissions'], false, false);
+        
+    $dueDatetimeFormatted = gmdate("Y-m-d\TH:i:s\Z", (int)$this->connector->getParam($params, $this->translator['dueDatetime'], true));
+    
+    $closeDatetime = (int)$this->connector->getParam($params, $this->translator['closeDatetime'], false);
+    $closeDatetimeFormatted = empty($closeDatetime) ?  null : gmdate("Y-m-d\TH:i:s\Z", $closeDatetime);
+
+    $assignDatetime = (int)$this->connector->getParam($params, $this->translator['assignDatetime'], false);
+    $assignDatetimeFormatted = empty($assignDatetime) ?  null : gmdate("Y-m-d\TH:i:s\Z", $assignDatetime);
+
+    $allowStudentsToAddResourcesToSubmission = (bool)$this->connector->getParam($params, $this->translator['allowStudentsToAddResourcesToSubmission'], false, false);
+
+    $addedStudentAction = (string)$this->connector->getParam($params, $this->translator['addedStudentAction'], false, "none");
+
+    $publishNow = (bool)$this->connector->getParam($params, $this->translator['publishNow'], false, false);
+
+    $recipients = (array)$this->connector->getParam($params, $this->translator['recipients'], false, []);
+    $msRecipients = [];
+
+    foreach ($recipients as $recipient) {
+      $userRecipientData = [
+        '_entity' => 'user',
+        'id' => $recipient[$this->translator['id']],
+        'uid' => $recipient[$this->translator['mailNickname']],
+        'domain' => $recipient[$this->translator['domain']]
+      ];
+      $userRecipient = $this->connector->load($userRecipientData);
+      if ($userRecipient == 1)
+        return 1;
+      $userRecipientId = $userRecipient['id'];
+      $msRecipients[] = $userRecipientId;
+    }
+
+    if (empty($msRecipients))
+      $assignTo = [
+        "@odata.type" => "#microsoft.graph.educationAssignmentClassRecipient"
+      ];
+    else
+      $assignTo = [
+        "@odata.type" => "#microsoft.graph.educationAssignmentIndividualRecipient",
+        "recipients" => $msRecipients
+      ];
+
+    $data = [
+      "displayName" => $displayName,
+      "instructions" => [
+          "content" => $instructions,
+          "contentType" => "text"
+      ],
+      "allowLateSubmissions" => $allowLateSubmissions,
+      "dueDateTime" => $dueDatetimeFormatted,
+      "closeDateTime" => $closeDatetimeFormatted,
+      "assignDateTime" => $assignDatetimeFormatted,
+      "assignTo" => $assignTo,
+      "status" => "draft",
+      "allowStudentsToAddResourcesToSubmission" => $allowStudentsToAddResourcesToSubmission,
+      "addedStudentAction" => $addedStudentAction,
+     // "notificationChannelUrl" => "https://graph.microsoft.com/v1.0/teams/$team_id/channels/$channel_id"
+    ];
+
+
+    if ($gradingMaxPoints) 
+      $data["grading"] = [
+        "@odata.type" => "#microsoft.graph.educationAssignmentPointsGradeType",
+        "maxPoints" => $gradingMaxPointsValue
+      ];
+
+
+    if (isset($team_id) && !empty($team_id)) {
+      try {
+        $result = $this->connector->connector->createRequest("POST", "/education/classes/$team_id/assignments")
+                                            ->attachBody($data)
+                                            ->setReturnType(Model\EducationAssignment::class)
+                                            ->execute();
+
+        $assignmentId = $result->getId();
+        if ($publishNow) {
+          $result = $this->connector->connector->createRequest("POST", "/education/classes/$team_id/assignments/$assignmentId/publish")
+                                            ->execute();
+        }
+      }
+      catch (\Exception $e) {
+        \Kuink\Core\TraceManager::add ( __METHOD__.' ERROR adding team assignment', \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  				
+        \Kuink\Core\TraceManager::add ( $e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__ );  	
+        
+        return 1;
+      }
+      return 0;
+    }
+    return 1;
+  }
+
+  function publishTeamAssignment($params, $operators) {
+    $group_data = [
+      'id' => (string)$this->connector->getParam($params, $this->translator['groupID'], false),
+      'uid' => (string)$this->connector->getParam($params, $this->translator['groupUID'], false)
+    ];
+    $team = $this->load($group_data, $operators);
+    if ($team == 1)
+      return 1;
+    $team_id = $team['id'];
+
+    $assignment_id = (string)$this->connector->getParam($params, $this->translator['id'], true);
+
+    if (isset($team_id) && !empty($team_id) && isset($assignment_id) && !empty($assignment_id)) {
+      try {
+          $result = $this->connector->connector->createRequest("POST", "/education/classes/$team_id/assignments/$assignment_id/publish")
+                                              ->execute();
+      }
+      catch (\Exception $e) {
+          \Kuink\Core\TraceManager::add(__METHOD__ . ' ERROR publishing assignment', \Kuink\Core\TraceCategory::ERROR, __CLASS__);
+          \Kuink\Core\TraceManager::add($e->getMessage(), \Kuink\Core\TraceCategory::ERROR, __CLASS__);
+          return 1;
+      }
+      return 0;
+    }
+    return 1;
+  }
+
 }
 
 
