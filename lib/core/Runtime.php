@@ -1561,7 +1561,7 @@ class Runtime {
 				$permissionName = ( string ) $permission ['name'];
 				
 				if ($permissionType == 'Capability') {
-					if (isset ( $this->nodeconfiguration [NodeConfKey::CAPABILITIES] [$permissionName] )) {
+					if (isset ( $this->nodeconfiguration [NodeConfKey::CAPABILITIES] [$permissionName] ) || $this->is_fw_admin) {
 						// The capability is present
 						if ($allowType == 'or')
 							$hasPermissionsLocal = 1;
@@ -1573,7 +1573,7 @@ class Runtime {
 				} else if ($permissionType == 'Role') {
 					//kuink_mydebug($permissionName, $this->nodeconfiguration [NodeConfKey::ROLES] [$permissionName]);
 					//kuink_mydebugObj('Roles', $this->nodeconfiguration [NodeConfKey::ROLES]);
-					if (isset ( $this->nodeconfiguration [NodeConfKey::ROLES] [$permissionName] )) {
+					if (isset ( $this->nodeconfiguration [NodeConfKey::ROLES] [$permissionName] ) || $this->is_fw_admin) {
 						// The capability is present
 						if ($allowType == 'or')
 							$hasPermissionsLocal = 1;
