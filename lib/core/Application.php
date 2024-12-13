@@ -37,22 +37,23 @@ class Application {
 	public $appManager; // Application manager
 	public $nodeconfiguration;
 	public $core; //The kuink core object
+	
 	function __construct($name, $lang, $config, $core) {
 		global $KUINK_CFG;
 		
 		// If it's not a restart and there's an application in the stack, the use it
 		// Get the application to execute from the top of process stack
 		$reset = FALSE;
-		if (isset ( $_GET ['reset'] ))
-			$reset = ($_GET ['reset'] == 'true');
+		if (isset ($_GET['reset']))
+			$reset = ($_GET['reset'] == 'true');
 		
-		$nameParts = explode ( ',', $name );
-		$baseApplication = ( string ) $nameParts [0];
-		$context = ProcessOrchestrator::prepareContext ( $baseApplication );
+		$nameParts = explode (',', $name);
+		$baseApplication = (string) $nameParts [0];
+		$context = ProcessOrchestrator::prepareContext ($baseApplication);
 		
 		$currentNode = ProcessOrchestrator::getCurrentNode ();
 		if (!$reset) {
-			$appName = (isset ($currentNode ) && isset($currentNode->application) && $currentNode->application != '') ? $currentNode->application : $name;
+			$appName = (isset ($currentNode) && isset($currentNode->application) && $currentNode->application != '') ? $currentNode->application : $name;
 		} else {
 			// Reset the stack;
 			ProcessOrchestrator::clearContexts ();
@@ -61,11 +62,11 @@ class Application {
 		
 		// The instance can define the application name as "application,process,event"
 		// This way the default flow will not be taken from menu but from this name
-		$nameParts = explode ( ',', $appName );
+		$nameParts = explode (',', $appName);
 
-		$this->name = ( string ) $nameParts [0];
-		if (isset ( $nameParts [1] ) && isset ( $nameParts [2] )) {
-			$this->defaultFlow = new Flow ( $this->name, $nameParts [1], '', $nameParts [2] );
+		$this->name = (string) $nameParts [0];
+		if (isset ($nameParts [1]) && isset ($nameParts [2])) {
+			$this->defaultFlow = new Flow ($this->name, $nameParts [1], '', $nameParts [2]);
 		}
 		$this->lang = $lang;
 		$this->config = $config;
@@ -74,21 +75,21 @@ class Application {
 		$this->core = $core;
 				
 		// Loads the config keys from instance
-		$this->loadInstanceConfig ( $config );
+		$this->loadInstanceConfig ($config);
 		
 		// Load framework.xml definiton
 		$this->loadFrameworkDefinition ();
 		//print_object($this->fwXmlDefinition);
 		
 		// Setup framework dataSources
-		\Kuink\Core\DataSourceManager::setupFrameworkDS ( $this );
+		\Kuink\Core\DataSourceManager::setupFrameworkDS ($this);
 
 			// Load all applications data to appManager
 		$this->appManager = new ApplicationManager ();
 		$this->appManager->load ();
 		// Check if this application exists
-		if (! $this->appManager->applicationExists ( $this->name ))
-			throw new \Exception ( 'Application ' . $this->name . ' does not exists or is not registered' );
+		if (! $this->appManager->applicationExists ($this->name))
+			throw new \Exception ('Application ' . $this->name . ' does not exists or is not registered');
 		
 			// Set the company id
 		ProcessOrchestrator::setCompany ();
@@ -96,7 +97,7 @@ class Application {
 		
 		if ($KUINK_CFG->useNewDataAccessInfrastructure)
 			// Setup Company dataSources
-			\Kuink\Core\DataSourceManager::setupCompanyDataSources ( ProcessOrchestrator::getCompany () );
+			\Kuink\Core\DataSourceManager::setupCompanyDataSources (ProcessOrchestrator::getCompany ());
 
 			// Load application.xml now that we have the app base in apps dir
 		$this->loadApplicationDefinition ();
@@ -106,13 +107,13 @@ class Application {
 
 		if ($KUINK_CFG->useNewDataAccessInfrastructure)
 			// Setup framework dataSources
-			\Kuink\Core\DataSourceManager::setupApplicationDS ( $this );
+			\Kuink\Core\DataSourceManager::setupApplicationDS ($this);
 			// Loading language files
-		Language::loadLanguageFiles ( $this->appManager, $this->name, $this->lang );
+		Language::loadLanguageFiles ($this->appManager, $this->name, $this->lang);
 		
 		// Check to see if this application is in maintenance mode or is not active
-		$this->isActive = $this->appManager->getApplicationAttribute ( $this->name, 'is_active' );
-		$this->inMaintenance = $this->appManager->getApplicationAttribute ( $this->name, 'in_maintenance' );
+		$this->isActive = $this->appManager->getApplicationAttribute ($this->name, 'is_active');
+		$this->inMaintenance = $this->appManager->getApplicationAttribute ($this->name, 'in_maintenance');
 	}
 	
 	/**
@@ -147,9 +148,9 @@ class Application {
 	 * Gets function params given a node and the function name
 	 */
 	public function getFunctionParams($node, $functionName) {
-		$runtime = new Runtime ( $node, 'lib', null );
+		$runtime = new Runtime ($node, 'lib', null);
 		
-		$params = $runtime->getFunctionParams ( $functionName );
+		$params = $runtime->getFunctionParams ($functionName);
 		
 		$params = array ();
 		return $params;
@@ -161,14 +162,14 @@ class Application {
 	private function loadApplicationDefinition() {
 		global $KUINK_CFG;
 		
-		$appBase = $this->appManager->getApplicationAttribute ( $this->name, 'app_base' );
+		$appBase = $this->appManager->getApplicationAttribute ($this->name, 'app_base');
 		$appFileName = $KUINK_CFG->appRoot . 'apps/' . $appBase . '/' . $this->name . '/application.xml';
 		
-		libxml_use_internal_errors ( true );
-		$this->xmlDefinition = simplexml_load_file ( $appFileName );
+		libxml_use_internal_errors (true);
+		$this->xmlDefinition = simplexml_load_file ($appFileName);
 		$errors = libxml_get_errors ();
 		if ($errors)
-			throw new \Exception ( 'Cannot load application file ' . $appFileName );
+			throw new \Exception ('Cannot load application file ' . $appFileName);
 	}
 	
 	/**
@@ -177,7 +178,7 @@ class Application {
 	private function loadFrameworkDefinition() {
 		global $KUINK_CFG;
 		
-		$this->fwXmlDefinition = simplexml_load_file ( $KUINK_CFG->appRoot . 'apps/framework/framework.xml' );
+		$this->fwXmlDefinition = simplexml_load_file ($KUINK_CFG->appRoot . 'apps/framework/framework.xml');
 	}
 	
 	/**
@@ -190,30 +191,30 @@ class Application {
 		global $KUINK_CFG;
 		
 		$config = array ();
-		if (trim ( $instanceConfigRaw ) != '') {
-			libxml_use_internal_errors ( true );
-			$instanceConfigXml = simplexml_load_string ( $instanceConfigRaw );
+		if (trim ($instanceConfigRaw) != '') {
+			libxml_use_internal_errors (true);
+			$instanceConfigXml = simplexml_load_string ($instanceConfigRaw);
 			$errors = libxml_get_errors ();
 			if ($instanceConfigXml == null)
-				throw new \Exception ( 'Cannot load instance configuration xml' );
-			$instance_configs = $instanceConfigXml->xpath ( '/Configuration//Config' );
-			foreach ( $instance_configs as $instance_config ) {
-				$key = ( string ) $instance_config ['key'];
-				$value = ( string ) $instance_config ['value'];
+				throw new \Exception ('Cannot load instance configuration xml');
+			$instance_configs = $instanceConfigXml->xpath ('/Configuration//Config');
+			foreach ($instance_configs as $instance_config) {
+				$key = (string) $instance_config ['key'];
+				$value = (string) $instance_config ['value'];
 				$config [$key] = $value;
 			}
 			
 			// load locally assigned roles
-			$current_user_id = ($KUINK_CFG->auth->user->id) ? ( string ) $KUINK_CFG->auth->user->id : 0;
-			$xpath_query = '/Configuration/Role[@user="' . ( string ) $current_user_id . '"]';
-			$instance_roles = $instanceConfigXml->xpath ( $xpath_query );
+			$current_user_id = ($KUINK_CFG->auth->user->id) ? (string) $KUINK_CFG->auth->user->id : 0;
+			$xpath_query = '/Configuration/Role[@user="' . (string) $current_user_id . '"]';
+			$instance_roles = $instanceConfigXml->xpath ($xpath_query);
 			
-			foreach ( $instance_roles as $role ) {
-				$roleName = ( string ) $role ['name'];
-				$this->addRole ( $roleName );
+			foreach ($instance_roles as $role) {
+				$roleName = (string) $role ['name'];
+				$this->addRole ($roleName);
 			}
 		}
-		unset ( $instanceConfigXml );
+		unset ($instanceConfigXml);
 		
 		$this->config = $config;
 	}
@@ -224,55 +225,68 @@ class Application {
 	private function loadRolesFromDB() {
 		global $KUINK_TRACE, $KUINK_CFG;
 		
-		$idCompany = ProcessOrchestrator::getCompany ();
-		$idNumber=($KUINK_CFG->auth->user->id) ? (string)$KUINK_CFG->auth->user->id : 0;		
+		$idCompany = ProcessOrchestrator::getCompany();
+		$idNumber = ($KUINK_CFG->auth->user->id) ? (string) $KUINK_CFG->auth->user->id : 0;		
+		
 		// Load the roles
 		try {
 			if ($KUINK_CFG->useGlobalACL) {	
-			  $da = new \Kuink\Core\DataAccess('framework/framework,acl,getRoles','framework', 'fw.person');
-			  $pars=array( 'acl_code'=>'_global', 'id_person'=>$idNumber, 'id_company' => $idCompany );
+			  $da = new \Kuink\Core\DataAccess('framework/framework,acl,getRoles', 'framework', 'fw.person');
+			  $pars = array('acl_code' => '_global', 'id_person' => $idNumber, 'id_company' => $idCompany);
 			} else {
-			  $da = new \Kuink\Core\DataAccess('framework/framework,fw.person,getRoles','framework', 'fw.person');
-			  $pars=array( 'id_person'=>$idNumber, 'id_company' => $idCompany );
+			  $da_person = new \Kuink\Core\DataAccess('framework/framework,fw.person,getRoles', 'framework', 'fw.person');
+				$da_groups = new \Kuink\Core\DataAccess('framework/framework,fw.person,getRolesByGroups', 'framework', 'fw.person');
+				$pars = array('id_person' => $idNumber, 'id_company' => $idCompany);
 			}
-			$da->setCache(\Kuink\Core\CacheType::SESSION, 'core/application::userRoles');
-			$alocs = $da->execute($pars);
+			
+			//$da->setCache(\Kuink\Core\CacheType::SESSION, 'core/application::userRoles');
+			$da_person->setCache(\Kuink\Core\CacheType::SESSION, 'core/application::userRoles');
+			$alocs = $da_person->execute($pars);
      		if (isset($alocs))
-				foreach ( $alocs as $aloc ) {
+				foreach ($alocs as $aloc) {
 					if ($KUINK_CFG->useNewDataAccessInfrastructure)
-						$this->addRole ( ( string ) $aloc ['code'] );
+						$this->addRole((string) $aloc['code']);
 					else
-						$this->addRole ( ( string ) $aloc->code );
+						$this->addRole((string) $aloc->code);
 				}
-		} catch ( \Exception $exp ) {
-			// var_dump( $exp );
+			$da_groups->setCache(\Kuink\Core\CacheType::SESSION, 'core/application::userRolesByGroups');
+			$alocs = $da_groups->execute($pars);
+     		if (isset($alocs))
+				foreach ($alocs as $aloc) {
+					if ($KUINK_CFG->useNewDataAccessInfrastructure)
+						$this->addRole((string) $aloc['code']);
+					else
+						$this->addRole((string) $aloc->code);
+				}
+		} catch (\Exception $exp) {
+			// var_dump($exp);
 			$KUINK_TRACE [] = 'Cannot load roles from user allocation tables...';
-			// var_dump( $KUINK_TRACE );
+			// var_dump($KUINK_TRACE);
 			// throw new \Exception('Cannot load roles from user allocation tables...');
 		}
 		
 		// Load capabilities
 		// try {
 		// $idNumber=($USER->idnumber) ? (string)$USER->idnumber : 0;
-		// $datasource = new \Kuink\Core\DataSource( null, 'framework,user,getCapabilities','framework', 'user');
-		// $pars=array( 'id_person'=>$idNumber, 'id_company' => $idCompany );
+		// $datasource = new \Kuink\Core\DataSource(null, 'framework,user,getCapabilities','framework', 'user');
+		// $pars=array('id_person'=>$idNumber, 'id_company' => $idCompany);
 		// //TODO: change for the correct company id
-		// $caps = $datasource->execute( $pars );
+		// $caps = $datasource->execute($pars);
 		// if (isset($caps))
-		// foreach( $caps as $cap ) {
+		// foreach($caps as $cap) {
 		// if ($KUINK_CFG->useNewDataAccessInfrastructure)
-		// $this->addCapability( (string)$cap['code'] );
+		// $this->addCapability((string)$cap['code']);
 		// else
-		// $this->addCapability( (string)$cap->code );
+		// $this->addCapability((string)$cap->code);
 		// }
 		// }
 		// catch (\Exception $exp)
 		// {
-		// var_dump( $exp );
+		// var_dump($exp);
 		// $KUINK_TRACE[] = 'Cannot load capabilities...';
 		// //throw new \Exception('Cannot load capabilities...');
 		// }
-		// //var_dump( $this->capabilities );
+		// //var_dump($this->capabilities);
 		
 		return;
 	}
@@ -282,19 +296,19 @@ class Application {
 	 */
 	private function setDefaultFlow() {
 		// var_dump($this->defaultFlow);
-		if (isset ( $this->defaultFlow ))
+		if (isset ($this->defaultFlow))
 			return;
 			
 			// Else get the default flow from the menu
 		$flowdefault = array ();
-		foreach ( $this->roles as $role => $value ) {
-			$role_flow = $this->xmlDefinition->xpath ( '/Application/Menus//Menu[contains(@role, \'' . $role . '\') and not(@startuc=\'\') and (@default=\'true\')]' );
-			if (! empty ( $role_flow ))
+		foreach ($this->roles as $role => $value) {
+			$role_flow = $this->xmlDefinition->xpath ('/Application/Menus//Menu[contains(@role, \'' . $role . '\') and not(@startuc=\'\') and (@default=\'true\')]');
+			if (! empty ($role_flow))
 				$flowdefault [] = $role_flow;
 		}
 		// var_dump($flowdefault);
-		if (count ( $flowdefault ) > 0)
-			$this->defaultFlow = new Flow ( $this->name, ( string ) $flowdefault [0] [0] ['startuc'], '', ( string ) $flowdefault [0] [0] ['event'] );
+		if (count ($flowdefault) > 0)
+			$this->defaultFlow = new Flow ($this->name, (string) $flowdefault [0] [0] ['startuc'], '', (string) $flowdefault [0] [0] ['event']);
 	}
 	
 	/**
@@ -306,11 +320,11 @@ class Application {
 		$layout = \Kuink\UI\Layout\Layout::getInstance ();
 		
 		$menu = array ();
-		$get_role = isset ( $_GET ['role'] ) ? ( string ) $_GET ['role'] : '';
+		$get_role = isset ($_GET ['role']) ? (string) $_GET ['role'] : '';
 		// If user is admin then use the impersonate capability
 		$currentRole = '';
-		if (isset ( $this->roles ['framework.admin'] ))
-			$currentRole = ($get_role == '') ? key ( $this->roles ) : $get_role;
+		if (isset ($this->roles ['framework.admin']))
+			$currentRole = ($get_role == '') ? key ($this->roles) : $get_role;
 
 		$xmlDefinition = $this->xmlDefinition;
 
@@ -322,12 +336,12 @@ class Application {
 			$xmlDefinition = simplexml_load_file($baseAppFileName, 'SimpleXmlElement', LIBXML_COMPACT | LIBXML_NOCDATA);
 		}			
 			// Get the application top menu for the current role
-		$flowMenu = $xmlDefinition->xpath ( '/Application/Menus/Menu[contains(@role, \'' . $currentRole . '\') and not(@startuc=\'\')]' );
-		$menu = $this->makeMenuItems ( $flowMenu );
+		$flowMenu = $xmlDefinition->xpath ('/Application/Menus/Menu[contains(@role, \'' . $currentRole . '\') and not(@startuc=\'\')]');
+		$menu = $this->makeMenuItems ($flowMenu);
 		
 		// var_dump($menu);
 		
-		$layout->setAppMenu ( $menu );
+		$layout->setAppMenu ($menu);
 	}
 	function makeMenuItems($flowMenu) {
 		global $KUINK_CFG;
@@ -336,7 +350,7 @@ class Application {
 		}
 		
 		$menu = array ();
-		$menuitemscount = count ( $flowMenu );
+		$menuitemscount = count ($flowMenu);
 		$counter = 1;
 		foreach ($flowMenu as $node) {
 			
@@ -346,18 +360,18 @@ class Application {
 			 * if has children menus, then add it to attribute child *
 			 */
 			$childMenus = false;
-			if ($node->xpath ( "./Menu" )) {
-				$child = $node->xpath ( "./Menu" );
-				if (isset ( $child ))
-					$childMenus = $this->makeMenuItems ( $child ); // recursive instruction
+			if ($node->xpath ("./Menu")) {
+				$child = $node->xpath ("./Menu");
+				if (isset ($child))
+					$childMenus = $this->makeMenuItems ($child); // recursive instruction
 			}
 			
 			// Checking user permission
 			$roles = $this->roles;
 			$hasRole = false;
-			$menuRoles = ( string ) $node ['role'];
-			foreach ( $roles as $role => $value )
-				if (! (strpos ( $menuRoles, $role ) === false)) {
+			$menuRoles = (string) $node ['role'];
+			foreach ($roles as $role => $value)
+				if (! (strpos ($menuRoles, $role) === false)) {
 					$hasRole = true;
 					break;
 				}
@@ -369,8 +383,8 @@ class Application {
 				$hrefNoContext = ($KUINK_CFG->allowMultipleContexts) ? $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $qstrId . '&idcontext=' . uniqid () . '&startuc=' . $node ['startuc'] . '&startnode=' . $node ['startnode'] . '&event=' . $node ['event'] . '&trace=' . $qstrTrace : '';
 				$icon = isset($node['icon']) ? (string)$node['icon'] : '';
 				$menu [] = array (
-						'label' => kuink_get_string ( ( string ) $node ['label'], $this->name ),
-						'target' => isset($this->target) ? kuink_get_string ( ( string ) $node ['target'], $this->target ) : '_self',
+						'label' => kuink_get_string ((string) $node ['label'], $this->name),
+						'target' => isset($this->target) ? kuink_get_string ((string) $node ['target'], $this->target) : '_self',
 						'href' => $href,
 						'hrefNoContext' => $hrefNoContext,
 						'child' => $childMenus,
@@ -388,7 +402,7 @@ class Application {
 	 * Displays the menu if config key HIDE_APP_MENU is false or not defined
 	 */
 	private function displayMenu() {
-		$display_menu = isset ( $this->config ['HIDE_APP_MENU'] ) ? ! ($this->config ['HIDE_APP_MENU'] == 'true') : true;
+		$display_menu = isset ($this->config ['HIDE_APP_MENU']) ? ! ($this->config ['HIDE_APP_MENU'] == 'true') : true;
 		
 		if ($display_menu)
 			$this->getMenuHtml () ;
@@ -429,31 +443,31 @@ class Application {
 			
 			// Get the default flow
 			$this->setDefaultFlow ();
-			$runNode = ($node == null) ? ProcessOrchestrator::getNodeToExecute ( $this->roles, $this->defaultFlow ) : $node;
+			$runNode = ($node == null) ? ProcessOrchestrator::getNodeToExecute ($this->roles, $this->defaultFlow) : $node;
 			
-			$this->nodeconfiguration = $this->getNodeConfiguration ( $runNode );
+			$this->nodeconfiguration = $this->getNodeConfiguration ($runNode);
 			// var_dump($this->nodeconfiguration);
-			// var_dump( $runNode );
+			// var_dump($runNode);
 			if ($functionName == null)
 				$this->displayMenu ();
 			$baseUrl = $KUINK_CFG->wwwRoot;
 			if ($functionName == null) {
 				$layout = \Kuink\UI\Layout\Layout::getInstance ();
-				$layout->setBaseUrl ( $KUINK_CFG->wwwRoot );
-				$layout->setLogOut ( $KUINK_CFG->auth->user->firstName . ' ' . $KUINK_CFG->auth->user->lastName, $KUINK_CFG->auth->user->id_bridge, $KUINK_CFG->auth->sessionKey );
+				$layout->setBaseUrl ($KUINK_CFG->wwwRoot);
+				$layout->setLogOut ($KUINK_CFG->auth->user->firstName . ' ' . $KUINK_CFG->auth->user->lastName, $KUINK_CFG->auth->user->id_bridge, $KUINK_CFG->auth->sessionKey);
 			}
 			$runtime = null;
 			if ($functionName == null)
-				$runtime = new Runtime ( $runNode, 'nodes', $this->nodeconfiguration );
+				$runtime = new Runtime ($runNode, 'nodes', $this->nodeconfiguration);
 			else
-				$runtime = new Runtime ( $runNode, 'lib', $this->nodeconfiguration );
+				$runtime = new Runtime ($runNode, 'lib', $this->nodeconfiguration);
 			
 			if ($functionName == null)
 				$result = $runtime->execute ();
 			else // Execute directly a function
-				$result = $runtime->execute ( $functionName, $function_params );
+				$result = $runtime->execute ($functionName, $function_params);
 			
-			while ( $runtime->eventRaised () ) {
+			while ($runtime->eventRaised ()) {
 				$eventRaisedName = $runtime->eventRaisedName ();
 				$eventRaisedParams = $runtime->eventRaisedParams ();
 				// $eventRaisedApp = $runtime->eventRaisedApplication();
@@ -461,41 +475,41 @@ class Application {
 				// kuink_mydebug('event_raised', $eventRaisedName);
 				
 				// PMT::New ProcessOrchetrator
-				$runNode = ProcessOrchestrator::getNodeToExecute ( $this->roles, null, $eventRaisedName );
+				$runNode = ProcessOrchestrator::getNodeToExecute ($this->roles, null, $eventRaisedName);
 				
-				$this->nodeconfiguration = $this->getNodeConfiguration ( $runNode );
-				$runtime = new Runtime ( $runNode, 'nodes', $this->nodeconfiguration, true, $eventRaisedParams );
+				$this->nodeconfiguration = $this->getNodeConfiguration ($runNode);
+				$runtime = new Runtime ($runNode, 'nodes', $this->nodeconfiguration, true, $eventRaisedParams);
 				$result = $runtime->execute ();
 			}
 		} else {
 			$msg = '';
 			if (! $this->isActive)
-				$msg = ( string ) kuink_get_string ( 'applicationIsInactive', 'framework', null );
+				$msg = (string) kuink_get_string ('applicationIsInactive', 'framework', null);
 			else
-				$msg = ( string ) kuink_get_string ( 'applicationInMaintenance', 'framework', null );
-			$msgManager->add ( \Kuink\Core\MessageType::ERROR, $msg );
+				$msg = (string) kuink_get_string ('applicationInMaintenance', 'framework', null);
+			$msgManager->add (\Kuink\Core\MessageType::ERROR, $msg);
 		}
 		
 		if ((! $this->isActive || $this->inMaintenance) && $this->isFwAdmin ()) {
 			$msg = '';
 			if (! $this->isActive)
-				$msg = ( string ) kuink_get_string ( 'applicationIsInactive', 'framework', null );
+				$msg = (string) kuink_get_string ('applicationIsInactive', 'framework', null);
 			else
-				$msg = ( string ) kuink_get_string ( 'applicationInMaintenance', 'framework', null );
-			$msgManager->add ( \Kuink\Core\MessageType::WARNING, $msg );
+				$msg = (string) kuink_get_string ('applicationInMaintenance', 'framework', null);
+			$msgManager->add (\Kuink\Core\MessageType::WARNING, $msg);
 		}
 		
 		$msgManager->print_messages ();
 		
 		// Setting smarty company variables
 		$layout = \Kuink\UI\Layout\Layout::getInstance ();
-		$layout->setGlobalVariable ( '_userCompany', ProcessOrchestrator::getCompany () );
-		$layout->setGlobalVariable ( '_userCompanies', ProcessOrchestrator::getCompanies () );
+		$layout->setGlobalVariable ('_userCompany', ProcessOrchestrator::getCompany ());
+		$layout->setGlobalVariable ('_userCompanies', ProcessOrchestrator::getCompanies ());
 		
 		return $result;
 	}
 	private function isFwAdmin() {
-		return isset ( $this->roles ['framework.admin'] );
+		return isset ($this->roles ['framework.admin']);
 	}
 	
 	/**
@@ -503,13 +517,13 @@ class Application {
 	 */
 	private function getFrameworkConfig() {
 		$fw = $this->fwXmlDefinition;
-		$configs = $fw->xpath ( '/Framework/Configuration//Config' );
+		$configs = $fw->xpath ('/Framework/Configuration//Config');
 		
 		$fwConfig = null;
 		
-		foreach ( $configs as $config ) {
-			$key = ( string ) $config ['key'];
-			$value = ( string ) $config ['value'];
+		foreach ($configs as $config) {
+			$key = (string) $config ['key'];
+			$value = (string) $config ['value'];
 			$fwConfig [$key] = $value;
 		}
 		return $fwConfig;
@@ -522,11 +536,11 @@ class Application {
 	 * @return array
 	 */
 	private function getApplicationConfig($fwConfig) {
-		$appConfigs = $this->xmlDefinition->xpath ( '/Application/Configuration//Config' );
+		$appConfigs = $this->xmlDefinition->xpath ('/Application/Configuration//Config');
 		
-		foreach ( $appConfigs as $appConfig ) {
-			$key = ( string ) $appConfig ['key'];
-			$value = ( string ) $appConfig ['value'];
+		foreach ($appConfigs as $appConfig) {
+			$key = (string) $appConfig ['key'];
+			$value = (string) $appConfig ['value'];
 			$fwConfig [$key] = $value;
 		}
 		return $fwConfig;
@@ -549,22 +563,22 @@ class Application {
 		$currentNode = ProcessOrchestrator::getCurrentNode ();
 		
 		$fwConfig = $this->getFrameworkConfig ();
-		$fwConfig = $this->getApplicationConfig ( $fwConfig );
+		$fwConfig = $this->getApplicationConfig ($fwConfig);
 		$qstrId = isset($_GET [QueryStringParam::ID]) ? $_GET [QueryStringParam::ID] : '';
-		$get_trace = isset ( $_GET [QueryStringParam::TRACE] ) ? ( string ) $_GET [QueryStringParam::TRACE] : '';
-		$get_modal = isset ( $_GET [QueryStringParam::MODAL] ) ? ( string ) $_GET [QueryStringParam::MODAL] : 'false';
+		$get_trace = isset ($_GET [QueryStringParam::TRACE]) ? (string) $_GET [QueryStringParam::TRACE] : '';
+		$get_modal = isset ($_GET [QueryStringParam::MODAL]) ? (string) $_GET [QueryStringParam::MODAL] : 'false';
 		$baseUrl = $KUINK_CFG->wwwRoot . '/' . $KUINK_CFG->kuinkRoot . '/view.php?id=' . $qstrId;
 		$baseUrlParams = array (
 				QueryStringParam::ID => isset($_GET [QueryStringParam::ID]) ? $_GET [QueryStringParam::ID] : '',			
 				QueryStringParam::ID_CONTEXT => $_GET [QueryStringParam::ID_CONTEXT],
-				//QueryStringParam::TRACE => isset ( $_GET [QueryStringParam::TRACE] ) ? ( string ) $_GET [QueryStringParam::TRACE] : '',
+				//QueryStringParam::TRACE => isset ($_GET [QueryStringParam::TRACE]) ? (string) $_GET [QueryStringParam::TRACE] : '',
 				QueryStringParam::ACTION_VALUE => isset($currentNode->action_value) ? $currentNode->action_value : '',
 				QueryStringParam::TRACE => $get_trace 
 		);
 		if ($get_modal != 'false' && $get_modal != 'widget')
 			$baseUrlParams [QueryStringParam::MODAL] = $get_modal;
 		
-		$baseUrl = \Kuink\Core\Tools::setUrlParams ( $baseUrl, $baseUrlParams );
+		$baseUrl = \Kuink\Core\Tools::setUrlParams ($baseUrl, $baseUrlParams);
 		$nodeconfiguration [NodeConfKey::APPLICATION] = $node->application;
 		$nodeconfiguration [NodeConfKey::NODE] = $node->node;
 		$nodeconfiguration [NodeConfKey::PROCESS] = $node->process;
