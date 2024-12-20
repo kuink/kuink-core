@@ -135,7 +135,11 @@ class VarInstruction extends \Kuink\Core\Instruction {
 		if ($type == '$' || $type == '#' || $type == '@') {
 			$eval = new \Kuink\Core\EvalExpr ();
 			$key = $eval->e ( $key, $instManager->variables, FALSE, TRUE, FALSE ); // Eval and return a value without ''
-		}		
+		}
+
+		// PHP 8.1, fix
+		if($variable == '')
+			$variable = [];
 
 		if (count($keys) == 0) {
 			if ($key == '__new') 
