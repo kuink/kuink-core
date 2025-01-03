@@ -116,7 +116,7 @@ substr ( $charid, 0, 8 ) . $hyphen . substr ( $charid, 8, 4 ) . $hyphen . substr
 		return $set;
 	}
 	function arrayLength($params) {
-		$arr = $params [0];
+		$arr = $params ?? [0];
 		return count ( $arr );
 	}
 	
