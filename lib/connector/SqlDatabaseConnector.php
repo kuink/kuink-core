@@ -516,7 +516,7 @@ private function encloseIdentifier($identifier) {
 		}
 
 		if (!empty($multilangTransformedRecords)) {
-			if (count ( $multilangTransformedRecords > 0 )) {
+			if (count ( $multilangTransformedRecords ) > 0) {
 				foreach ( $multilangTransformedRecords as $key => $multilangData )
 				if ($key != 'id')
 					$record[$key] = $multilangData;
