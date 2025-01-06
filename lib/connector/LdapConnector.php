@@ -594,7 +594,7 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		// Commit modification on directory
 		// Just replace with new password
 		$replace = ldap_mod_replace ( $this->client, $dn, $userdata );
-		$errno = ldap_errno ( $ldap );
+		$errno = ldap_errno ( $this->client );
 		if ($errno)
 			return 2;
 		
