@@ -1162,7 +1162,7 @@ private function encloseIdentifier($identifier) {
 		$database = $this->dataSource->getParam ( 'database', true );
 		
 		$entName = ( string ) $params ['_entity'];
-		$this->db->exec ('SET GLOBAL innodb_stats_on_metadata=0;');
+		//$this->db->exec ('SET GLOBAL innodb_stats_on_metadata=0;');
 		$sql = "
 		SELECT
  					c.ordinal_position as 'id',
@@ -1958,7 +1958,8 @@ private function encloseIdentifier($identifier) {
 				$sqlAttribute .= ($attribute ['zerofill'] == 'true') ? ' UNSIGNED ZEROFILL' : (($attribute ['unsigned'] == 'true') ? ' UNSIGNED' : '');
 				$sqlAttribute .= ($attribute ['required'] == 'true') ? ' NOT NULL' : '';
 				$sqlAttribute .= ($attribute ['autonumber'] == 'true') ? ' AUTO_INCREMENT' : '';
-				$sqlAttribute .= ($attribute ['default'] != '') ? ' DEFAULT \'' . ( string ) $attribute ['default'] . '\'' : '';
+				$sqlAttribute .= ($attribute ['default'] != '') ? ' DEFAULT ' . ( string ) $attribute ['default'] : '';
+				//$sqlAttribute .= ($attribute ['default'] != '') ? ' DEFAULT \'' . ( string ) $attribute ['default'] . '\'' : '';
 				$sqlAttribute .= ' COMMENT \'' . ( string ) $attribute ['comment'] . '\'';
 				$pk = $this->getAttribute ( $attribute, 'pk', false, null, 'false' );
 				if ($pk == 'true') {
