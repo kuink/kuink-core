@@ -76,7 +76,12 @@ class DoPDF_v2Instruction extends PdfInstruction {
 		$pdf->SetAuthor ( $metaAuthor );
 		$pdf->SetTitle ( $metaTitle );
 		$pdf->SetSubject ( $metaSubject );
+		
+		// PHP 8.0, fix from just		$pdf->SetKeywords ( $metaKeywords );
+		if (is_array($metaKeywords))
+			$metaKeywords = implode(', ', $metaKeywords);
 		$pdf->SetKeywords ( $metaKeywords );
+
 		$pdf->setTemplateCode ( $metaTemplateCode );
 		
 		// set header and footer fonts

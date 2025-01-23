@@ -133,9 +133,12 @@ class NodeManager {
 		$this->requireLoad ();
 		
 		$xpathCondition = '[';
-		$conditions = count ( $attributeName );
+
+		//PHP 8.0 moved to if body: $conditions = count ( $attributeName );
+
 		$countConditions = 0;
 		if (is_array ( $attributeName )) {
+			$conditions = count ( $attributeName );
 			foreach ( $attributeName as $attr ) {
 				$xpathCondition .= '@' . $attr . '="' . $value . '"';
 				if ($countConditions < $conditions - 1)

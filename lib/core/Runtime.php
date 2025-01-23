@@ -231,7 +231,8 @@ class Runtime {
 			$capabilities = isset($this->nodeconfiguration[NodeConfKey::CAPABILITIES]) ? $this->nodeconfiguration[NodeConfKey::CAPABILITIES] : null;
 			
 			//Only rebuild if the capabilites are not set
-			if (count($capabilities) == 0 || $force) {
+			// PHP 8.0, fix from		if (count($capabilities) == 0 || $force) {
+			if ((is_countable($capabilities) && count($capabilities) == 0) || $force) {
 				//print_object('NEW...');
 				if (count($roles)>0) {
 					$rolesFilter = array();
@@ -1383,8 +1384,9 @@ class Runtime {
 		return $postdata;
 	}
 	function secureSuperGlobalPOST(&$value, $key) {
-		if (get_magic_quotes_gpc ())
-			$value = stripslashes ( $value );
+		// PHP 8.0			get_magic_quotes_gpc REMOVED of PHP 8.0.0. No longer needed.
+		// if (get_magic_quotes_gpc ())
+			//$value = stripslashes ( $value );
 			// $_POST[$key] = htmlspecialchars(stripslashes($_POST[$key]));
 			// $_POST[$key] = str_ireplace("script", "blocked", $_POST[$key]);
 			// $value = mysql_escape_string($value);

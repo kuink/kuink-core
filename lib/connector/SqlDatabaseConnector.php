@@ -488,7 +488,8 @@ private function encloseIdentifier($identifier) {
 		TraceManager::add ( __METHOD__, TraceCategory::GENERAL, __CLASS__.'::'.__METHOD__ );	
 		
 		$records = $this->executeSql ( $sql, $params, true, false );
-		$record = (count ( $records ) > 0) ? $records [0] : null;
+		// PHP 8.0, fix from		$record = (count ( $records ) > 0) ? $records [0] : null;
+		$record = (is_countable ( $records ) && count ( $records ) > 0) ? $records [0] : null;
 
 		// add the multilang data if it is set
 		$multilangTransformedRecords = array ();
@@ -515,7 +516,7 @@ private function encloseIdentifier($identifier) {
 		}
 
 		if (!empty($multilangTransformedRecords)) {
-			if (count ( $multilangTransformedRecords > 0 )) {
+			if (count ( $multilangTransformedRecords ) > 0) {
 				foreach ( $multilangTransformedRecords as $key => $multilangData )
 				if ($key != 'id')
 					$record[$key] = $multilangData;
@@ -1161,7 +1162,7 @@ private function encloseIdentifier($identifier) {
 		$database = $this->dataSource->getParam ( 'database', true );
 		
 		$entName = ( string ) $params ['_entity'];
-		$this->db->exec ('SET GLOBAL innodb_stats_on_metadata=0;');
+		//$this->db->exec ('SET GLOBAL innodb_stats_on_metadata=0;');
 		$sql = "
 		SELECT
  					c.ordinal_position as 'id',
@@ -1957,7 +1958,8 @@ private function encloseIdentifier($identifier) {
 				$sqlAttribute .= ($attribute ['zerofill'] == 'true') ? ' UNSIGNED ZEROFILL' : (($attribute ['unsigned'] == 'true') ? ' UNSIGNED' : '');
 				$sqlAttribute .= ($attribute ['required'] == 'true') ? ' NOT NULL' : '';
 				$sqlAttribute .= ($attribute ['autonumber'] == 'true') ? ' AUTO_INCREMENT' : '';
-				$sqlAttribute .= ($attribute ['default'] != '') ? ' DEFAULT \'' . ( string ) $attribute ['default'] . '\'' : '';
+				$sqlAttribute .= ($attribute ['default'] != '') ? ' DEFAULT ' . ( string ) $attribute ['default'] : '';
+				//$sqlAttribute .= ($attribute ['default'] != '') ? ' DEFAULT \'' . ( string ) $attribute ['default'] . '\'' : '';
 				$sqlAttribute .= ' COMMENT \'' . ( string ) $attribute ['comment'] . '\'';
 				$pk = $this->getAttribute ( $attribute, 'pk', false, null, 'false' );
 				if ($pk == 'true') {

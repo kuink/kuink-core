@@ -594,7 +594,7 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		// Commit modification on directory
 		// Just replace with new password
 		$replace = ldap_mod_replace ( $this->client, $dn, $userdata );
-		$errno = ldap_errno ( $ldap );
+		$errno = ldap_errno ( $this->client );
 		if ($errno)
 			return 2;
 		
@@ -661,7 +661,8 @@ class LdapConnector extends \Kuink\Core\DataSourceConnector {
 		$len = strlen ( utf8_decode ( $password ) );
 		$adpassword = "";
 		for($i = 0; $i < $len; $i ++) {
-			$adpassword .= "{$password{$i}}\000";
+			// PHP 8.0, fix from		$adpassword .= "{$password{$i}}\000";
+			$adpassword .= "{$password[$i]}\000";
 		}
 		return $adpassword;
 	}

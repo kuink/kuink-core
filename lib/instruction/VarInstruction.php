@@ -65,11 +65,11 @@ class VarInstruction extends \Kuink\Core\Instruction {
 			
 			$value = '';
 			switch ($key) {
-				case '' : $value = isset($instManager->variables [$varname]) ? $instManager->variables [$varname] : ''; break;
+				case '' : $value = isset($instManager->variables [$varname]) ? $instManager->variables [$varname] : null; break;
 				case '__first' : $value= (is_array($instManager->variables[$varname])) ? array_values($instManager->variables[$varname])[0] : null; break;
 				case '__length' :$value=count($instManager->variables[$varname]);break;			
 				default :
-					$value = isset($instManager->variables [$varname]) ? self::getVarKeyInDepth($instManager, $instManager->variables[$varname], $keys) : ''; //isset($instManager->variables [$varname] [$key]) ? $instManager->variables [$varname] [$key] : null;
+					$value = isset($instManager->variables [$varname]) ? self::getVarKeyInDepth($instManager, $instManager->variables[$varname], $keys) : null; //isset($instManager->variables [$varname] [$key]) ? $instManager->variables [$varname] [$key] : null;
 			}
 		}
 		
@@ -135,7 +135,11 @@ class VarInstruction extends \Kuink\Core\Instruction {
 		if ($type == '$' || $type == '#' || $type == '@') {
 			$eval = new \Kuink\Core\EvalExpr ();
 			$key = $eval->e ( $key, $instManager->variables, FALSE, TRUE, FALSE ); // Eval and return a value without ''
-		}		
+		}
+
+		// PHP 8.1, fix
+		if($variable == '')
+			$variable = [];
 
 		if (count($keys) == 0) {
 			if ($key == '__new') 

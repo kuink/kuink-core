@@ -68,6 +68,7 @@ class AsciiLib {
 		foreach ( $tableData as $rowData ) {
 			$row = new Zend\Text\Table\Row ();
 			foreach ( $rowData as $columnData ) {
+				$columnData = (string) $columnData;
 				$row->appendColumn ( new Zend\Text\Table\Column ( $columnData ) );
 			}
 			$table->appendRow ( $row );
