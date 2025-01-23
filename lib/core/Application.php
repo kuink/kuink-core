@@ -336,7 +336,11 @@ class Application {
 			$xmlDefinition = simplexml_load_file($baseAppFileName, 'SimpleXmlElement', LIBXML_COMPACT | LIBXML_NOCDATA);
 		}			
 			// Get the application top menu for the current role
-		$flowMenu = $xmlDefinition->xpath ('/Application/Menus/Menu[contains(@role, \'' . $currentRole . '\') and not(@startuc=\'\')]');
+		if ($xmlDefinition)
+			$flowMenu = $xmlDefinition->xpath ('/Application/Menus/Menu[contains(@role, \'' . $currentRole . '\') and not(@startuc=\'\')]');
+		else
+			$flowMenu = '';
+
 		$menu = $this->makeMenuItems ($flowMenu);
 		
 		// var_dump($menu);

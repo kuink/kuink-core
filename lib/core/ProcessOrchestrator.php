@@ -400,8 +400,10 @@ class ProcessOrchestrator {
 		$contextId = (isset ( $contextId )) ? $contextId : self::getContextId ();
 		$currentNode = self::getCurrentNode ( $contextId );
 		
-		$currentNode->registeredAPI[$api] = $api;
-		self::setNode ( $currentNode );
+		if(isset($currentNode) && $currentNode != false) {
+			$currentNode->registeredAPI[$api] = $api;
+			self::setNode ( $currentNode );
+		}
 		return;
 	}
 	static function validRegisteredAPI($api, $contextId = null, $bypass = false) {
