@@ -10,7 +10,10 @@ namespace Kuink\Core\Instruction;
 class DoPDFSetZIPInstruction extends \Kuink\Core\Instruction {
 	
 	/**
-	 * Creates a PDF
+	 * Creates a ZIP with a set of associated PDFs.
+	 * The properties for each file are filename and content.
+	 * The remaining properties and meta data are defined in the
+	 * instruction parameters and applied to all PDF files.
 	 */
 	static public function execute($instManager, $instructionXmlNode) {
 		return self::create($instManager, $instructionXmlNode);
@@ -85,15 +88,11 @@ class DoPDFSetZIPInstruction extends \Kuink\Core\Instruction {
 
 		$a = 19;
 		$html_contents = array($html, $html, $html);
-		foreach ($html_contents as $key => $value) {
-			$a+=2;
-			$filename = 'abc_' . $a . '.pdf';
-
+		foreach ($documents as $document) {
 			// create new PDF document
 			$pdf = new \KuinkPDF ( $orientation, $unit, $paper, true, 'UTF-8', false, false );
 			
 			// set document information
-
 			$meta = $instManager->getCustomParams($instructionXmlNode, 'Meta');
 			$metaCreator = isset($meta['creator']) ? ( string ) $meta['creator'] : ''; // $this->get_meta_value ( 'creator', $instManager->nodeConfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $instManager->variables, $exit );
 			$metaAuthor = isset($meta['author']) ? ( string ) $meta['author'] : '';  //( string ) $this->get_meta_value ( 'author', $instManager->nodeConfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $instManager->variables, $exit );
@@ -170,14 +169,14 @@ class DoPDFSetZIPInstruction extends \Kuink\Core\Instruction {
 				
 				// Print text using writeHTMLCell()
 			try {
-				$pdf->writeHTML ( $html, true, false, true, false, '' );
+				$pdf->writeHTML ( $document ['content'], true, false, true, false, '' );
 			} catch (\Exception $e) {
 				var_dump($e);
 				throw new \Exception($e);
 			}			
 
 
-			$myFile = $uploadPdfDir . '/' . $filename;
+			$myFile = $uploadPdfDir . '/' . $document ['filename'] . '.pdf';
 			$myFile = str_replace ( '//', '/', $myFile );
 			
 			$fh = fopen ( $myFile, 'w+' ) or die ( "can't open file." );
