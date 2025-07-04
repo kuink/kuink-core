@@ -68,6 +68,7 @@ class DoPDFSetZIPInstruction extends \Kuink\Core\Instruction {
 		$uploadPdfDir = str_replace ( '//', '/', $uploadPdfDir );
 
 		// Create the path if the directory doesn't exist
+		// This includes an aux directory to contain this set of PDFs.
 		if (! is_dir ( $uploadPdfDir )) {
 			$dir_parts = explode ( '/', $uploadPdfDir );
 			$sub_dirs = '/';
@@ -88,6 +89,7 @@ class DoPDFSetZIPInstruction extends \Kuink\Core\Instruction {
 
 		$a = 19;
 		$html_contents = array($html, $html, $html);
+
 		foreach ($documents as $document) {
 			// create new PDF document
 			$pdf = new \KuinkPDF ( $orientation, $unit, $paper, true, 'UTF-8', false, false );
@@ -189,10 +191,9 @@ class DoPDFSetZIPInstruction extends \Kuink\Core\Instruction {
 			}					
 			fwrite ( $fh, $stringData );
 			fclose ( $fh );
-			
-			
 		}
 		
+		// Create ZIP file
 		$idFile = null;
 		$zipFile = $uploadDir . '/' . $filesetname . '.zip';
 		$zip = new \ZipArchive();
@@ -201,6 +202,7 @@ class DoPDFSetZIPInstruction extends \Kuink\Core\Instruction {
 		if ($zip_fh !== true && $zip_fh !== 0)
 			die ( "can't open file." );
 
+		// Add PDF files from aux directory to ZIP
 		$files = glob($uploadPdfDir . '/*');
 		array_map(function($file) use ($zip) {
 			$zip->addFile($file, basename($file));
