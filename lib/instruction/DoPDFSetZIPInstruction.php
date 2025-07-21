@@ -84,11 +84,7 @@ class DoPDFSetZIPInstruction extends \Kuink\Core\Instruction {
 		array_map('unlink', array_filter((array) glob("$uploadPdfDir/*")));
 
 		$params = $instManager->getParams( $instructionXmlNode); //Get the params defined in params attribute $this->aux_get_named_param_values ( $instManager->nodeConfiguration, $nodexml, $action_xmlnode, $instruction_xmlnode, $actionname, $instructionname, $instManager->variables, $exit );
-		$html = $params ['content'];
 		$documents = $params ['documents'];
-
-		$a = 19;
-		$html_contents = array($html, $html, $html);
 
 		foreach ($documents as $document) {
 			// create new PDF document
