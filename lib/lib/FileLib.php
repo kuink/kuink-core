@@ -930,6 +930,29 @@ class FileLib {
 		// unset( $dirArray[0] );
 		return $dirArray;
 	}
+	function getFileInfo($params) {
+		global $KUINK_CFG;
+
+		$path = ($params ['path']) ? $params ['path'] : '';
+		$file = ($params ['filename']) ? $params ['filename'] : '';
+
+		$path = str_replace($KUINK_CFG->uploadVirtualPrefix, '', $path);
+		$pathName = $KUINK_CFG->uploadRoot . '/' . $path . '/' . $file;
+
+		if (file_exists ( $pathName ) and ! is_dir ( $pathName ))
+			return [
+				'name'      => basename($pathName),
+				'size'      => filesize($pathName),
+				'mime'      => mime_content_type($pathName),
+				'created'   => filectime($pathName), // timestamp
+				'modified'  => filemtime($pathName), // timestamp
+				'accessed'  => fileatime($pathName), // timestamp
+				'hash_md5'  => md5_file($pathName),
+				'hash_sha1' => sha1_file($pathName)
+			];
+		else
+			return false;
+	}
 }
 
 /*
